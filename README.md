@@ -50,14 +50,21 @@ $ npm install
 ## Run the app
 
 ```
-$ npx ts-node --require tsconfig-paths/register src/main.ts
+$ npx ts-node --project=tsconfig.src.json --require=tsconfig-paths/register src/main.ts
 ```
 
-To dump the compiled files and execute them:
+To compile the app and execute it directly with node:
 
 ```
-$ npx tsc
-$ node --require ts-node/register --require tsconfig-paths/register dist/main.js
+$ npx tsc --project tsconfig.src.json
+$ TS_NODE_PROJECT=tsconfig.src.json node --require=ts-node/register --require=tsconfig-paths/register dist/src/main.js
+```
+
+
+## Run the tests
+
+```
+$ TS_NODE_PROJECT=tsconfig.tests.json npx mocha --require=ts-node/register --require=tsconfig-paths/register --check-leaks tests/**/*.spec.ts
 ```
 
 

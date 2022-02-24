@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": ".",
     "lib": ["es2021"],
     "module": "commonjs",
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "target": "es2021",
     "sourceMap": true,
-    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "@app/*": ["src/*"]
@@ -17,6 +16,7 @@
     "src"
   ],
   "exclude": [
+    "dist",
     "node_modules"
   ],
 }
