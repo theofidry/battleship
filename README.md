@@ -36,37 +36,27 @@ $ npm --version
 8.5.1
 ```
 
-### Install dependencies
+## Development
+
+The local development is relying on [Make][make] to help out. You can list
+the available commands with:
 
 ```
-# For a fresh clean install (ci as clean install):
-$ npm ci
-
-# To take advantage of the already installed pakcages:
-$ npm install
+$ make help
 ```
 
+The make file aims at helping to run the right commands based on the missing
+files or outdated files. For example, it will automatically install `node_modules`
+if it is missing or run an `npm install` if the `package-lock.json` has been
+updated.
 
-## Run the app
-
-```
-$ npx ts-node --project=tsconfig.src.json --require=tsconfig-paths/register src/main.ts
-```
-
-To compile the app and execute it directly with node:
-
-```
-$ npx tsc --project tsconfig.src.json
-$ TS_NODE_PROJECT=tsconfig.src.json node --require=ts-node/register --require=tsconfig-paths/register dist/src/main.js
-```
+However make still relies on the files & directories timestamp to detect changes
+and it is not always working. For example sometimes a file changes (added/updated/deleted)
+with `src` and yet the timestamp of the directory `src` is not updated although
+it should. This is a limitation of the file system and OSes. In such an event,
+if you want to force a command with make, you can always use the option `-B|--always-make`.
 
 
-## Run the tests
-
-```
-$ TS_NODE_PROJECT=tsconfig.tests.json npx mocha --require=ts-node/register --require=tsconfig-paths/register --check-leaks tests/**/*.spec.ts
-```
-
-
+[make]: https://www.gnu.org/software/make/
 [npm]: https://www.npmjs.com/
 [nvm]: https://github.com/nvm-sh/nvm
