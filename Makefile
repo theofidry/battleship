@@ -27,7 +27,7 @@ TEST_DEPS=node_modules src tests tsconfig.base.json tsconfig.tests.json
 #---------------------------------------------------------------------------
 
 .PHONY: default
-default: test compile
+default: cs test compile
 
 .PHONY: help
 help:		## Displays the documented commands
@@ -41,6 +41,12 @@ clean:		## Cleans up all the artefacts
 clean:
 	rm -rf dist/* || true
 	rm -rf node_modules || true
+
+
+.PHONY: cs
+cs:	## Runs ESLint
+cs:
+	npx eslint . --ext .js,.ts --fix
 
 
 .PHONY: compile
