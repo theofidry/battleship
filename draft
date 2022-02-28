@@ -1,0 +1,42 @@
+## Rules
+
+board: 10x10
+ A...J
+1
+.
+.
+.
+10
+
+boats:
+1x 5tiles
+1x 4tiles
+2x 3tiles
+1x 2tiles
+
+
+## Start a game
+
+modes:
+
+- play against AI
+- play against another player
+- play between two AIs +nbr of times
+
+
+
+spawn PlayerA
+spawn PlayerB
+
+player = pickFirstPlayer()
+
+while game not finished or max turn not reached
+    coordinates = ask player coordinates (send "your turn\n")
+    validateCoordinates(coordinates) -> if invalid player looses
+
+    response = get (other) player response
+    validateResponse("miss/hit/sunk/won/error")
+
+    acknowledgement = send back response
+    validateAcknoledgement("ok/error")
+
