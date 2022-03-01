@@ -1,0 +1,17 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "dist/tests",
+        "declaration": false,
+        "noEmit": true,
+        "allowJs": true
+    },
+    "include": [
+        "src",
+        "tests",
+        ".eslintrc.js"
+    ],
+    "references": [
+        { "path": "./tsconfig.src.json" }
+    ]
+}
