@@ -1,5 +1,7 @@
 # Battleship
 
+Original idea: [link][afup-battleship]
+
 ## Installation
 
 ### Install nodejs
@@ -16,6 +18,15 @@ $ nvm use v17
 $ node --version
 v17.5.0
 ```
+
+### Automatic node version switch
+
+You may already be using nvm with different node versions on your computer. In
+this cases finding out that you have been using the wrong node version and
+having to switch manually is a tad irritating. You can get rid of this annoyance
+by adding a deeper support of nvm within your shell to automatically do the
+switch: [nvm shell integration][nvm-shell-integration].
+
 
 ### Check npm
 
@@ -57,6 +68,8 @@ it should. This is a limitation of the file system and OSes. In such an event,
 if you want to force a command with make, you can always use the option `-B|--always-make`.
 
 
+[afup-battleship]: https://github.com/AFUP-rennes/challenge-2022-01
 [make]: https://www.gnu.org/software/make/
 [npm]: https://www.npmjs.com/
 [nvm]: https://github.com/nvm-sh/nvm
+[nvm-shell-integration]: https://github.com/nvm-sh/nvm#deeper-shell-integration
