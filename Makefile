@@ -45,7 +45,7 @@ clean:
 
 .PHONY: cs
 cs:	## Runs ESLint
-cs:
+cs: node_modules
 	npx eslint . --ext .js,.ts --fix
 
 
