@@ -20,7 +20,7 @@ TOUCH = bash .makefile/touch.sh
 
 SRC_DEPS=node_modules src tsconfig.base.json tsconfig.src.json
 TEST_DEPS=node_modules src tests tsconfig.base.json tsconfig.tests.json
-RUN_ESLINT=px eslint . --ext .js,.ts
+RUN_ESLINT=npx eslint . --ext .js,.ts
 
 
 #
