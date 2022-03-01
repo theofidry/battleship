@@ -10,7 +10,14 @@
     "baseUrl": ".",
     "paths": {
       "@app/*": ["src/*"]
-    }
+    },
+
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "strict": true
   },
   "include": [
     "src"
