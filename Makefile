@@ -52,7 +52,6 @@ cs: node_modules
 .PHONY: compile
 compile:	## Builds the JavaScript app artefacts
 compile:
-	rm -rf dist/src || true
 	$(MAKE) dist/src
 
 
