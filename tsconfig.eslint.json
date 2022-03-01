@@ -12,6 +12,8 @@
         ".eslintrc.js"
     ],
     "references": [
-        { "path": "./tsconfig.src.json" }
+        {
+            "path": "./tsconfig.src.json"
+        }
     ]
 }
