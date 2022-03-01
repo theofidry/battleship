@@ -1,4 +1,4 @@
-import { greeter } from '@app/greeter';
+import { greeter } from './greeter';
 
 const message = greeter();
 
