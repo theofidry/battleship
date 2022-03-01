@@ -1,0 +1,82 @@
+name: Run tests
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+
+jobs:
+    CS:
+        runs-on: ubuntu-latest
+        name: 'CS Lint'
+        strategy:
+            fail-fast: false
+            matrix:
+                nodejs: [ '17' ]
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v2
+                with:
+                    fetch-depth: 0
+
+            -   name: Set Node.js
+                uses: actions/setup-node@v2.5.1
+                with:
+                    node-version: ${{ matrix.nodejs }}
+                    cache: 'npm'
+
+            -   name: Install dependencies
+                run: npm ci
+
+            -   name: Run tests
+                run: make lint
+
+    tests:
+        runs-on: ubuntu-latest
+        name: 'Tests'
+        strategy:
+            fail-fast: false
+            matrix:
+                nodejs: [ '17' ]
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v2
+                with:
+                    fetch-depth: 0
+
+            -   name: Set Node.js
+                uses: actions/setup-node@v2.5.1
+                with:
+                    node-version: ${{ matrix.nodejs }}
+                    cache: 'npm'
+
+            -   name: Install dependencies
+                run: npm ci
+
+            -   name: Run tests
+                run: npm test
+
+    compile:
+        runs-on: ubuntu-latest
+        name: 'Compile'
+        strategy:
+            fail-fast: false
+            matrix:
+                nodejs: [ '17' ]
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v2
+                with:
+                    fetch-depth: 0
+
+            -   name: Set Node.js
+                uses: actions/setup-node@v2.5.1
+                with:
+                    node-version: ${{ matrix.nodejs }}
+                    cache: 'npm'
+
+            -   name: Install dependencies
+                run: npm ci
+
+            -   name: Run tests
+                run: make compile

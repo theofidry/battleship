@@ -20,6 +20,7 @@ TOUCH = bash .makefile/touch.sh
 
 SRC_DEPS=node_modules src tsconfig.base.json tsconfig.src.json
 TEST_DEPS=node_modules src tests tsconfig.base.json tsconfig.tests.json
+RUN_ESLINT=npx eslint . --ext .js,.ts
 
 
 #
@@ -44,10 +45,16 @@ clean:
 	rm -rf node_modules || true
 
 
+.PHONY: lint
+lint:		## Runs ESLint lint (will not fix anything)
+lint: node_modules
+	$(RUN_ESLINT)
+
+
 .PHONY: cs
 cs:		## Runs ESLint
 cs: node_modules
-	npx eslint . --ext .js,.ts --fix
+	$(RUN_ESLINT) --fix
 
 
 .PHONY: compile
