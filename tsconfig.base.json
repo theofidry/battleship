@@ -10,11 +10,6 @@
         "target": "es2021",
         "sourceMap": true,
         "baseUrl": ".",
-        "paths": {
-            "@app/*": [
-                "src/*"
-            ]
-        },
         "exactOptionalPropertyTypes": true,
         "noImplicitOverride": true,
         "noImplicitReturns": true,
