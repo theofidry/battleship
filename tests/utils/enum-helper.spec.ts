@@ -25,9 +25,9 @@ describe('EnumHelper', () => {
             { name: 'GREEN', value: 1 },
         ];
 
-        expect(EnumHelper.getNames(RegularEnum)).toEqual(expectedNames as any);
-        expect(EnumHelper.getValues(RegularEnum)).toEqual(expectedValues as any);
-        expect(EnumHelper.getNamesAndValues(RegularEnum)).toEqual(expectedNamesAndValues as any);
+        expect(EnumHelper.getNames(RegularEnum)).to.eqls(expectedNames);
+        expect(EnumHelper.getValues(RegularEnum)).to.eqls(expectedValues);
+        expect(EnumHelper.getNamesAndValues(RegularEnum)).to.eqls(expectedNamesAndValues);
     });
 
     it('can describe a string enum', () => {
@@ -38,9 +38,9 @@ describe('EnumHelper', () => {
             { name: 'GREEN', value: 'green' },
         ];
 
-        expect(EnumHelper.getNames(StringEnum)).toEqual(expectedNames as any);
-        expect(EnumHelper.getValues(StringEnum)).toEqual(expectedValues as any);
-        expect(EnumHelper.getNamesAndValues(StringEnum)).toEqual(expectedNamesAndValues as any);
+        expect(EnumHelper.getNames(StringEnum)).to.eqls(expectedNames);
+        expect(EnumHelper.getValues(StringEnum)).to.eqls(expectedValues);
+        expect(EnumHelper.getNamesAndValues(StringEnum)).to.eqls(expectedNamesAndValues);
     });
 
     it('can describe a mixed enum', () => {
@@ -51,28 +51,28 @@ describe('EnumHelper', () => {
             { name: 'GREEN', value: 'green' },
         ];
 
-        expect(EnumHelper.getNames(MixedEnum)).toEqual(expectedNames as any);
-        expect(EnumHelper.getValues(MixedEnum)).toEqual(expectedValues as any);
-        expect(EnumHelper.getNamesAndValues(MixedEnum)).toEqual(expectedNamesAndValues as any);
+        expect(EnumHelper.getNames(MixedEnum)).to.eqls(expectedNames);
+        expect(EnumHelper.getValues(MixedEnum)).to.eqls(expectedValues);
+        expect(EnumHelper.getNamesAndValues(MixedEnum)).to.eqls(expectedNamesAndValues);
     });
 
     describe('takeByKeyOrElse', () => {
         it('regularEnum', () => {
-            expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'RED', 'foo')).toEqual(RegularEnum.RED);
-            expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'unknown', 'foo')).toEqual('foo');
+            expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'RED', 'foo')).to.eqls(RegularEnum.RED);
+            expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'unknown', 'foo')).to.eqls('foo');
         });
 
         it('stringEnum', () => {
-            expect(EnumHelper.takeByKeyOrElse(StringEnum, 'RED', 'foo')).toEqual(StringEnum.RED);
-            expect(EnumHelper.takeByKeyOrElse(StringEnum, 'unknown', 'foo')).toEqual('foo');
+            expect(EnumHelper.takeByKeyOrElse(StringEnum, 'RED', 'foo')).to.eqls(StringEnum.RED);
+            expect(EnumHelper.takeByKeyOrElse(StringEnum, 'unknown', 'foo')).to.eqls('foo');
         });
 
         it('mixedEnum', () => {
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'RED', 'foo')).toEqual(MixedEnum.RED);
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).toEqual('foo');
+            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'RED', 'foo')).to.eqls(MixedEnum.RED);
+            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).to.eqls('foo');
 
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'GREEN', 'foo')).toEqual(MixedEnum.GREEN);
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).toEqual('foo');
+            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'GREEN', 'foo')).to.eqls(MixedEnum.GREEN);
+            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).to.eqls('foo');
         });
     });
 });

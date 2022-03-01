@@ -28,7 +28,7 @@ while (true) {
     }
 
     if (turn > maxTurn) {
-        console.log(`ERROR: the game could not be finished within 100 turns.`);
+        console.log('ERROR: the game could not be finished within 100 turns.');
 
         break;
     }

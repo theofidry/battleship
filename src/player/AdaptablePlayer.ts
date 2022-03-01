@@ -9,13 +9,11 @@ import { RandomHitStrategy } from '@app/player/hit-strategy/RandomHitStrategy';
 import { PlacementStrategy } from '@app/player/placement-strategy/PlacementStrategy';
 import { RandomPlacementStrategy } from '@app/player/placement-strategy/RandomPlacementStrategy';
 import { Player } from '@app/player/Player';
-import { PlayerFleet } from '@app/player/PlayerFleet';
 import { Fleet } from '@app/ship/Fleet';
+import * as _ from 'lodash';
 
 export class AdaptablePlayer {
-    private readonly fleet: PlayerFleet;
-
-    private readonly ownGrid = new Grid();
+    private readonly grid: Grid;
 
     private readonly opponentGrid = new OpponentGrid();
 
@@ -28,7 +26,10 @@ export class AdaptablePlayer {
         placementStrategy: PlacementStrategy,
         private readonly hitStrategy: HitStrategy,
     ) {
-        this.fleet = placementStrategy.place(grid, fleet);
+        const playerGrid = _.cloneDeep(grid);
+
+        this.grid = playerGrid;
+        placementStrategy.place(playerGrid, fleet);
     }
 
     askMove(): Coordinate {
@@ -67,7 +68,7 @@ export class AdaptablePlayer {
     }
 
     askResponse(coordinates: Coordinate): ShotResponse {
-        return this.fleet.recordHit(coordinates);
+        return this.grid.recordHit(coordinates);
     }
 }
 
