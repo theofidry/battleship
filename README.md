@@ -17,6 +17,15 @@ $ node --version
 v17.5.0
 ```
 
+### Automatic node version switch
+
+You may already be using nvm with different node versions on your computer. In
+this cases finding out that you have been using the wrong node version and
+having to switch manually is a tad irritating. You can get rid of this annoyance
+by adding a deeper support of nvm within your shell to automatically do the
+switch: [nvm shell integration][nvm-shell-integration].
+
+
 ### Check npm
 
 Ensure [npm][npm] is at the right version:
@@ -60,3 +69,4 @@ if you want to force a command with make, you can always use the option `-B|--al
 [make]: https://www.gnu.org/software/make/
 [npm]: https://www.npmjs.com/
 [nvm]: https://github.com/nvm-sh/nvm
+[nvm-shell-integration]: https://github.com/nvm-sh/nvm#deeper-shell-integration
