@@ -22,7 +22,7 @@ function getGridRowsAsObject<
 
 describe('Grid creation', () => {
     it('allows to create a grid with custom columns', () => {
-        const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
                 Map<GreekColumnIndex, Cell>([
@@ -45,7 +45,7 @@ describe('Grid creation', () => {
                 ]),
             ],
         ]);
-        const grid = new GreekJapaneseGrid(lines);
+        const grid = new GreekJapaneseGrid(rows);
 
         const expected = {
             'いち': {
@@ -68,7 +68,7 @@ describe('Grid creation', () => {
     });
 
     it('allows to create a grid with only some of the rows and columns', () => {
-        const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
                 Map<GreekColumnIndex, Cell>([
@@ -76,7 +76,7 @@ describe('Grid creation', () => {
                 ]),
             ],
         ]);
-        const grid = new GreekJapaneseGrid(lines);
+        const grid = new GreekJapaneseGrid(rows);
 
         const expected = {
             'いち': {
@@ -90,7 +90,7 @@ describe('Grid creation', () => {
     });
 
     it('does not allow to create a grid with rows of different columns', () => {
-        const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
                 Map<GreekColumnIndex, Cell>([
@@ -106,7 +106,7 @@ describe('Grid creation', () => {
             ],
         ]);
 
-        const createGrid = () => new GreekJapaneseGrid(lines);
+        const createGrid = () => new GreekJapaneseGrid(rows);
 
         expect(createGrid).to.throw('Expected rows to have identical columns. Got "β" and "α", "β".');
     });
@@ -115,15 +115,15 @@ describe('Grid creation', () => {
 class FillingGridSet {
     constructor(
         readonly title: string,
-        readonly lines: Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>,
+        readonly rows: Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>,
         readonly coordinates: Array<Coordinate<GreekColumnIndex, JapaneseRowIndex>>,
-        readonly expectedLinesOrErrorMessage: unknown,
+        readonly expectedRowsOrErrorMessage: unknown,
     ) {
     }
 }
 
 function* provideFillingGridSets(): Generator<FillingGridSet> {
-    const minimalLines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+    const minimalRows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
         [
             'いち',
             Map<GreekColumnIndex, Cell>([
@@ -135,7 +135,7 @@ function* provideFillingGridSets(): Generator<FillingGridSet> {
 
     yield new FillingGridSet(
         'Fill a single empty cell',
-        minimalLines,
+        minimalRows,
         [
             new Coordinate('α', 'いち'),
         ],
@@ -149,7 +149,7 @@ function* provideFillingGridSets(): Generator<FillingGridSet> {
 
     yield new FillingGridSet(
         'Fill an already filled cell',
-        minimalLines,
+        minimalRows,
         [
             new Coordinate('β', 'いち'),
         ],
@@ -179,7 +179,7 @@ function* provideFillingGridSets(): Generator<FillingGridSet> {
 
     yield new FillingGridSet(
         'Fill an out of bound cell (row)',
-        minimalLines,
+        minimalRows,
         [
             new Coordinate('β', 'に'),
         ],
@@ -188,7 +188,7 @@ function* provideFillingGridSets(): Generator<FillingGridSet> {
 
     yield new FillingGridSet(
         'Fill multiple cells with one out of bound cell (row)',
-        minimalLines,
+        minimalRows,
         [
             new Coordinate('β', 'いち'),
             new Coordinate('β', 'に'),
@@ -246,39 +246,39 @@ function* provideFillingGridSets(): Generator<FillingGridSet> {
 }
 
 describe('filling Grid', () => {
-    for (const { title, lines, coordinates, expectedLinesOrErrorMessage } of provideFillingGridSets()) {
-        if ('string' === typeof expectedLinesOrErrorMessage) {
-            const expectedErrorMessage: string = expectedLinesOrErrorMessage;
+    for (const { title, rows, coordinates, expectedRowsOrErrorMessage } of provideFillingGridSets()) {
+        if ('string' === typeof expectedRowsOrErrorMessage) {
+            const expectedErrorMessage: string = expectedRowsOrErrorMessage;
 
             it(`does not allow to fill out of bound cells: ${title}`, () => {
-                const originalGrid = new GreekJapaneseGrid(lines);
-                const originalGridLines = getGridRowsAsObject(originalGrid);
+                const originalGrid = new GreekJapaneseGrid(rows);
+                const originalGridRows = getGridRowsAsObject(originalGrid);
 
-                const sourceGrid = new GreekJapaneseGrid(lines);
+                const sourceGrid = new GreekJapaneseGrid(rows);
 
                 const fillGrid = () => sourceGrid.fillCells(coordinates);
 
-                const sourceGridLines = getGridRowsAsObject(sourceGrid);
+                const sourceGridRows = getGridRowsAsObject(sourceGrid);
 
                 expect(fillGrid).to.throw(expectedErrorMessage);
-                expect(sourceGridLines).to.eqls(originalGridLines);
+                expect(sourceGridRows).to.eqls(originalGridRows);
             });
         } else {
-            const expectedLines = expectedLinesOrErrorMessage;
+            const expectedRows = expectedRowsOrErrorMessage;
 
             it(`allows to mark cells as filled: ${title}`, () => {
-                const originalGrid = new GreekJapaneseGrid(lines);
-                const originalGridLines = getGridRowsAsObject(originalGrid);
+                const originalGrid = new GreekJapaneseGrid(rows);
+                const originalGridRows = getGridRowsAsObject(originalGrid);
 
-                const sourceGrid = new GreekJapaneseGrid(lines);
+                const sourceGrid = new GreekJapaneseGrid(rows);
 
                 const filledGrid = sourceGrid.fillCells(coordinates);
 
-                const sourceGridLines = getGridRowsAsObject(sourceGrid);
-                const filledGridLines = getGridRowsAsObject(filledGrid);
+                const sourceGridRows = getGridRowsAsObject(sourceGrid);
+                const filledGridRows = getGridRowsAsObject(filledGrid);
 
-                expect(sourceGridLines).to.eqls(originalGridLines);
-                expect(filledGridLines).to.eqls(expectedLines);
+                expect(sourceGridRows).to.eqls(originalGridRows);
+                expect(filledGridRows).to.eqls(expectedRows);
             });
         }
     }
