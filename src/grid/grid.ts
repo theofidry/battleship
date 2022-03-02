@@ -48,6 +48,11 @@ function assertRowHasColumn<ColumnIndex extends Index>(
     );
 }
 
+/**
+ * Basic grid which offers an API to easily interact with its cells. The grid
+ * itself is not specific to the game and should be seen as block to help to
+ * build a game grid.
+ */
 export class Grid<
     ColumnIndex extends Index,
     RowIndex extends Index,
