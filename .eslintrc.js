@@ -9,8 +9,6 @@ module.exports = {
         tsconfigRootDir: __dirname,
         project: [
             './tsconfig.eslint.json',
-            './tsconfig.tests.json',
-            './tsconfig.tests.json',
         ],
     },
     plugins: [
@@ -23,12 +21,8 @@ module.exports = {
         'plugin:@typescript-eslint/recommended-requiring-type-checking',
     ],
     rules: {
-        '@typescript-eslint/await-thenable': 'error',
-
         'brace-style': 'off',
         '@typescript-eslint/brace-style': ['error', '1tbs'],
-
-        'camelcase': ['error'],
 
         'comma-dangle': 'off',
         '@typescript-eslint/comma-dangle': ['error', 'always-multiline'],
@@ -36,6 +30,11 @@ module.exports = {
         'no-shadow': 'off',
         '@typescript-eslint/no-shadow': ['error'],
 
+        'semi': 'off',
+        '@typescript-eslint/semi': ['error'],
+
+        'arrow-parens': ['error', 'always'],
+        'camelcase': ['error'],
         'no-var': 'error',
         'no-void': ['error', { 'allowAsStatement': true }],
         'prefer-regex-literals': ['error'],
@@ -43,10 +42,10 @@ module.exports = {
         'radix': 'error',
         'unicorn/filename-case': ['error', { 'case': 'kebabCase' }],
 
-        'semi': 'off',
-        '@typescript-eslint/semi': ['error'],
-
-        '@typescript-eslint/no-empty-interface': ['error', {'allowSingleExtends': true}],
+        '@typescript-eslint/await-thenable': 'error',
+        '@typescript-eslint/ban-types': 'off',
+        '@typescript-eslint/no-empty-interface': ['error', { 'allowSingleExtends': true }],
+        '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/sort-type-union-intersection-members': ['error'],
         '@typescript-eslint/type-annotation-spacing': ['error', { 'before': false, 'after': true }],
     },
