@@ -11,7 +11,7 @@ export type Index = number | string | symbol;
 
 export type Row<ColumnIndex extends Index> = Map<ColumnIndex, Cell>;
 
-export type GridLines<
+export type GridRows<
     ColumnIndex extends Index,
     RowIndex extends Index,
 > = Map<RowIndex, Row<ColumnIndex>>;
@@ -21,12 +21,12 @@ export class Grid<
     RowIndex extends Index,
 > {
     constructor(
-        readonly rows: Readonly<GridLines<ColumnIndex, RowIndex>>,
+        readonly rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
     ) {
         assertAllRowsHaveSameColumns(rows);
     }
 
-    getLines(): Readonly<GridLines<ColumnIndex, RowIndex>> {
+    getRows(): Readonly<GridRows<ColumnIndex, RowIndex>> {
         return this.rows;
     }
 }
@@ -34,7 +34,7 @@ export class Grid<
 function assertAllRowsHaveSameColumns<
     ColumnIndex extends Index,
     RowIndex extends Index,
->(rows: Readonly<GridLines<ColumnIndex, RowIndex>>): void {
+>(rows: Readonly<GridRows<ColumnIndex, RowIndex>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];
 
