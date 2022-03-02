@@ -16,30 +16,29 @@ export type GridLines<
     RowIndex extends Index,
 > = Map<RowIndex, Row<ColumnIndex>>;
 
-export interface Grid<
+export class Grid<
     ColumnIndex extends Index,
     RowIndex extends Index,
 > {
-    getLines(): Readonly<GridLines<ColumnIndex, RowIndex>>;
-}
+    constructor(
+        readonly rows: Readonly<GridLines<ColumnIndex, RowIndex>>,
+    ) {
+        assertAllRowsHaveSameColumns(rows);
+    }
 
-export function assertIsValidGrid<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
->(grid: Grid<ColumnIndex, RowIndex>): void {
-    const lines = grid.getLines();
-
-    assertAllRowsHaveSameColumns(lines);
+    getLines(): Readonly<GridLines<ColumnIndex, RowIndex>> {
+        return this.rows;
+    }
 }
 
 function assertAllRowsHaveSameColumns<
     ColumnIndex extends Index,
     RowIndex extends Index,
->(lines: Readonly<GridLines<ColumnIndex, RowIndex>>): void {
+>(rows: Readonly<GridLines<ColumnIndex, RowIndex>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];
 
-    lines.forEach((row) => {
+    rows.forEach((row) => {
         rowColumns = row.keySeq().toArray();
 
         if (undefined === columns) {
@@ -48,7 +47,25 @@ function assertAllRowsHaveSameColumns<
 
         assert(
             _.isEqual(rowColumns, columns),
-            `Expected rows to have identical columns. Got "${columns.join('", "')}" and "${rowColumns.join('", "')}".`
+            InvalidGridError.forColumns(rowColumns, columns),
         );
     });
+}
+
+function stringifyIndices<I extends Index>(indices: I[]): string {
+    return indices.join('", "');
+}
+
+class InvalidGridError extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'InvalidGridError';
+    }
+
+    static forColumns<ColumnIndex extends Index>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError {
+        return new InvalidGridError(
+            `Expected rows to have identical columns. Got "${stringifyIndices(a)}" and "${stringifyIndices(b)}".`,
+        );
+    }
 }
