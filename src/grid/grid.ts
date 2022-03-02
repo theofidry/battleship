@@ -21,24 +21,24 @@ export class Grid<
     RowIndex extends Index,
 > {
     constructor(
-        readonly lines: Readonly<GridLines<ColumnIndex, RowIndex>>,
+        readonly rows: Readonly<GridLines<ColumnIndex, RowIndex>>,
     ) {
-        assertAllRowsHaveSameColumns(lines);
+        assertAllRowsHaveSameColumns(rows);
     }
 
     getLines(): Readonly<GridLines<ColumnIndex, RowIndex>> {
-        return this.lines;
+        return this.rows;
     }
 }
 
 function assertAllRowsHaveSameColumns<
     ColumnIndex extends Index,
     RowIndex extends Index,
->(lines: Readonly<GridLines<ColumnIndex, RowIndex>>): void {
+>(rows: Readonly<GridLines<ColumnIndex, RowIndex>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];
 
-    lines.forEach((row) => {
+    rows.forEach((row) => {
         rowColumns = row.keySeq().toArray();
 
         if (undefined === columns) {
