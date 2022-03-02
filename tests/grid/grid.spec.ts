@@ -59,7 +59,7 @@ describe('Grid', () => {
         };
 
         const actual = grid.getLines()
-            .map(row => row.toObject())
+            .map((row) => row.toObject())
             .toObject();
 
         expect(actual).to.eqls(expected);
@@ -84,7 +84,7 @@ describe('Grid', () => {
         };
 
         const actual = grid.getLines()
-            .map(row => row.toObject())
+            .map((row) => row.toObject())
             .toObject();
 
         expect(actual).to.eqls(expected);
@@ -120,7 +120,7 @@ describe('Grid', () => {
         };
 
         const actual = grid.getLines()
-            .map(row => row.toObject())
+            .map((row) => row.toObject())
             .toObject();
 
         expect(actual).to.eqls(expected);
