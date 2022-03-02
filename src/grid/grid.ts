@@ -18,10 +18,10 @@ export type GridRows<
     RowIndex extends Index,
 > = Map<RowIndex, Row<ColumnIndex>>;
 
-function getRow<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
->(rows: Readonly<GridRows<ColumnIndex, RowIndex>>, rowIndex: RowIndex): Row<ColumnIndex> {
+function getRow<ColumnIndex extends Index, RowIndex extends Index>(
+    rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
+    rowIndex: RowIndex,
+): Row<ColumnIndex> {
     const row = rows.get(rowIndex);
 
     assertIsNotUndefined(
@@ -105,14 +105,14 @@ function stringifyIndices<I extends Index>(indices: I[]): string {
     return indices.join('", "');
 }
 
-class InvalidGridError<ColumnIndex extends Index> extends Error {
+class InvalidGridError extends Error {
     constructor(message?: string) {
         super(message);
 
         this.name = 'InvalidGridError';
     }
 
-    static forColumns<ColumnIndex extends Index>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError<ColumnIndex> {
+    static forColumns<ColumnIndex extends Index>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError {
         return new InvalidGridError(
             `Expected rows to have identical columns. Got "${stringifyIndices(a)}" and "${stringifyIndices(b)}".`,
         );
@@ -126,13 +126,13 @@ class OutOfBoundCoordinate extends Error {
         this.name = 'InvalidGridError';
     }
 
-    static forRow<RowIndex extends Index>(rowIndex: RowIndex, rowIndices: RowIndex[]): InvalidGridError {
+    static forRow<RowIndex extends Index>(rowIndex: RowIndex, rowIndices: RowIndex[]): OutOfBoundCoordinate {
         return new InvalidGridError(
             `Unknown row index "${rowIndex}". Expected one of "${stringifyIndices(rowIndices)}".`,
         );
     }
 
-    static forColumn<ColumnIndex extends Index>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): InvalidGridError {
+    static forColumn<ColumnIndex extends Index>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): OutOfBoundCoordinate {
         return new InvalidGridError(
             `Unknown column index "${columnIndex}". Expected one of "${stringifyIndices(columnIndices)}".`,
         );

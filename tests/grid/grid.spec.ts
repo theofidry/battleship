@@ -1,3 +1,5 @@
+// noinspection NonAsciiCharacters
+
 import { expect } from 'chai';
 import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
@@ -9,11 +11,11 @@ type JapaneseRowIndex = 'いち' | 'さん' | 'に';
 class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex> {
 }
 
-function getGridLinesAsObject<
+function getGridRowsAsObject<
     ColumnIndex extends Index,
     RowIndex extends Index,
 >(grid: Grid<ColumnIndex, RowIndex>) {
-    return grid.getLines()
+    return grid.getRows()
         .map((row) => row.toObject())
         .toObject();
 }
@@ -60,7 +62,7 @@ describe('Grid creation', () => {
             },
         };
 
-        const actual = getGridLinesAsObject(grid);
+        const actual = getGridRowsAsObject(grid);
 
         expect(actual).to.eqls(expected);
     });
@@ -82,7 +84,7 @@ describe('Grid creation', () => {
             },
         };
 
-        const actual = getGridLinesAsObject(grid);
+        const actual = getGridRowsAsObject(grid);
 
         expect(actual).to.eqls(expected);
     });
@@ -250,13 +252,13 @@ describe('filling Grid', () => {
 
             it(`does not allow to fill out of bound cells: ${title}`, () => {
                 const originalGrid = new GreekJapaneseGrid(lines);
-                const originalGridLines = getGridLinesAsObject(originalGrid);
+                const originalGridLines = getGridRowsAsObject(originalGrid);
 
                 const sourceGrid = new GreekJapaneseGrid(lines);
 
                 const fillGrid = () => sourceGrid.fillCells(coordinates);
 
-                const sourceGridLines = getGridLinesAsObject(sourceGrid);
+                const sourceGridLines = getGridRowsAsObject(sourceGrid);
 
                 expect(fillGrid).to.throw(expectedErrorMessage);
                 expect(sourceGridLines).to.eqls(originalGridLines);
@@ -266,14 +268,14 @@ describe('filling Grid', () => {
 
             it(`allows to mark cells as filled: ${title}`, () => {
                 const originalGrid = new GreekJapaneseGrid(lines);
-                const originalGridLines = getGridLinesAsObject(originalGrid);
+                const originalGridLines = getGridRowsAsObject(originalGrid);
 
                 const sourceGrid = new GreekJapaneseGrid(lines);
 
                 const filledGrid = sourceGrid.fillCells(coordinates);
 
-                const sourceGridLines = getGridLinesAsObject(sourceGrid);
-                const filledGridLines = getGridLinesAsObject(filledGrid);
+                const sourceGridLines = getGridRowsAsObject(sourceGrid);
+                const filledGridLines = getGridRowsAsObject(filledGrid);
 
                 expect(sourceGridLines).to.eqls(originalGridLines);
                 expect(filledGridLines).to.eqls(expectedLines);
