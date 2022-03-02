@@ -1,24 +1,23 @@
-import { expect } from 'chai';
 import { Map } from 'immutable';
-import { Cell, Grid, Index } from '../../src/grid/grid';
+import { expect } from 'chai';
+import { Cell, Grid, GridLines, assertIsValidGrid } from '../../src/grid/grid';
 
 type GreekColumnIndex = 'α' | 'β';
 type JapaneseRowIndex = 'いち' | 'さん' | 'に';
 
-class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex> {
+class GreekJapaneseGrid implements Grid<GreekColumnIndex, JapaneseRowIndex> {
+    constructor(
+        readonly lines: Readonly<GridLines<GreekColumnIndex, JapaneseRowIndex>>
+    ) {
+    }
+
+    getLines(): Readonly<GridLines<GreekColumnIndex, JapaneseRowIndex>> {
+        return this.lines;
+    }
 }
 
-function getGridLinesAsObject<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
->(grid: Grid<ColumnIndex, RowIndex>) {
-    return grid.getLines()
-        .map((row) => row.toObject())
-        .toObject();
-}
-
-describe('Grid creation', () => {
-    it('allows to create a grid with custom columns', () => {
+describe('Grid', () => {
+    it('allows to create a (valid) grid with custom columns', () => {
         const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
@@ -59,12 +58,15 @@ describe('Grid creation', () => {
             },
         };
 
-        const actual = getGridLinesAsObject(grid);
+        const actual = grid.getLines()
+            .map((row) => row.toObject())
+            .toObject();
 
         expect(actual).to.eqls(expected);
+        expect(() => assertIsValidGrid(grid)).to.not.throw();
     });
 
-    it('allows to create a grid with only some of the rows and columns', () => {
+    it('allows to create a (valid) grid with only some of the rows and columns', () => {
         const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
@@ -81,12 +83,15 @@ describe('Grid creation', () => {
             },
         };
 
-        const actual = getGridLinesAsObject(grid);
+        const actual = grid.getLines()
+            .map((row) => row.toObject())
+            .toObject();
 
         expect(actual).to.eqls(expected);
+        expect(() => assertIsValidGrid(grid)).to.not.throw();
     });
 
-    it('does not allow to create a grid with rows of different columns', () => {
+    it('allows to create an (invalid) grid with rows of different columns', () => {
         const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
@@ -102,9 +107,23 @@ describe('Grid creation', () => {
                 ]),
             ],
         ]);
+        const grid = new GreekJapaneseGrid(lines);
 
-        const createGrid = () => new GreekJapaneseGrid(lines);
+        const expected = {
+            'いち': {
+                'α': Cell.EMPTY,
+                'β': Cell.EMPTY,
+            },
+            'さん': {
+                'β': Cell.FULL,
+            },
+        };
 
-        expect(createGrid).to.throw('Expected rows to have identical columns. Got "β" and "α", "β".');
+        const actual = grid.getLines()
+            .map((row) => row.toObject())
+            .toObject();
+
+        expect(actual).to.eqls(expected);
+        expect(() => assertIsValidGrid(grid)).to.throw('Expected rows to have identical columns. Got "α", "β" and "β"');
     });
 });
