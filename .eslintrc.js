@@ -46,8 +46,8 @@ module.exports = {
         'semi': 'off',
         '@typescript-eslint/semi': ['error'],
 
+        '@typescript-eslint/no-empty-interface': ['error', {'allowSingleExtends': true}],
         '@typescript-eslint/sort-type-union-intersection-members': ['error'],
-
         '@typescript-eslint/type-annotation-spacing': ['error', { 'before': false, 'after': true }],
     },
 };
