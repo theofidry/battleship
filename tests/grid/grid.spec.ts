@@ -14,7 +14,7 @@ class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex> {
 function getGridRowsAsObject<
     ColumnIndex extends Index,
     RowIndex extends Index,
->(grid: Grid<ColumnIndex, RowIndex>) {
+>(grid: Grid<ColumnIndex, RowIndex>): any {
     return grid.getRows()
         .map((row) => row.toObject())
         .toObject();
