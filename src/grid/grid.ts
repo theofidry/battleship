@@ -13,7 +13,7 @@ export type Index = number | string | symbol;
 
 export type Row<ColumnIndex extends Index> = Map<ColumnIndex, Cell>;
 
-export type GridLines<
+export type GridRows<
     ColumnIndex extends Index,
     RowIndex extends Index,
 > = Map<RowIndex, Row<ColumnIndex>>;
@@ -21,24 +21,24 @@ export type GridLines<
 function getRow<
     ColumnIndex extends Index,
     RowIndex extends Index,
->(lines: Readonly<GridLines<ColumnIndex, RowIndex>>, rowIndex: RowIndex): Row<ColumnIndex> {
-    const row = lines.get(rowIndex);
+>(rows: Readonly<GridRows<ColumnIndex, RowIndex>>, rowIndex: RowIndex): Row<ColumnIndex> {
+    const row = rows.get(rowIndex);
 
     assertIsNotUndefined(
         row,
         OutOfBoundCoordinate.forRow(
             rowIndex,
-            lines.keySeq().toArray(),
+            rows.keySeq().toArray(),
         ),
     );
 
     return row;
 }
 
-function assertRowHasColumn<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
->(row: Readonly<Row<ColumnIndex>>, columnIndex: ColumnIndex): void {
+function assertRowHasColumn<ColumnIndex extends Index>(
+    row: Readonly<Row<ColumnIndex>>,
+    columnIndex: ColumnIndex,
+): void {
     assert(
         row.has(columnIndex),
         OutOfBoundCoordinate.forColumn(
@@ -53,41 +53,41 @@ export class Grid<
     RowIndex extends Index,
 > {
     constructor(
-        readonly lines: Readonly<GridLines<ColumnIndex, RowIndex>>,
+        readonly rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
     ) {
-        assertAllRowsHaveSameColumns(lines);
+        assertAllRowsHaveSameColumns(rows);
     }
 
     fillCells(coordinates: Array<Coordinate<ColumnIndex, RowIndex>>): Grid<ColumnIndex, RowIndex> {
-        let lines = this.lines;
+        let rows = this.rows;
         let row: Row<ColumnIndex>;
 
         coordinates.forEach(({ columnIndex, rowIndex }) => {
-            row = getRow(lines, rowIndex);
+            row = getRow(rows, rowIndex);
 
             assertRowHasColumn(row, columnIndex);
 
             row = row.set(columnIndex, Cell.FULL);
 
-            lines = lines.set(rowIndex, row);
+            rows = rows.set(rowIndex, row);
         });
 
-        return new Grid(lines);
+        return new Grid(rows);
     }
 
-    getLines(): Readonly<GridLines<ColumnIndex, RowIndex>> {
-        return this.lines;
+    getRows(): Readonly<GridRows<ColumnIndex, RowIndex>> {
+        return this.rows;
     }
 }
 
 function assertAllRowsHaveSameColumns<
     ColumnIndex extends Index,
     RowIndex extends Index,
-    >(lines: Readonly<GridLines<ColumnIndex, RowIndex>>): void {
+>(rows: Readonly<GridRows<ColumnIndex, RowIndex>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];
 
-    lines.forEach((row) => {
+    rows.forEach((row) => {
         rowColumns = row.keySeq().toArray();
 
         if (undefined === columns) {
@@ -119,20 +119,20 @@ class InvalidGridError<ColumnIndex extends Index> extends Error {
     }
 }
 
-class OutOfBoundCoordinate<ColumnIndex extends Index> extends Error {
+class OutOfBoundCoordinate extends Error {
     constructor(message?: string) {
         super(message);
 
         this.name = 'InvalidGridError';
     }
 
-    static forRow<RowIndex extends Index>(rowIndex: RowIndex, rowIndices: RowIndex[]): InvalidGridError<RowIndex> {
+    static forRow<RowIndex extends Index>(rowIndex: RowIndex, rowIndices: RowIndex[]): InvalidGridError {
         return new InvalidGridError(
             `Unknown row index "${rowIndex}". Expected one of "${stringifyIndices(rowIndices)}".`,
         );
     }
 
-    static forColumn<ColumnIndex extends Index>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): InvalidGridError<ColumnIndex> {
+    static forColumn<ColumnIndex extends Index>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): InvalidGridError {
         return new InvalidGridError(
             `Unknown column index "${columnIndex}". Expected one of "${stringifyIndices(columnIndices)}".`,
         );
