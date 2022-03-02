@@ -1,5 +1,7 @@
 import { Map } from 'immutable';
 import * as _ from 'lodash';
+import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { Coordinate } from './coordinate';
 import assert = require('node:assert');
 
 export enum Cell {
@@ -16,6 +18,36 @@ export type GridRows<
     RowIndex extends Index,
 > = Map<RowIndex, Row<ColumnIndex>>;
 
+function getRow<ColumnIndex extends Index, RowIndex extends Index>(
+    rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
+    rowIndex: RowIndex,
+): Row<ColumnIndex> {
+    const row = rows.get(rowIndex);
+
+    assertIsNotUndefined(
+        row,
+        OutOfBoundCoordinate.forRow(
+            rowIndex,
+            rows.keySeq().toArray(),
+        ),
+    );
+
+    return row;
+}
+
+function assertRowHasColumn<ColumnIndex extends Index>(
+    row: Readonly<Row<ColumnIndex>>,
+    columnIndex: ColumnIndex,
+): void {
+    assert(
+        row.has(columnIndex),
+        OutOfBoundCoordinate.forColumn(
+            columnIndex,
+            row.keySeq().toArray(),
+        ),
+    );
+}
+
 export class Grid<
     ColumnIndex extends Index,
     RowIndex extends Index,
@@ -24,6 +56,23 @@ export class Grid<
         readonly rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
     ) {
         assertAllRowsHaveSameColumns(rows);
+    }
+
+    fillCells(coordinates: Array<Coordinate<ColumnIndex, RowIndex>>): Grid<ColumnIndex, RowIndex> {
+        let rows = this.rows;
+        let row: Row<ColumnIndex>;
+
+        coordinates.forEach(({ columnIndex, rowIndex }) => {
+            row = getRow(rows, rowIndex);
+
+            assertRowHasColumn(row, columnIndex);
+
+            row = row.set(columnIndex, Cell.FULL);
+
+            rows = rows.set(rowIndex, row);
+        });
+
+        return new Grid(rows);
     }
 
     getRows(): Readonly<GridRows<ColumnIndex, RowIndex>> {
@@ -66,6 +115,26 @@ class InvalidGridError extends Error {
     static forColumns<ColumnIndex extends Index>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError {
         return new InvalidGridError(
             `Expected rows to have identical columns. Got "${stringifyIndices(a)}" and "${stringifyIndices(b)}".`,
+        );
+    }
+}
+
+class OutOfBoundCoordinate extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'InvalidGridError';
+    }
+
+    static forRow<RowIndex extends Index>(rowIndex: RowIndex, rowIndices: RowIndex[]): OutOfBoundCoordinate {
+        return new InvalidGridError(
+            `Unknown row index "${rowIndex}". Expected one of "${stringifyIndices(rowIndices)}".`,
+        );
+    }
+
+    static forColumn<ColumnIndex extends Index>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): OutOfBoundCoordinate {
+        return new InvalidGridError(
+            `Unknown column index "${columnIndex}". Expected one of "${stringifyIndices(columnIndices)}".`,
         );
     }
 }
