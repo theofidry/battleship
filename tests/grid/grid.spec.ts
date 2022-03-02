@@ -1,24 +1,27 @@
-import { Map } from 'immutable';
+// noinspection NonAsciiCharacters
+
 import { expect } from 'chai';
-import { Cell, Grid, GridLines, assertIsValidGrid } from '../../src/grid/grid';
+import { Map } from 'immutable';
+import { Cell, Grid, Index } from '../../src/grid/grid';
 
 type GreekColumnIndex = 'α' | 'β';
 type JapaneseRowIndex = 'いち' | 'さん' | 'に';
 
-class GreekJapaneseGrid implements Grid<GreekColumnIndex, JapaneseRowIndex> {
-    constructor(
-        readonly lines: Readonly<GridLines<GreekColumnIndex, JapaneseRowIndex>>
-    ) {
-    }
-
-    getLines(): Readonly<GridLines<GreekColumnIndex, JapaneseRowIndex>> {
-        return this.lines;
-    }
+class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex> {
 }
 
-describe('Grid', () => {
-    it('allows to create a (valid) grid with custom columns', () => {
-        const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+function getGridRowsAsObject<
+    ColumnIndex extends Index,
+    RowIndex extends Index,
+>(grid: Grid<ColumnIndex, RowIndex>) {
+    return grid.getRows()
+        .map((row) => row.toObject())
+        .toObject();
+}
+
+describe('Grid creation', () => {
+    it('allows to create a grid with custom columns', () => {
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
                 Map<GreekColumnIndex, Cell>([
@@ -41,7 +44,7 @@ describe('Grid', () => {
                 ]),
             ],
         ]);
-        const grid = new GreekJapaneseGrid(lines);
+        const grid = new GreekJapaneseGrid(rows);
 
         const expected = {
             'いち': {
@@ -58,16 +61,13 @@ describe('Grid', () => {
             },
         };
 
-        const actual = grid.getLines()
-            .map((row) => row.toObject())
-            .toObject();
+        const actual = getGridRowsAsObject(grid);
 
         expect(actual).to.eqls(expected);
-        expect(() => assertIsValidGrid(grid)).to.not.throw();
     });
 
-    it('allows to create a (valid) grid with only some of the rows and columns', () => {
-        const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+    it('allows to create a grid with only some of the rows and columns', () => {
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
                 Map<GreekColumnIndex, Cell>([
@@ -75,7 +75,7 @@ describe('Grid', () => {
                 ]),
             ],
         ]);
-        const grid = new GreekJapaneseGrid(lines);
+        const grid = new GreekJapaneseGrid(rows);
 
         const expected = {
             'いち': {
@@ -83,16 +83,13 @@ describe('Grid', () => {
             },
         };
 
-        const actual = grid.getLines()
-            .map((row) => row.toObject())
-            .toObject();
+        const actual = getGridRowsAsObject(grid);
 
         expect(actual).to.eqls(expected);
-        expect(() => assertIsValidGrid(grid)).to.not.throw();
     });
 
-    it('allows to create an (invalid) grid with rows of different columns', () => {
-        const lines = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+    it('does not allow to create a grid with rows of different columns', () => {
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
                 'いち',
                 Map<GreekColumnIndex, Cell>([
@@ -107,23 +104,9 @@ describe('Grid', () => {
                 ]),
             ],
         ]);
-        const grid = new GreekJapaneseGrid(lines);
 
-        const expected = {
-            'いち': {
-                'α': Cell.EMPTY,
-                'β': Cell.EMPTY,
-            },
-            'さん': {
-                'β': Cell.FULL,
-            },
-        };
+        const createGrid = () => new GreekJapaneseGrid(rows);
 
-        const actual = grid.getLines()
-            .map((row) => row.toObject())
-            .toObject();
-
-        expect(actual).to.eqls(expected);
-        expect(() => assertIsValidGrid(grid)).to.throw('Expected rows to have identical columns. Got "α", "β" and "β"');
+        expect(createGrid).to.throw('Expected rows to have identical columns. Got "β" and "α", "β".');
     });
 });
