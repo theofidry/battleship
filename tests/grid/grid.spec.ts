@@ -20,7 +20,7 @@ function getGridRowsAsObject<
         .toObject();
 }
 
-describe('Grid creation', () => {
+describe('Grid#constructor', () => {
     it('allows to create a grid with custom columns', () => {
         const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
             [
@@ -245,7 +245,7 @@ function* provideFillingGridSets(): Generator<FillingGridSet> {
     );
 }
 
-describe('filling Grid', () => {
+describe('Grid filling', () => {
     for (const { title, rows, coordinates, expectedRowsOrErrorMessage } of provideFillingGridSets()) {
         if ('string' === typeof expectedRowsOrErrorMessage) {
             const expectedErrorMessage: string = expectedRowsOrErrorMessage;

@@ -24,7 +24,7 @@ describe('assertIsNonNullObject', () => {
     it('throws with a custom message upon failure', () => {
         const value: object | null = null;
 
-        const assert = () => assertIsNonNullObject(value);
+        const assert = () => assertIsNonNullObject(value, 'foo');
 
         expect(assert).to.throw('foo');
     });
