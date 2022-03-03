@@ -50,4 +50,83 @@ describe('Optional', () => {
         expect(filteredOptional.isPresent()).to.equal(false);
         expect(optional.isPresent()).to.equal(false);
     });
+
+    it('can map value', () => {
+        const optional = just(value);
+        const map = (_value: string) => 10;
+
+        const mappedOptional = optional.map(map);
+
+        expect(mappedOptional.isPresent()).to.equal(true);
+        expect(mappedOptional.getValue()).to.equal(10);
+        expect(optional.getValue()).to.equal(value);
+    });
+
+    it('can map on nothing', () => {
+        const optional = nothing();
+        const map = (_value: any) => 10;
+
+        const mappedOptional = optional.map(map);
+
+        expect(mappedOptional.isPresent()).to.equal(false);
+        expect(optional.isPresent()).to.equal(false);
+    });
+
+    it('can execute a side-effect', () => {
+        let i = 0;
+
+        const optional = just(value);
+        const sideEffect = (_value: string) => i = _value.length;
+
+        optional.ifPresent(sideEffect);
+
+        expect(i).to.equal(3);
+        expect(optional.isPresent()).to.equal(true);
+        expect(optional.getValue()).to.equal(value);
+    });
+
+    it('can execute a side-effect on nothing', () => {
+        let i = 0;
+
+        const optional = nothing();
+        const sideEffect = (_value: any) => i = 10;
+
+        optional.ifPresent(sideEffect);
+
+        expect(i).to.equal(0);
+        expect(optional.isPresent()).to.equal(false);
+    });
+
+    it('can take a value with default with value present', () => {
+        const optional = just(value);
+
+        const innerValue = optional.orElse(10);
+
+        expect(innerValue).to.equal(value);
+        expect(optional.isPresent()).to.equal(true);
+        expect(optional.getValue()).to.equal(value);
+    });
+
+    it('can take a value with default with value missing', () => {
+        const optional = nothing();
+
+        const innerValue = optional.orElse(10);
+
+        expect(innerValue).to.equal(10);
+        expect(optional.isPresent()).to.equal(false);
+    });
+
+    it('can take another optional value', () => {
+        const optional = just(just(value));
+
+        expect(optional.isPresent()).to.equal(true);
+        expect(optional.getValue().getValue()).to.equal(value);
+    });
+
+    it('can take another nothing value', () => {
+        const optional = just(nothing());
+
+        expect(optional.isPresent()).to.equal(true);
+        expect(optional.getValue().isPresent()).to.equal(false);
+    });
 });

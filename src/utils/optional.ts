@@ -48,27 +48,27 @@ function isNothing(value: unknown): value is Nothing {
 
 type Maybe<T> = Just<T> | Nothing;
 
-export class Optional<T> {
-    constructor(private maybeValue: Maybe<T>) {
+export class Optional<R, T = Nothing | R> {
+    constructor(private maybeValue: Maybe<R>) {
     }
 
     isPresent(): boolean {
         return isJust(this.maybeValue);
     }
 
-    ifPresent(consumer: (v: T)=> void): void {
+    ifPresent(consumer: (v: R)=> unknown): void {
         if (isJust(this.maybeValue)) {
             consumer(this.maybeValue.value);
         }
     }
 
-    filter(filter: (v: T)=> boolean): Optional<Nothing | T> {
+    filter(filter: (v: R)=> boolean): Optional<R> {
         return this.isPresent() && filter(this.getValue())
             ? this
             : new Optional(nothingObject());
     }
 
-    map<U>(mapper: (v: T)=> U): Optional<Nothing | U> {
+    map<U>(mapper: (v: R)=> U): Optional<Nothing | U> {
         return new Optional(
             this.isPresent()
                 ? justObject(mapper(this.getValue()))
@@ -76,13 +76,13 @@ export class Optional<T> {
         );
     }
 
-    orElse<U>(defaultValue: U): T | U {
+    orElse<U>(defaultValue: U): R | U {
         return this.isPresent()
             ? this.getValue()
             : defaultValue;
     }
 
-    getValue(): T {
+    getValue(): R {
         assertIsJust(this.maybeValue, 'No value found.');
 
         return this.maybeValue.value;
