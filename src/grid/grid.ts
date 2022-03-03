@@ -9,16 +9,14 @@ export enum Cell {
     FULL,
 }
 
-export type Index = number | string | symbol;
-
-export type Row<ColumnIndex extends Index> = Map<ColumnIndex, Cell>;
+export type Row<ColumnIndex extends PropertyKey> = Map<ColumnIndex, Cell>;
 
 export type GridRows<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
 > = Map<RowIndex, Row<ColumnIndex>>;
 
-function getRow<ColumnIndex extends Index, RowIndex extends Index>(
+function getRow<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
     rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
     rowIndex: RowIndex,
 ): Row<ColumnIndex> {
@@ -35,7 +33,7 @@ function getRow<ColumnIndex extends Index, RowIndex extends Index>(
     return row;
 }
 
-function assertRowHasColumn<ColumnIndex extends Index>(
+function assertRowHasColumn<ColumnIndex extends PropertyKey>(
     row: Readonly<Row<ColumnIndex>>,
     columnIndex: ColumnIndex,
 ): void {
@@ -54,8 +52,8 @@ function assertRowHasColumn<ColumnIndex extends Index>(
  * build a game grid.
  */
 export class Grid<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
 > {
     constructor(
         readonly rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
@@ -86,8 +84,8 @@ export class Grid<
 }
 
 function assertAllRowsHaveSameColumns<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
 >(rows: Readonly<GridRows<ColumnIndex, RowIndex>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];
@@ -106,7 +104,7 @@ function assertAllRowsHaveSameColumns<
     });
 }
 
-function stringifyIndices<I extends Index>(indices: I[]): string {
+function stringifyIndices<I extends PropertyKey>(indices: I[]): string {
     return indices.join('", "');
 }
 
@@ -117,7 +115,7 @@ class InvalidGridError extends Error {
         this.name = 'InvalidGridError';
     }
 
-    static forColumns<ColumnIndex extends Index>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError {
+    static forColumns<ColumnIndex extends PropertyKey>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError {
         return new InvalidGridError(
             `Expected rows to have identical columns. Got "${stringifyIndices(a)}" and "${stringifyIndices(b)}".`,
         );
@@ -131,13 +129,13 @@ class OutOfBoundCoordinate extends Error {
         this.name = 'InvalidGridError';
     }
 
-    static forRow<RowIndex extends Index>(rowIndex: RowIndex, rowIndices: RowIndex[]): OutOfBoundCoordinate {
+    static forRow<RowIndex extends PropertyKey>(rowIndex: RowIndex, rowIndices: RowIndex[]): OutOfBoundCoordinate {
         return new InvalidGridError(
             `Unknown row index "${rowIndex}". Expected one of "${stringifyIndices(rowIndices)}".`,
         );
     }
 
-    static forColumn<ColumnIndex extends Index>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): OutOfBoundCoordinate {
+    static forColumn<ColumnIndex extends PropertyKey>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): OutOfBoundCoordinate {
         return new InvalidGridError(
             `Unknown column index "${columnIndex}". Expected one of "${stringifyIndices(columnIndices)}".`,
         );

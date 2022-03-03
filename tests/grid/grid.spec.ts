@@ -3,7 +3,7 @@
 import { expect } from 'chai';
 import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
-import { Cell, Grid, Index } from '../../src/grid/grid';
+import { Cell, Grid } from '../../src/grid/grid';
 
 type GreekColumnIndex = 'α' | 'β';
 type JapaneseRowIndex = 'いち' | 'さん' | 'に';
@@ -12,8 +12,8 @@ class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex> {
 }
 
 function getGridRowsAsObject<
-    ColumnIndex extends Index,
-    RowIndex extends Index,
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
 >(grid: Grid<ColumnIndex, RowIndex>): any {
     return grid.getRows()
         .map((row) => row.toObject())
