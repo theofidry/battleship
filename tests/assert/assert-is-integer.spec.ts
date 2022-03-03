@@ -1,6 +1,14 @@
 import { expect } from 'chai';
 import { assertIsInteger } from '../../src/assert/assert-is-integer';
 
+class InvalidIntegerSet {
+    constructor(
+        readonly title: string,
+        readonly value: number,
+    ) {
+    }
+}
+
 describe('assertIsInteger', () => {
     it('narrows the value type on success', () => {
         const value: number | undefined = 10;
@@ -11,6 +19,19 @@ describe('assertIsInteger', () => {
         const numberValue: number = value;
 
         expect(numberValue).to.equal(value);
+    });
+
+    it('accepts round floats', () => {
+        // eslint-disable-next-line @typescript-eslint/no-loss-of-precision
+        const assert = () => assertIsInteger(10.);
+
+        expect(assert).to.not.throw;
+    });
+
+    it('accepts min safe integer', () => {
+        const assert = () => assertIsInteger(Number.MIN_SAFE_INTEGER);
+
+        expect(assert).to.not.throw;
     });
 
     it('throws upon failure', () => {
@@ -29,9 +50,33 @@ describe('assertIsInteger', () => {
         expect(assert).to.throw('foo');
     });
 
-    it('does not accept float values', () => {
-        const assert = () => assertIsInteger(10.2);
+    for (const { title, value } of provideInvalidInteger()) {
+        it(`does not accept invalid integers: ${title}`, () => {
+            const assert = () => assertIsInteger(value);
 
-        expect(assert).to.throw('false == true');
-    });
+            expect(assert).to.throw('false == true');
+        });
+    }
 });
+
+function* provideInvalidInteger(): Generator<InvalidIntegerSet> {
+    yield new InvalidIntegerSet(
+        'float value',
+        10.2,
+    );
+
+    yield new InvalidIntegerSet(
+        'infinity',
+        Infinity,
+    );
+
+    yield new InvalidIntegerSet(
+        'NaN',
+        NaN,
+    );
+
+    yield new InvalidIntegerSet(
+        'min number',
+        Number.MIN_VALUE,
+    );
+}
