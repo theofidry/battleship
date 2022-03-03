@@ -1,6 +1,4 @@
-import { Index } from './grid';
-
-export class Coordinate<ColumnIndex extends Index, RowIndex extends Index>{
+export class Coordinate<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>{
     public constructor(
         public readonly columnIndex: ColumnIndex,
         public readonly rowIndex: RowIndex,
