@@ -50,10 +50,12 @@ export class Optional<T> {
         return isJust(this.maybeValue);
     }
 
-    ifPresent(consumer: (v: T)=> unknown): void {
+    ifPresent(consumer: (v: T)=> unknown): Optional<T> {
         if (isJust(this.maybeValue)) {
             consumer(this.maybeValue.value);
         }
+
+        return this;
     }
 
     filter(filter: (v: T)=> boolean): Optional<T> {
@@ -76,6 +78,14 @@ export class Optional<T> {
             : defaultValue;
     }
 
+    orElseThrow(error: Error): T {
+        if (!this.isPresent()) {
+            throw error;
+        }
+
+        return this.getValue();
+    }
+
     getValue(): T {
         assertIsJust(this.maybeValue, 'No value found.');
 
@@ -87,6 +97,6 @@ export function just<T>(value: T): Optional<T> {
     return new Optional(justObject(value));
 }
 
-export function nothing(): Optional<Nothing> {
+export function nothing<T>(): Optional<T> {
     return new Optional(nothingObject());
 }
