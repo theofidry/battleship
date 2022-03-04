@@ -50,6 +50,15 @@ describe('assertIsInteger', () => {
         expect(assert).to.throw('foo');
     });
 
+    it('throws with a custom error upon failure', () => {
+        const value: number | undefined = undefined;
+        const error = new Error('foo');
+
+        const assert = () => assertIsInteger(value, error);
+
+        expect(assert).to.throw(error);
+    });
+
     for (const { title, value } of provideInvalidInteger()) {
         it(`does not accept invalid integers: ${title}`, () => {
             const assert = () => assertIsInteger(value);
