@@ -63,8 +63,8 @@ function assertIsAnAcknowledgementAction(
 }
 
 type PlayerAction<
-ColumnIndex extends PropertyKey,
-RowIndex extends PropertyKey,
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
 > = AcknowledgementAction | MoveAction<ColumnIndex, RowIndex> | ResponseAction<ColumnIndex, RowIndex>;
 
 export class PlayerStub<
