@@ -78,7 +78,7 @@ export class Optional<T> {
             : defaultValue;
     }
 
-    orElseThrow(error: Error): T {
+    orElseThrow(error: Error): T | never {
         if (!this.isPresent()) {
             throw error;
         }

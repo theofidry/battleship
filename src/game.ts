@@ -1,6 +1,7 @@
-import { map, Observable, range, tap, throwError } from 'rxjs';
+import { map, range, tap } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
-import { HitResponse } from './communications/hit-response';
+import { HitResponse } from './communication/hit-response';
+import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
 import { Player } from './player/player';
 
@@ -18,12 +19,82 @@ function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends Property
         assertIsNotUndefined(player, `Could not find the player for the turn "${turn}".`);
         assertIsNotUndefined(opponent, `Could not find the player opponent for the turn "${turn}".`);
 
-        return { player, opponent };
+        return { turn, player, opponent };
     });
 }
 
-function throwInvalidResponse() {
-    return throwError(() => new Error('Invalid response received!'));
+class InvalidPlayerResponse<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> extends Error {
+    constructor(
+        message: string,
+        public readonly turn: number,
+        public readonly playerName: string,
+        public readonly opponentName: string,
+        public readonly target: Coordinate<ColumnIndex, RowIndex>,
+    ) {
+        super(message);
+    }
+}
+
+class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
+    constructor(
+        public readonly logger: Logger,
+        public readonly turn: number,
+        public readonly player: Player<ColumnIndex, RowIndex>,
+        public readonly opponent: Player<ColumnIndex, RowIndex>,
+    ) {
+    }
+
+    play(): Player<ColumnIndex, RowIndex> | undefined {
+        const targetCoordinate = this.player.askMove();
+        this.logger.log(`Player ${this.player.name} targets ${targetCoordinate.toString()}`);
+
+        return this.opponent
+            .askResponse(targetCoordinate)
+            .map((hitResponse) => this.handleOpponentResponse(
+                hitResponse,
+                targetCoordinate,
+            ))
+            .orElseThrow(
+                this.createError(
+                    'The opponent could not respond.',
+                    targetCoordinate,
+                ),
+            );
+    }
+
+    private handleOpponentResponse(
+        hitResponse: HitResponse,
+        targetCoordinate: Coordinate<ColumnIndex, RowIndex>
+    ): Player<ColumnIndex, RowIndex> | undefined {
+        this.logger.log(`Player ${this.player.name} replies ${hitResponse}.`);
+
+        const acknowledgement = this.player.sendResponse(hitResponse);
+
+        acknowledgement.orElseThrow(
+            this.createError(
+                'The player could not acknowledge the opponent response.',
+                targetCoordinate,
+            ),
+        );
+
+        return HitResponse.WON === hitResponse ? this.player : undefined;
+    }
+
+    private createError(
+        message: string,
+        targetCoordinate: Coordinate<ColumnIndex, RowIndex>,
+    ): InvalidPlayerResponse<ColumnIndex, RowIndex> {
+        return new InvalidPlayerResponse(
+            message,
+            this.turn,
+            this.player.name,
+            this.opponent.name,
+            targetCoordinate,
+        );
+    }
 }
 
 export class Game<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
@@ -35,35 +106,22 @@ export class Game<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>
         playerB: Player<ColumnIndex, RowIndex>,
         maxTurn = 100,
     ) {
-        this.logger.log(`Starting a game between the player ${playerA.name} and ${playerB.name}`);
+        this.logger.log(`Starting a game between the player ${playerA.name} and ${playerB.name}.`);
 
         return range(0, maxTurn)
             .pipe(
-                tap((turn) => this.logger.log(`Turn ${turn}`)),
+                tap((turn) => this.logger.log(`Turn ${turn}.`)),
                 selectPlayer(playerA, playerB),
-                map(({ player, opponent }) => this.playTurn(player, opponent)),
+                map(({ turn, player, opponent }) => {
+                    const playerTurn = new PlayerTurn(
+                        this.logger,
+                        turn,
+                        player,
+                        opponent,
+                    );
+
+                    return playerTurn.play();
+                }),
             );
-    }
-
-    private playTurn(
-        player: Player<ColumnIndex, RowIndex>,
-        opponent: Player<ColumnIndex, RowIndex>,
-    ): Observable<Player<ColumnIndex, RowIndex> | undefined> {
-        const targetCoordinate = player.askMove();
-        this.logger.log(`Player ${player.name} targets ${targetCoordinate.toString()}`);
-
-        return opponent
-            .askResponse(targetCoordinate)
-            .ifPresent((hitResponse) => {
-                this.logger.log(`Player ${player.name} replies ${hitResponse}`);
-                player.sendResponse(hitResponse);
-            })
-            .map((hitResponse) => {
-                this.logger.log(`Player ${player.name} replies ${hitResponse}`);
-                player.sendResponse(hitResponse);
-
-                return HitResponse.WON === hitResponse ? player : undefined;
-            })
-            .orElse(throwInvalidResponse());
     }
 }
