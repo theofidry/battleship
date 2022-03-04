@@ -64,7 +64,7 @@ export class Optional<T> {
             : new Optional(nothingObject());
     }
 
-    map<U>(mapper: (v: T)=> U): Optional<Nothing | U> {
+    map<U>(mapper: (v: T)=> U): Optional<U> {
         return new Optional(
             this.isPresent()
                 ? justObject(mapper(this.getValue()))
