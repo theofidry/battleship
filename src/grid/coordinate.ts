@@ -4,4 +4,8 @@ export class Coordinate<ColumnIndex extends PropertyKey, RowIndex extends Proper
         public readonly rowIndex: RowIndex,
     ) {
     }
+
+    toString(): string {
+        return this.columnIndex.toString() + this.rowIndex.toString();
+    }
 }
