@@ -1,4 +1,4 @@
-import { map, range, tap } from 'rxjs';
+import { map, Observable, range, tap } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
@@ -97,15 +97,19 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
     }
 }
 
-export class Game<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
+export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
     constructor(private readonly logger: Logger) {
     }
 
+    /**
+     * Plays the match between two players. Once the game is finished, the
+     * winner is returned.
+     */
     play(
         playerA: Player<ColumnIndex, RowIndex>,
         playerB: Player<ColumnIndex, RowIndex>,
         maxTurn = 100,
-    ) {
+    ): Observable<Player<ColumnIndex, RowIndex>|undefined> {
         this.logger.log(`Starting a game between the player ${playerA.name} and ${playerB.name}.`);
 
         return range(0, maxTurn)
