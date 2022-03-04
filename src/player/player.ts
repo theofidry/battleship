@@ -1,5 +1,5 @@
-import { HitResponse } from '../communications/hit-response';
-import { ShotAcknowledgement } from '../communications/shot-acknowledgement';
+import { HitResponse } from '../communication/hit-response';
+import { ShotAcknowledgement } from '../communication/shot-acknowledgement';
 import { Coordinate } from '../grid/coordinate';
 import { Optional } from '../utils/optional';
 

@@ -6,6 +6,6 @@ export class Coordinate<ColumnIndex extends PropertyKey, RowIndex extends Proper
     }
 
     toString(): string {
-        return String(this.columnIndex) + String(this.rowIndex);
+        return this.columnIndex.toString() + this.rowIndex.toString();
     }
 }
