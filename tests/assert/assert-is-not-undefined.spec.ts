@@ -28,4 +28,13 @@ describe('assertIsNotUndefined', () => {
 
         expect(assert).to.throw('foo');
     });
+
+    it('throws with a custom error upon failure', () => {
+        const value: string | undefined = undefined;
+        const error = new Error('foo');
+
+        const assert = () => assertIsNotUndefined(value, error);
+
+        expect(assert).to.throw(error);
+    });
 });

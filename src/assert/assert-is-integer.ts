@@ -4,6 +4,6 @@ export function isInteger(value: unknown): value is number {
     return Number.isInteger(value);
 }
 
-export function assertIsInteger(value: unknown, message?: string): asserts value is number {
+export function assertIsInteger(value: unknown, message?: Error | string): asserts value is number {
     assert(isInteger(value), message);
 }
