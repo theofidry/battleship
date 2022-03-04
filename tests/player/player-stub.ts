@@ -1,6 +1,7 @@
 import { List } from 'immutable';
 import * as _ from 'lodash';
 import { assertIsNonNullObject } from '../../src/assert/assert-is-non-null-object';
+import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../src/communication/hit-response';
 import { ShotAcknowledgement } from '../../src/communication/shot-acknowledgement';
 import { Coordinate } from '../../src/grid/coordinate';
@@ -19,9 +20,12 @@ type MoveAction<
 function assertIsAMoveAction<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(value: unknown): asserts value is MoveAction<ColumnIndex, RowIndex> {
-    assertIsNonNullObject(value);
-    assert(hasOwnProperty(value, 'targetCoordinate'));
+>(
+    value: unknown,
+    message?: Error | string,
+): asserts value is MoveAction<ColumnIndex, RowIndex> {
+    assertIsNonNullObject(value, message);
+    assert(hasOwnProperty(value, 'targetCoordinate'), message);
 }
 
 type ResponseAction<
@@ -35,10 +39,13 @@ type ResponseAction<
 function assertIsAResponseAction<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(value: unknown): asserts value is ResponseAction<ColumnIndex, RowIndex> {
-    assertIsNonNullObject(value);
-    assert(hasOwnProperty(value, 'targetedCoordinate'));
-    assert(hasOwnProperty(value, 'response'));
+>(
+    value: unknown,
+    message?: Error | string,
+): asserts value is ResponseAction<ColumnIndex, RowIndex> {
+    assertIsNonNullObject(value, message);
+    assert(hasOwnProperty(value, 'targetedCoordinate'), message);
+    assert(hasOwnProperty(value, 'response'), message);
 }
 
 type AcknowledgementAction = {
@@ -46,18 +53,21 @@ type AcknowledgementAction = {
     acknowledgement: ShotAcknowledgement,
 };
 
-function assertIsAnAcknowledgementAction(value: unknown): asserts value is AcknowledgementAction {
-    assertIsNonNullObject(value);
-    assert(hasOwnProperty(value, 'response'));
-    assert(hasOwnProperty(value, 'acknowledgement'));
+function assertIsAnAcknowledgementAction(
+    value: unknown,
+    message?: Error | string,
+): asserts value is AcknowledgementAction {
+    assertIsNonNullObject(value, message);
+    assert(hasOwnProperty(value, 'response'), message);
+    assert(hasOwnProperty(value, 'acknowledgement'), message);
 }
 
 type PlayerAction<
-ColumnIndex extends PropertyKey,
-RowIndex extends PropertyKey,
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
 > = AcknowledgementAction | MoveAction<ColumnIndex, RowIndex> | ResponseAction<ColumnIndex, RowIndex>;
 
-export class DummyPlayer<
+export class PlayerStub<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > implements Player<ColumnIndex, RowIndex> {
@@ -71,27 +81,41 @@ export class DummyPlayer<
     }
 
     askMove(): Coordinate<ColumnIndex, RowIndex> {
-        const action = this.turnActions.shift();
-        assertIsAMoveAction(action);
+        const action = this.getNextMove();
+        assertIsAMoveAction(action, 'Invalid action.');
 
         return action.targetCoordinate;
     }
 
     askResponse(coordinates: Coordinate<ColumnIndex, RowIndex>): Optional<HitResponse> {
-        const action = this.turnActions.shift();
+        const action = this.getNextMove();
 
-        assertIsAResponseAction(action);
-        assert(_.isEqual(action.targetedCoordinate, coordinates));
+        assertIsAResponseAction(action, 'Invalid action.');
+        assert(
+            _.isEqual(action.targetedCoordinate, coordinates),
+            `Expected "${action.targetedCoordinate.toString()}". Got "${coordinates.toString()}".`
+        );
 
         return just(action.response);
     }
 
     sendResponse(response: HitResponse): Optional<ShotAcknowledgement> {
-        const action = this.turnActions.shift();
+        const action = this.getNextMove();
 
-        assertIsAnAcknowledgementAction(action);
-        assert(_.isEqual(action.acknowledgement, response));
+        assertIsAnAcknowledgementAction(action, 'Invalid action.');
+        assert(
+            action.response === response,
+            `Expected "${action.response}". Got "${response}".`
+        );
 
         return just(action.acknowledgement);
+    }
+
+    private getNextMove(): PlayerAction<ColumnIndex, RowIndex> {
+        const action = this.turnActions.shift();
+
+        assertIsNotUndefined(action, 'No action is available.');
+
+        return action;
     }
 }

@@ -29,6 +29,15 @@ describe('assertIsNonNullObject', () => {
         expect(assert).to.throw('foo');
     });
 
+    it('throws with a custom error upon failure', () => {
+        const value: object | null = null;
+        const error = new Error('foo');
+
+        const assert = () => assertIsNonNullObject(value, error);
+
+        expect(assert).to.throw(error);
+    });
+
     it('does not accept undefined', () => {
         const assert = () => assertIsNonNullObject(undefined);
 

@@ -29,6 +29,15 @@ describe('assertIsNatural', () => {
         expect(assert).to.throw('foo');
     });
 
+    it('throws with a custom error upon failure', () => {
+        const value: number | undefined = undefined;
+        const error = new Error('foo');
+
+        const assert = () => assertIsNatural(value, error);
+
+        expect(assert).to.throw(error);
+    });
+
     it('accepts 0', () => {
         const assert = () => assertIsNatural(0);
 
