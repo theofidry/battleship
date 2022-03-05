@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { EnumHelper } from '@app/utils/enum-helper';
+import { EnumHelper } from '../../src/utils/enum-helper';
 
 enum RegularEnum {
     RED,
@@ -55,24 +55,24 @@ describe('EnumHelper', () => {
         expect(EnumHelper.getValues(MixedEnum)).to.eqls(expectedValues);
         expect(EnumHelper.getNamesAndValues(MixedEnum)).to.eqls(expectedNamesAndValues);
     });
+});
 
-    describe('takeByKeyOrElse', () => {
-        it('regularEnum', () => {
-            expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'RED', 'foo')).to.eqls(RegularEnum.RED);
-            expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'unknown', 'foo')).to.eqls('foo');
-        });
+describe('EnumHelper::takeByKeyOrElse()', () => {
+    it('regularEnum', () => {
+        expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'RED', 'foo')).to.eqls(RegularEnum.RED);
+        expect(EnumHelper.takeByKeyOrElse(RegularEnum, 'unknown', 'foo')).to.eqls('foo');
+    });
 
-        it('stringEnum', () => {
-            expect(EnumHelper.takeByKeyOrElse(StringEnum, 'RED', 'foo')).to.eqls(StringEnum.RED);
-            expect(EnumHelper.takeByKeyOrElse(StringEnum, 'unknown', 'foo')).to.eqls('foo');
-        });
+    it('stringEnum', () => {
+        expect(EnumHelper.takeByKeyOrElse(StringEnum, 'RED', 'foo')).to.eqls(StringEnum.RED);
+        expect(EnumHelper.takeByKeyOrElse(StringEnum, 'unknown', 'foo')).to.eqls('foo');
+    });
 
-        it('mixedEnum', () => {
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'RED', 'foo')).to.eqls(MixedEnum.RED);
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).to.eqls('foo');
+    it('mixedEnum', () => {
+        expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'RED', 'foo')).to.eqls(MixedEnum.RED);
+        expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).to.eqls('foo');
 
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'GREEN', 'foo')).to.eqls(MixedEnum.GREEN);
-            expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).to.eqls('foo');
-        });
+        expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'GREEN', 'foo')).to.eqls(MixedEnum.GREEN);
+        expect(EnumHelper.takeByKeyOrElse(MixedEnum, 'unknown', 'foo')).to.eqls('foo');
     });
 });
