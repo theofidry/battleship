@@ -100,3 +100,7 @@ export function just<T>(value: T): Optional<T> {
 export function nothing<T>(): Optional<T> {
     return new Optional(nothingObject());
 }
+
+export function nothingIfUndefined<T>(value: T | undefined): Optional<T> {
+    return undefined === value ? nothing() : just(value);
+}

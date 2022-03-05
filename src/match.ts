@@ -1,16 +1,17 @@
-import { map, Observable, range, tap } from 'rxjs';
+import { map, Observable, range, shareReplay, Subject, takeUntil, tap, throwError } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
 import { Player } from './player/player';
+import assert = require('node:assert');
 
 function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
     playerA: Player<ColumnIndex, RowIndex>,
     playerB: Player<ColumnIndex, RowIndex>,
 ) {
     return map((turn: number) => {
-        const players = [playerA, playerB];
+        const players = [playerB, playerA];
 
         const playerIndex = turn % 2;
         const player = players.splice(playerIndex, 1)[0];
@@ -22,6 +23,14 @@ function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends Property
         return { turn, player, opponent };
     });
 }
+
+export type TurnResult<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = {
+    winner: Player<ColumnIndex, RowIndex>|undefined,
+    turn: number,
+};
 
 class InvalidPlayerResponse<
     ColumnIndex extends PropertyKey,
@@ -47,9 +56,9 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
     ) {
     }
 
-    play(): Player<ColumnIndex, RowIndex> | undefined {
+    play(): TurnResult<ColumnIndex, RowIndex> {
         const targetCoordinate = this.player.askMove();
-        this.logger.log(`Player ${this.player.name} targets ${targetCoordinate.toString()}`);
+        this.logger.log(`"${this.player.name}" targets "${targetCoordinate.toString()}".`);
 
         return this.opponent
             .askResponse(targetCoordinate)
@@ -68,19 +77,24 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
     private handleOpponentResponse(
         hitResponse: HitResponse,
         targetCoordinate: Coordinate<ColumnIndex, RowIndex>
-    ): Player<ColumnIndex, RowIndex> | undefined {
-        this.logger.log(`Player ${this.player.name} replies ${hitResponse}.`);
+    ): TurnResult<ColumnIndex, RowIndex> {
+        this.logger.log(`"${this.opponent.name}" replies "${hitResponse}".`);
 
         const acknowledgement = this.player.sendResponse(hitResponse);
 
-        acknowledgement.orElseThrow(
-            this.createError(
-                'The player could not acknowledge the opponent response.',
-                targetCoordinate,
-            ),
-        );
+        acknowledgement
+            .ifPresent(() => this.logger.log(`"${this.player.name}" acknowledges the answer.`))
+            .orElseThrow(
+                this.createError(
+                    'The player could not acknowledge the opponent response.',
+                    targetCoordinate,
+                ),
+            );
 
-        return HitResponse.WON === hitResponse ? this.player : undefined;
+        return {
+            winner: HitResponse.WON === hitResponse ? this.player : undefined,
+            turn: this.turn,
+        };
     }
 
     private createError(
@@ -97,6 +111,12 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
     }
 }
 
+class MaxTurnReached extends Error {
+    static forMaxTurn(maxTurn: number): MaxTurnReached {
+        return new MaxTurnReached(`The match could not be finished in ${maxTurn} turns.`);
+    }
+}
+
 export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
     constructor(private readonly logger: Logger) {
     }
@@ -108,12 +128,24 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
     play(
         playerA: Player<ColumnIndex, RowIndex>,
         playerB: Player<ColumnIndex, RowIndex>,
-        maxTurn = 100,
-    ): Observable<Player<ColumnIndex, RowIndex>|undefined> {
-        this.logger.log(`Starting a game between the player ${playerA.name} and ${playerB.name}.`);
+        maxTurn: number,
+    ): Observable<TurnResult<ColumnIndex, RowIndex>> {
+        assert(maxTurn > 1, `Expect the match to allow at least 2 turns. Got ${maxTurn}.`);
 
-        return range(0, maxTurn)
+        const maxTurnOffset = maxTurn + 1;
+        const playing = new Subject();
+        this.logger.log(`Starting a match between the player "${playerA.name}" and "${playerB.name}".`);
+
+        return range(1, maxTurnOffset + 1)
             .pipe(
+                takeUntil(playing),
+                map((turn) => {
+                    if (turn > maxTurn) {
+                        throw MaxTurnReached.forMaxTurn(maxTurn);
+                    }
+
+                    return turn;
+                }),
                 tap((turn) => this.logger.log(`Turn ${turn}.`)),
                 selectPlayer(playerA, playerB),
                 map(({ turn, player, opponent }) => {
@@ -126,6 +158,14 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
 
                     return playerTurn.play();
                 }),
+                tap(({ winner, turn }) => {
+                    if (winner !== undefined) {
+                        this.logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
+                        playing.next(true);
+                        playing.complete();
+                    }
+                }),
+                shareReplay(maxTurnOffset),
             );
     }
 }

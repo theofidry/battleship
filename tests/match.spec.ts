@@ -1,67 +1,330 @@
 import { expect } from 'chai';
 import { List } from 'immutable';
-import * as _ from 'lodash';
 import { beforeEach } from 'mocha';
-import { TestScheduler } from 'rxjs/testing';
-import { assertIsNonNullObject } from '../src/assert/assert-is-non-null-object';
-import { assertIsNotUndefined } from '../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../src/communication/hit-response';
 import { ShotAcknowledgement } from '../src/communication/shot-acknowledgement';
-import { Match } from '../src/match';
 import { Coordinate } from '../src/grid/coordinate';
-import { BufferLogger } from '../src/logger/buffer-logger';
+import { BufferLogger, Record as LogRecord } from '../src/logger/buffer-logger';
+import { Match } from '../src/match';
 import { Player } from '../src/player/player';
-import { hasOwnProperty } from '../src/utils/has-own-property';
-import { just, Optional } from '../src/utils/optional';
 import { PlayerStub } from './player/player-stub';
-import assert = require('node:assert');
-
-const testScheduler = new TestScheduler((actual, expected) => {
-    // asserting the two objects are equal - required
-    // for TestScheduler assertions to work via your test framework
-    // e.g. using chai.
-    expect(actual).deep.equal(expected);
-});
 
 type SmallGridColumnIndex = 'C1' | 'C2';
 type SmallGridRowIndex = 'R1' | 'R2';
 
+type TestPlayer = Player<SmallGridColumnIndex, SmallGridRowIndex>;
+
+function createLogRecord(message: string): LogRecord {
+    return { message: message, optionalParams: [] };
+}
+
 describe('Game', () => {
     const logger = new BufferLogger();
+    const createGame = () => {
+        const game = new Match(logger);
+
+        const playerA: TestPlayer = new PlayerStub(
+            'Player A',
+            List([
+                { targetCoordinate: new Coordinate('C1', 'R2') },
+                { response: HitResponse.MISS, acknowledgement: ShotAcknowledgement.OK },
+                { targetedCoordinate: new Coordinate('C2', 'R1'), response: HitResponse.HIT },
+                { targetCoordinate: new Coordinate('C1', 'R1') },
+                { response: HitResponse.WON, acknowledgement: ShotAcknowledgement.OK },
+            ]),
+        );
+
+        const playerB: TestPlayer = new PlayerStub(
+            'Player B',
+            List([
+                { targetedCoordinate: new Coordinate('C1', 'R2'), response: HitResponse.MISS },
+                { targetCoordinate: new Coordinate('C2', 'R1') },
+                { response: HitResponse.HIT, acknowledgement: ShotAcknowledgement.OK },
+                { targetedCoordinate: new Coordinate('C1', 'R1'), response: HitResponse.WON },
+            ]),
+        );
+
+        return {
+            game,
+            playerA,
+            playerB,
+            expectedWinner: playerA,
+            expectedFinalTurn: 3,
+        };
+    };
 
     beforeEach(() => logger.clear());
 
-    it('be created and play', () => {
-        const game = new Match(logger);
+    it('can be created and played', (done) => {
+        const { game, playerA, playerB } = createGame();
 
-        const playerA = new PlayerStub(
-            'Player A',
-            List([
+        const expectedLogs = [
+            createLogRecord('Starting a match between the player "Player A" and "Player B".'),
+            createLogRecord('Turn 1.'),
+            createLogRecord('"Player A" targets "C1R2".'),
+            createLogRecord('"Player B" replies "miss".'),
+            createLogRecord('"Player A" acknowledges the answer.'),
+            createLogRecord('Turn 2.'),
+            createLogRecord('"Player B" targets "C2R1".'),
+            createLogRecord('"Player A" replies "hit".'),
+            createLogRecord('"Player B" acknowledges the answer.'),
+            createLogRecord('Turn 3.'),
+            createLogRecord('"Player A" targets "C1R1".'),
+            createLogRecord('"Player B" replies "won".'),
+            createLogRecord('"Player A" acknowledges the answer.'),
+            createLogRecord('"Player A" has won the match in 3 turns.'),
+        ];
 
-            ]),
-        );
+        const result$ = game.play(playerA, playerB, 100);
 
-        const playerB = new PlayerStub(
-            'Player B',
-            List([
+        result$.subscribe({
+            complete: () => {
+                expect(logger.getRecords()).to.eqls(expectedLogs);
 
-            ]),
-        );
-
-        testScheduler.run((helpers) => {
-            const { cold, time, expectObservable, expectSubscriptions } = helpers;
-
-            const e1 = cold(' -a--b--c---|');
-            const e1subs = '  ^----------!';
-            const t = time('   ---|       '); // t = 3
-            const expected = '-a-----c---|';
-
-
-
-            const result$ = game.play(playerA, playerB);
-
-            expectObservable(result$).toEqual(playerA);
-            expectSubscriptions(e1.subscriptions).toBe(e1subs);
+                done();
+            },
         });
+    });
+
+    it('emits each turn result', (done) => {
+        const { game, playerA, playerB } = createGame();
+
+        const expectedResults = [
+            { winner: undefined, turn: 1 },
+            { winner: undefined, turn: 2 },
+            { winner: playerA, turn: 3 },
+        ];
+
+        const result$ = game.play(playerA, playerB, 100);
+
+        result$.subscribe({
+            next: (turnResult) => {
+                const expectedResult = expectedResults.shift();
+
+                expect(turnResult).to.eqls(expectedResult);
+            },
+            complete: () => done(),
+        });
+    });
+
+    it('the match can be replayed without the processing happening twice', (done) => {
+        const { game, playerA, playerB } = createGame();
+
+        const expectedResults = [
+            { winner: undefined, turn: 1 },
+            { winner: undefined, turn: 2 },
+            { winner: playerA, turn: 3 },
+        ];
+
+        const result$ = game.play(playerA, playerB, 100);
+
+        result$.subscribe();
+        result$.subscribe();
+        result$.subscribe({
+            next: (turnResult) => {
+                const expectedResult = expectedResults.shift();
+
+                expect(turnResult).to.eqls(expectedResult);
+            },
+            complete: () => done(),
+        });
+    });
+
+    it('fails when a player throws an error when being asked his/her turn', (done) => {
+        const { game, playerA } = createGame();
+
+        const expectedLogs = [
+            createLogRecord('Starting a match between the player "Player A" and "Fake Player".'),
+            createLogRecord('Turn 1.'),
+            createLogRecord('"Player A" targets "C1R2".'),
+        ];
+
+        const result$ = game.play(
+            playerA,
+            new PlayerStub('Fake Player', List()),
+            100,
+        );
+
+        result$.subscribe({
+            next: () => expect.fail('Did not expect to be called'),
+            error: (obsError: Error) => {
+                expect(logger.getRecords()).to.eqls(expectedLogs);
+                expect(obsError.message).to.eqls('No action is available.');
+
+                done();
+            },
+        });
+    });
+
+    it('fails when a player does not return any hit response', (done) => {
+        const { game, playerA } = createGame();
+
+        const expectedLogs = [
+            createLogRecord('Starting a match between the player "Player A" and "Player B".'),
+            createLogRecord('Turn 1.'),
+            createLogRecord('"Player A" targets "C1R2".'),
+        ];
+
+        const result$ = game.play(
+            playerA,
+            new PlayerStub(
+                'Player B',
+                List([
+                    { targetedCoordinate: new Coordinate('C1', 'R2'), response: undefined },
+                ]),
+            ),
+            100,
+        );
+
+        result$.subscribe({
+            next: () => expect.fail('Did not expect to be called'),
+            error: (obsError: Error) => {
+                expect(logger.getRecords()).to.eqls(expectedLogs);
+                expect(obsError.message).to.eqls('The opponent could not respond.');
+
+                done();
+            },
+        });
+    });
+
+    it('fails when the player throws an error when being asked to acknowledge the answer', (done) => {
+        const { game } = createGame();
+
+        const expectedLogs = [
+            createLogRecord('Starting a match between the player "Player A" and "Player B".'),
+            createLogRecord('Turn 1.'),
+            createLogRecord('"Player A" targets "C1R2".'),
+            createLogRecord('"Player B" replies "miss".'),
+        ];
+
+        const result$ = game.play(
+            new PlayerStub(
+                'Player A',
+                List([
+                    { targetCoordinate: new Coordinate('C1', 'R2') },
+                    { response: HitResponse.MISS, acknowledgement: undefined },
+                ]),
+            ),
+            new PlayerStub(
+                'Player B',
+                List([
+                    { targetedCoordinate: new Coordinate('C1', 'R2'), response: HitResponse.MISS },
+                ]),
+            ),
+            100,
+        );
+
+        result$.subscribe({
+            next: () => expect.fail('Did not expect to be called'),
+            error: (obsError: Error) => {
+                expect(logger.getRecords()).to.eqls(expectedLogs);
+                expect(obsError.message).to.eqls('The player could not acknowledge the opponent response.');
+
+                done();
+            },
+        });
+    });
+
+    it('fails when the player does not acknowledge the answer', (done) => {
+        const { game } = createGame();
+
+        const expectedLogs = [
+            createLogRecord('Starting a match between the player "Player A" and "Player B".'),
+            createLogRecord('Turn 1.'),
+            createLogRecord('"Player A" targets "C1R2".'),
+            createLogRecord('"Player B" replies "miss".'),
+        ];
+
+        const result$ = game.play(
+            new PlayerStub(
+                'Player A',
+                List([
+                    { targetCoordinate: new Coordinate('C1', 'R2') },
+                ]),
+            ),
+            new PlayerStub(
+                'Player B',
+                List([
+                    { targetedCoordinate: new Coordinate('C1', 'R2'), response: HitResponse.MISS },
+                ]),
+            ),
+            100,
+        );
+
+        result$.subscribe({
+            next: () => expect.fail('Did not expect to be called'),
+            error: (obsError: Error) => {
+                expect(logger.getRecords()).to.eqls(expectedLogs);
+                expect(obsError.message).to.eqls('No action is available.');
+
+                done();
+            },
+        });
+    });
+
+    it('fails when the max number of turn has been reached', (done) => {
+        const { game } = createGame();
+
+        const expectedLogs = [
+            createLogRecord('Starting a match between the player "Player A" and "Player B".'),
+            createLogRecord('Turn 1.'),
+            createLogRecord('"Player A" targets "C1R2".'),
+            createLogRecord('"Player B" replies "miss".'),
+            createLogRecord('"Player A" acknowledges the answer.'),
+            createLogRecord('Turn 2.'),
+            createLogRecord('"Player B" targets "C2R1".'),
+            createLogRecord('"Player A" replies "miss".'),
+            createLogRecord('"Player B" acknowledges the answer.'),
+        ];
+
+        const result$ = game.play(
+            new PlayerStub(
+                'Player A',
+                List([
+                    { targetCoordinate: new Coordinate('C1', 'R2') },
+                    { response: HitResponse.MISS, acknowledgement: ShotAcknowledgement.OK },
+                    { targetedCoordinate: new Coordinate('C2', 'R1'), response: HitResponse.MISS },
+                    { targetCoordinate: new Coordinate('C2', 'R2') },
+                    { response: HitResponse.HIT, acknowledgement: ShotAcknowledgement.OK },
+                ]),
+            ),
+            new PlayerStub(
+                'Player B',
+                List([
+                    { targetedCoordinate: new Coordinate('C1', 'R2'), response: HitResponse.MISS },
+                    { targetCoordinate: new Coordinate('C2', 'R1') },
+                    { response: HitResponse.MISS, acknowledgement: ShotAcknowledgement.OK },
+                    { targetedCoordinate: new Coordinate('C2', 'R2'), response: HitResponse.HIT },
+                ]),
+            ),
+            2,
+        );
+
+        const expectedTurnResults = [
+            { winner: undefined, turn: 1 },
+            { winner: undefined, turn: 2 },
+        ];
+
+        result$.subscribe({
+            next: (turnResult) => {
+                const expectedTurnResult = expectedTurnResults.shift();
+
+                expect(turnResult).to.eqls(expectedTurnResult);
+            },
+            error: (obsError: Error) => {
+                expect(logger.getRecords()).to.eqls(expectedLogs);
+                expect(obsError.message).to.eqls('The match could not be finished in 2 turns.');
+
+                done();
+            },
+        });
+    });
+
+    it('fails when the max number of turn is lower than 2', () => {
+        const { game, playerA, playerB } = createGame();
+
+        const play = () => game.play(playerA, playerB, 1);
+
+        expect(play).to.throw('Expect the match to allow at least 2 turns. Got 1.');
     });
 });

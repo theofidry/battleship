@@ -7,7 +7,7 @@ import { ShotAcknowledgement } from '../../src/communication/shot-acknowledgemen
 import { Coordinate } from '../../src/grid/coordinate';
 import { Player } from '../../src/player/player';
 import { hasOwnProperty } from '../../src/utils/has-own-property';
-import { just, Optional } from '../../src/utils/optional';
+import { nothingIfUndefined, Optional } from '../../src/utils/optional';
 import assert = require('node:assert');
 
 type MoveAction<
@@ -33,7 +33,7 @@ type ResponseAction<
     RowIndex extends PropertyKey,
 > = {
     targetedCoordinate: Coordinate<ColumnIndex, RowIndex>,
-    response: HitResponse,
+    response: HitResponse | undefined,
 };
 
 function assertIsAResponseAction<
@@ -50,7 +50,7 @@ function assertIsAResponseAction<
 
 type AcknowledgementAction = {
     response: HitResponse,
-    acknowledgement: ShotAcknowledgement,
+    acknowledgement: ShotAcknowledgement | undefined,
 };
 
 function assertIsAnAcknowledgementAction(
@@ -96,7 +96,7 @@ export class PlayerStub<
             `Expected "${action.targetedCoordinate.toString()}". Got "${coordinates.toString()}".`
         );
 
-        return just(action.response);
+        return nothingIfUndefined(action.response);
     }
 
     sendResponse(response: HitResponse): Optional<ShotAcknowledgement> {
@@ -108,7 +108,7 @@ export class PlayerStub<
             `Expected "${action.response}". Got "${response}".`
         );
 
-        return just(action.acknowledgement);
+        return nothingIfUndefined(action.acknowledgement);
     }
 
     private getNextMove(): PlayerAction<ColumnIndex, RowIndex> {
