@@ -78,7 +78,7 @@ export class Optional<T> {
             : defaultValue;
     }
 
-    orElseThrow(error: Error): T {
+    orElseThrow(error: Error): T | never {
         if (!this.isPresent()) {
             throw error;
         }
@@ -99,4 +99,8 @@ export function just<T>(value: T): Optional<T> {
 
 export function nothing<T>(): Optional<T> {
     return new Optional(nothingObject());
+}
+
+export function nothingIfUndefined<T>(value: T | undefined): Optional<T> {
+    return undefined === value ? nothing() : just(value);
 }

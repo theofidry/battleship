@@ -1,6 +1,6 @@
 import { Logger } from './logger';
 
-type Record = {
+export type Record = {
     message: any,
     optionalParams: any,
 };
