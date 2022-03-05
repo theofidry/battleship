@@ -1,0 +1,1 @@
+export type ShipSize = 2 | 3 | 4 | 5;
