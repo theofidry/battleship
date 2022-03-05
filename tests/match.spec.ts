@@ -263,7 +263,7 @@ describe('Game', () => {
     });
 
     it('fails when the max number of turn has been reached', (done) => {
-        const { game } = createGame();
+        const { game, playerA, playerB } = createGame();
 
         const expectedLogs = [
             createLogRecord('Starting a match between the player "Player A" and "Player B".'),
@@ -273,32 +273,11 @@ describe('Game', () => {
             createLogRecord('"Player A" acknowledges the answer.'),
             createLogRecord('Turn 2.'),
             createLogRecord('"Player B" targets "C2R1".'),
-            createLogRecord('"Player A" replies "miss".'),
+            createLogRecord('"Player A" replies "hit".'),
             createLogRecord('"Player B" acknowledges the answer.'),
         ];
 
-        const result$ = game.play(
-            new PlayerStub(
-                'Player A',
-                List([
-                    { targetCoordinate: new Coordinate('C1', 'R2') },
-                    { response: HitResponse.MISS, acknowledgement: ShotAcknowledgement.OK },
-                    { targetedCoordinate: new Coordinate('C2', 'R1'), response: HitResponse.MISS },
-                    { targetCoordinate: new Coordinate('C2', 'R2') },
-                    { response: HitResponse.HIT, acknowledgement: ShotAcknowledgement.OK },
-                ]),
-            ),
-            new PlayerStub(
-                'Player B',
-                List([
-                    { targetedCoordinate: new Coordinate('C1', 'R2'), response: HitResponse.MISS },
-                    { targetCoordinate: new Coordinate('C2', 'R1') },
-                    { response: HitResponse.MISS, acknowledgement: ShotAcknowledgement.OK },
-                    { targetedCoordinate: new Coordinate('C2', 'R2'), response: HitResponse.HIT },
-                ]),
-            ),
-            2,
-        );
+        const result$ = game.play(playerA, playerB, 2);
 
         const expectedTurnResults = [
             { winner: undefined, turn: 1 },
