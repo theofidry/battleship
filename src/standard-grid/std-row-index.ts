@@ -1,4 +1,4 @@
-export enum RowIndex {
+export enum StdRowIndex {
     Row1,
     Row2,
     Row3,

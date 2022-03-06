@@ -61,7 +61,7 @@ export class Grid<
         assertAllRowsHaveSameColumns(rows);
     }
 
-    fillCells(coordinates: Array<Coordinate<ColumnIndex, RowIndex>>): Grid<ColumnIndex, RowIndex> {
+    fillCells(coordinates: ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>): Grid<ColumnIndex, RowIndex> {
         let rows = this.rows;
         let row: Row<ColumnIndex>;
 

@@ -1,4 +1,4 @@
-export enum ColumnIndex {
+export enum StdColumnIndex {
     A = 'A',
     B = 'B',
     C = 'C',
