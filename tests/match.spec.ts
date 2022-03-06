@@ -292,6 +292,7 @@ describe('Game', () => {
             },
             error: (obsError: Error) => {
                 expect(logger.getRecords()).to.eqls(expectedLogs);
+                expect(obsError.name).to.equal('MaxTurnReached');
                 expect(obsError.message).to.eqls('The match could not be finished in 2 turns.');
 
                 done();
