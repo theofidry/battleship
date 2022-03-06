@@ -4,22 +4,18 @@ import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from './coordinate';
 import assert = require('node:assert');
 
-export enum Cell {
-    EMPTY,
-    FULL,
-}
-
-export type Row<ColumnIndex extends PropertyKey> = Map<ColumnIndex, Cell>;
+export type Row<ColumnIndex extends PropertyKey, Cell> = Map<ColumnIndex, Cell>;
 
 export type GridRows<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> = Map<RowIndex, Row<ColumnIndex>>;
+    Cell,
+> = Map<RowIndex, Row<ColumnIndex, Cell>>;
 
-function getRow<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
-    rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
+function getRow<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, Cell>(
+    rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
     rowIndex: RowIndex,
-): Row<ColumnIndex> {
+): Row<ColumnIndex, Cell> {
     const row = rows.get(rowIndex);
 
     assertIsNotUndefined(
@@ -33,8 +29,8 @@ function getRow<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
     return row;
 }
 
-function assertRowHasColumn<ColumnIndex extends PropertyKey>(
-    row: Readonly<Row<ColumnIndex>>,
+function assertRowHasColumn<ColumnIndex extends PropertyKey, Cell>(
+    row: Readonly<Row<ColumnIndex, Cell>>,
     columnIndex: ColumnIndex,
 ): void {
     assert(
@@ -54,23 +50,27 @@ function assertRowHasColumn<ColumnIndex extends PropertyKey>(
 export class Grid<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
+    Cell,
 > {
     constructor(
-        readonly rows: Readonly<GridRows<ColumnIndex, RowIndex>>,
+        readonly rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
     ) {
         assertAllRowsHaveSameColumns(rows);
     }
 
-    fillCells(coordinates: ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>): Grid<ColumnIndex, RowIndex> {
+    fillCells(
+        coordinates: ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>,
+        value: Cell,
+    ): Grid<ColumnIndex, RowIndex, Cell> {
         let rows = this.rows;
-        let row: Row<ColumnIndex>;
+        let row: Row<ColumnIndex, Cell>;
 
         coordinates.forEach(({ columnIndex, rowIndex }) => {
             row = getRow(rows, rowIndex);
 
             assertRowHasColumn(row, columnIndex);
 
-            row = row.set(columnIndex, Cell.FULL);
+            row = row.set(columnIndex, value);
 
             rows = rows.set(rowIndex, row);
         });
@@ -78,7 +78,7 @@ export class Grid<
         return new Grid(rows);
     }
 
-    getRows(): Readonly<GridRows<ColumnIndex, RowIndex>> {
+    getRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>> {
         return this.rows;
     }
 }
@@ -86,7 +86,8 @@ export class Grid<
 function assertAllRowsHaveSameColumns<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(rows: Readonly<GridRows<ColumnIndex, RowIndex>>): void {
+    Cell,m,
+>(rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];
 
