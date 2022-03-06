@@ -1,4 +1,4 @@
-import { List, OrderedSet, Set } from 'immutable';
+import { List, OrderedSet } from 'immutable';
 import { Coordinate } from '../grid/coordinate';
 import { Ship } from './ship';
 import assert = require('node:assert');
