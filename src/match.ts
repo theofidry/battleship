@@ -112,6 +112,12 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
 }
 
 class MaxTurnReached extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'MaxTurnReached';
+    }
+
     static forMaxTurn(maxTurn: number): MaxTurnReached {
         return new MaxTurnReached(`The match could not be finished in ${maxTurn} turns.`);
     }

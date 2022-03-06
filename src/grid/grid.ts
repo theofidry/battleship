@@ -20,7 +20,7 @@ function getRow<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, C
 
     assertIsNotUndefined(
         row,
-        OutOfBoundCoordinate.forRow(
+        GridOutOfBoundCoordinate.forRow(
             rowIndex,
             rows.keySeq().toArray(),
         ),
@@ -35,7 +35,7 @@ function assertRowHasColumn<ColumnIndex extends PropertyKey, Cell>(
 ): void {
     assert(
         row.has(columnIndex),
-        OutOfBoundCoordinate.forColumn(
+        GridOutOfBoundCoordinate.forColumn(
             columnIndex,
             row.keySeq().toArray(),
         ),
@@ -108,7 +108,7 @@ function assertAllRowsHaveSameColumns<
 
         assert(
             _.isEqual(rowColumns, columns),
-            InvalidGridError.forColumns(rowColumns, columns),
+            InvalidGrid.forColumns(rowColumns, columns),
         );
     });
 }
@@ -117,35 +117,41 @@ function stringifyIndices<I extends PropertyKey>(indices: I[]): string {
     return indices.join('", "');
 }
 
-class InvalidGridError extends Error {
+class InvalidGrid extends Error {
     constructor(message?: string) {
         super(message);
 
-        this.name = 'InvalidGridError';
+        this.name = 'InvalidGrid';
     }
 
-    static forColumns<ColumnIndex extends PropertyKey>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGridError {
-        return new InvalidGridError(
+    static forColumns<ColumnIndex extends PropertyKey>(a: ColumnIndex[], b: ColumnIndex[]): InvalidGrid {
+        return new InvalidGrid(
             `Expected rows to have identical columns. Got "${stringifyIndices(a)}" and "${stringifyIndices(b)}".`,
         );
     }
 }
 
-class OutOfBoundCoordinate extends Error {
+class GridOutOfBoundCoordinate extends Error {
     constructor(message?: string) {
         super(message);
 
-        this.name = 'InvalidGridError';
+        this.name = 'OutOfBoundCoordinate';
     }
 
-    static forRow<RowIndex extends PropertyKey>(rowIndex: RowIndex, rowIndices: RowIndex[]): OutOfBoundCoordinate {
-        return new InvalidGridError(
+    static forRow<RowIndex extends PropertyKey>(
+        rowIndex: RowIndex,
+        rowIndices: RowIndex[],
+    ): GridOutOfBoundCoordinate {
+        return new GridOutOfBoundCoordinate(
             `Unknown row index "${rowIndex}". Expected one of "${stringifyIndices(rowIndices)}".`,
         );
     }
 
-    static forColumn<ColumnIndex extends PropertyKey>(columnIndex: ColumnIndex, columnIndices: ColumnIndex[]): OutOfBoundCoordinate {
-        return new InvalidGridError(
+    static forColumn<ColumnIndex extends PropertyKey>(
+        columnIndex: ColumnIndex,
+        columnIndices: ColumnIndex[],
+    ): GridOutOfBoundCoordinate {
+        return new GridOutOfBoundCoordinate(
             `Unknown column index "${columnIndex}". Expected one of "${stringifyIndices(columnIndices)}".`,
         );
     }
