@@ -25,7 +25,7 @@ describe('Optional', () => {
     describe('::filter()', () => {
         it('can filter values (value NOT filtered out)', () => {
             const optional: Optional<string> = just(value);
-            const filter = (_value: unknown) => 'string' === typeof value;
+            const filter = (_value: unknown) => 'string' === typeof _value;
 
             const filteredOptional: Optional<string> = optional.filter(filter);
 
@@ -36,7 +36,7 @@ describe('Optional', () => {
 
         it('can filter values (value filtered out)', () => {
             const optional: Optional<string> = just(value);
-            const filter = (_value: unknown) => 'number' === typeof value;
+            const filter = (_value: unknown) => 'number' === typeof _value;
 
             const filteredOptional: Optional<string> = optional.filter(filter);
 
@@ -46,7 +46,7 @@ describe('Optional', () => {
 
         it('can filter on nothing', () => {
             const optional: Optional<string> = nothing();
-            const filter = (_value: unknown) => 'number' === typeof value;
+            const filter = (_value: unknown) => 'number' === typeof _value;
 
             const filteredOptional: Optional<string> = optional.filter(filter);
 
@@ -58,6 +58,7 @@ describe('Optional', () => {
     describe('::map()', () => {
         it('can map value', () => {
             const optional: Optional<string> = just(value);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const map = (_value: string) => 10;
 
             const mappedOptional: Optional<number> = optional.map(map);
@@ -69,6 +70,7 @@ describe('Optional', () => {
 
         it('can map on nothing', () => {
             const optional: Optional<string> = nothing();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const map = (_value: any) => 10;
 
             const mappedOptional: Optional<number> = optional.map(map);
@@ -97,7 +99,7 @@ describe('Optional', () => {
             let i = 0;
 
             const optional: Optional<string> = nothing();
-            const sideEffect = (_value: any) => i = 10;
+            const sideEffect = () => i = 10;
 
             const newOptional: Optional<string> = optional.ifPresent(sideEffect);
 

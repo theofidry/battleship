@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
 import { Grid } from '../../src/grid/grid';
+import { expectError } from '../chai-assertions';
 
 enum Cell {
     EMPTY,
@@ -114,7 +115,50 @@ describe('Grid#constructor', () => {
 
         const createGrid = () => new GreekJapaneseGrid(rows);
 
-        expect(createGrid).to.throw('Expected rows to have identical columns. Got "β" and "α", "β".');
+        expectError(
+            'InvalidGrid',
+            'Expected rows to have identical columns. Got "β" and "α", "β".',
+            createGrid,
+        );
+    });
+});
+
+describe('Grid::getCell()', () => {
+    const grid = new GreekJapaneseGrid(
+        Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+            [
+                'いち',
+                Map<GreekColumnIndex, Cell>([
+                    ['α', Cell.EMPTY],
+                ]),
+            ],
+        ]),
+    );
+
+    it('allows to get a specific cell', () => {
+        const coordinate = new Coordinate('α', 'いち');
+
+        expect(grid.getCell(coordinate)).to.equal(Cell.EMPTY);
+    });
+
+    it('cannot give a cell with out of bounds coordinate (row)', () => {
+        const getCoordinate = () => grid.getCell(new Coordinate('α', 'さん'));
+
+        expectError(
+            'OutOfBoundCoordinate',
+            'Unknown row index "さん". Expected one of "いち".',
+            getCoordinate,
+        );
+    });
+
+    it('cannot give a cell with out of bounds coordinate (column)', () => {
+        const getCoordinate = () => grid.getCell(new Coordinate('β', 'いち'));
+
+        expectError(
+            'OutOfBoundCoordinate',
+            'Unknown column index "β". Expected one of "α".',
+            getCoordinate,
+        );
     });
 });
 
@@ -266,7 +310,11 @@ describe('Grid filling', () => {
 
                 const sourceGridRows = getGridRowsAsObject(sourceGrid);
 
-                expect(fillGrid).to.throw(expectedErrorMessage);
+                expectError(
+                    'OutOfBoundCoordinate',
+                    expectedErrorMessage,
+                    fillGrid,
+                );
                 expect(sourceGridRows).to.eqls(originalGridRows);
             });
         } else {
