@@ -1,6 +1,7 @@
+import { Map } from 'immutable';
 import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
-import { Cell, Grid, GridRows, Row } from '../grid/grid';
+import { Grid, GridRows, Row } from '../grid/grid';
 import { PlayerGrid } from '../grid/player-grid';
 import { PositionedShip } from '../ship/positioned-ship';
 import { Ship } from '../ship/ship';
@@ -9,29 +10,36 @@ import { EnumHelper } from '../utils/enum-helper';
 import { StdColumnIndex } from './std-column-index';
 import { StdRowIndex } from './std-row-index';
 
-export class StandardPlayerGrid implements PlayerGrid<StdColumnIndex, StdRowIndex> {
-    private readonly shipMap = new Map<Coordinate<StdColumnIndex, StdRowIndex>, PositionedShip<StdColumnIndex, StdRowIndex>>();
-    private readonly fleet: Array<PositionedShip<StdColumnIndex, StdRowIndex>> = [];
+type Cell = PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
+
+export class StandardPlayerGrid implements PlayerGrid<
+    StdColumnIndex,
+    StdRowIndex,
+    Cell
+> {
+    private readonly innerGrid: Readonly<Grid<StdColumnIndex, StdRowIndex, Cell>>;
+    private readonly fleet: ReadonlyArray<PositionedShip<StdColumnIndex, StdRowIndex>>;
 
     constructor(
-        private readonly innerGrid: Grid<StdColumnIndex, StdRowIndex> = createEmptyGrid(),
+        fleet: ReadonlyArray<{ ship: Ship, position: ShipPosition<StdColumnIndex, StdRowIndex> }>,
     ) {
-    }
+        this.fleet = fleet.map(({ ship, position }) => {
+            const shipCoordinates = getCoordinates(position);
 
-    placeShip(ship: Ship, position: ShipPosition<StdColumnIndex, StdRowIndex>): void {
-        const shipCoordinates = getCoordinates(position);
-        const positionedShip = new PositionedShip(ship, shipCoordinates);
-
-        this.innerGrid.fillCells(shipCoordinates);
-
-        shipCoordinates.forEach((coordinate) => {
-            this.shipMap.set(coordinate, positionedShip);
-            this.fleet.push(positionedShip);
+            return new PositionedShip(ship, shipCoordinates);
         });
+
+        this.innerGrid = this.fleet.reduce(
+            (grid, positionedShip) => grid.fillCells(
+                positionedShip.coordinates,
+                positionedShip,
+            ),
+            createEmptyGrid(),
+        );
     }
 
     recordHit(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): HitResponse {
-        const hitShip = this.shipMap.get(coordinate);
+        const hitShip = this.innerGrid.getCell(coordinate);
 
         if (undefined === hitShip) {
             return HitResponse.MISS;
@@ -50,17 +58,21 @@ export class StandardPlayerGrid implements PlayerGrid<StdColumnIndex, StdRowInde
 
         return fleetSunk ? HitResponse.WON : HitResponse.SUNK;
     }
+
+    getRows(): Readonly<GridRows<StdColumnIndex, StdRowIndex, Cell>> {
+        return this.innerGrid.getRows();
+    }
 }
 
-export function createEmptyRow(): Row<StdColumnIndex> {
+export function createEmptyRow(): Row<StdColumnIndex, Cell> {
     return Map(
         EnumHelper
             .getValues(StdColumnIndex)
-            .map((columnIndex) => [columnIndex, Cell.EMPTY]),
+            .map((columnIndex) => [columnIndex, undefined]),
     );
 }
 
-export function createEmptyGrid(): Grid<StdColumnIndex, StdRowIndex> {
+export function createEmptyGrid(): Grid<StdColumnIndex, StdRowIndex, Cell> {
     const rows = Map(
         EnumHelper
             .getValues(StdRowIndex)

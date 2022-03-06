@@ -78,6 +78,14 @@ export class Grid<
         return new Grid(rows);
     }
 
+    getCell(coordinate: Coordinate<ColumnIndex, RowIndex>): Cell {
+        const row = getRow(this.rows, coordinate.rowIndex);
+
+        assertRowHasColumn(row, coordinate.columnIndex);
+
+        return row.get(coordinate.columnIndex) as Cell;
+    }
+
     getRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>> {
         return this.rows;
     }
@@ -86,7 +94,7 @@ export class Grid<
 function assertAllRowsHaveSameColumns<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-    Cell,m,
+    Cell,
 >(rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>): void {
     let columns: ColumnIndex[];
     let rowColumns: ColumnIndex[];

@@ -16,10 +16,9 @@ export type ShipPlacement<
 export interface PlayerGrid<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
+    Cell,
 > {
-    placeShip(): void;
-
     recordHit(coordinate: Coordinate<ColumnIndex, RowIndex>): HitResponse;
 
-    getRows(): Readonly<GridRows<ColumnIndex, RowIndex>>;
+    getRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>>;
 }

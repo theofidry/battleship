@@ -47,6 +47,7 @@ module.exports = {
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/no-empty-interface': ['error', { 'allowSingleExtends': true }],
         '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/no-unsafe-argument': 'off',
         '@typescript-eslint/no-unsafe-assignment': 'off',
         '@typescript-eslint/no-unsafe-call': 'off',

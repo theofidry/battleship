@@ -1,6 +1,5 @@
 import { Coordinate } from '../grid/coordinate';
 import { Ship } from './ship';
-import { ShipPosition } from './ship-position';
 
 export class PositionedShip<
     ColumnIndex extends PropertyKey,
