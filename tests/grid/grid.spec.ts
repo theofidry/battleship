@@ -118,6 +118,37 @@ describe('Grid#constructor', () => {
     });
 });
 
+describe('Grid::getCell()', () => {
+    const grid = new GreekJapaneseGrid(
+        Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+            [
+                'いち',
+                Map<GreekColumnIndex, Cell>([
+                    ['α', Cell.EMPTY],
+                ]),
+            ],
+        ]),
+    );
+
+    it('allows to get a specific cell', () => {
+        const coordinate = new Coordinate('α', 'いち');
+
+        expect(grid.getCell(coordinate)).to.equal(Cell.EMPTY);
+    });
+
+    it('cannot give a cell with out of bounds coordinate (row)', () => {
+        const getCoordinate = () => grid.getCell(new Coordinate('α', 'さん'));
+
+        expect(getCoordinate).to.throw('Unknown row index "さん". Expected one of "いち".');
+    });
+
+    it('cannot give a cell with out of bounds coordinate (column)', () => {
+        const getCoordinate = () => grid.getCell(new Coordinate('β', 'いち'));
+
+        expect(getCoordinate).to.throw('Unknown column index "β". Expected one of "α".');
+    });
+});
+
 class FillingGridSet {
     constructor(
         readonly title: string,
