@@ -1,4 +1,4 @@
-import { map, Observable, range, shareReplay, Subject, takeUntil, tap, throwError } from 'rxjs';
+import { map, Observable, range, shareReplay, Subject, takeUntil, tap } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';

@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
 import { Grid } from '../../src/grid/grid';
+import { expectError } from '../chai-assertions';
 
 enum Cell {
     EMPTY,
@@ -114,7 +115,11 @@ describe('Grid#constructor', () => {
 
         const createGrid = () => new GreekJapaneseGrid(rows);
 
-        expect(createGrid).to.throw('Expected rows to have identical columns. Got "β" and "α", "β".');
+        expectError(
+            'InvalidGrid',
+            'Expected rows to have identical columns. Got "β" and "α", "β".',
+            createGrid,
+        );
     });
 });
 
@@ -139,13 +144,21 @@ describe('Grid::getCell()', () => {
     it('cannot give a cell with out of bounds coordinate (row)', () => {
         const getCoordinate = () => grid.getCell(new Coordinate('α', 'さん'));
 
-        expect(getCoordinate).to.throw('Unknown row index "さん". Expected one of "いち".');
+        expectError(
+            'OutOfBoundCoordinate',
+            'Unknown row index "さん". Expected one of "いち".',
+            getCoordinate,
+        );
     });
 
     it('cannot give a cell with out of bounds coordinate (column)', () => {
         const getCoordinate = () => grid.getCell(new Coordinate('β', 'いち'));
 
-        expect(getCoordinate).to.throw('Unknown column index "β". Expected one of "α".');
+        expectError(
+            'OutOfBoundCoordinate',
+            'Unknown column index "β". Expected one of "α".',
+            getCoordinate,
+        );
     });
 });
 
@@ -297,7 +310,11 @@ describe('Grid filling', () => {
 
                 const sourceGridRows = getGridRowsAsObject(sourceGrid);
 
-                expect(fillGrid).to.throw(expectedErrorMessage);
+                expectError(
+                    'OutOfBoundCoordinate',
+                    expectedErrorMessage,
+                    fillGrid,
+                );
                 expect(sourceGridRows).to.eqls(originalGridRows);
             });
         } else {
