@@ -3,18 +3,24 @@
 import { expect } from 'chai';
 import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
-import { Cell, Grid } from '../../src/grid/grid';
+import { Grid } from '../../src/grid/grid';
+
+enum Cell {
+    EMPTY,
+    FULL,
+}
 
 type GreekColumnIndex = 'α' | 'β';
 type JapaneseRowIndex = 'いち' | 'さん' | 'に';
 
-class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex> {
+class GreekJapaneseGrid extends Grid<GreekColumnIndex, JapaneseRowIndex, Cell> {
 }
 
 function getGridRowsAsObject<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(grid: Grid<ColumnIndex, RowIndex>): any {
+    Cell,
+>(grid: Grid<ColumnIndex, RowIndex, Cell>): any {
     return grid.getRows()
         .map((row) => row.toObject())
         .toObject();
@@ -256,7 +262,7 @@ describe('Grid filling', () => {
 
                 const sourceGrid = new GreekJapaneseGrid(rows);
 
-                const fillGrid = () => sourceGrid.fillCells(coordinates);
+                const fillGrid = () => sourceGrid.fillCells(coordinates, Cell.FULL);
 
                 const sourceGridRows = getGridRowsAsObject(sourceGrid);
 
@@ -272,7 +278,7 @@ describe('Grid filling', () => {
 
                 const sourceGrid = new GreekJapaneseGrid(rows);
 
-                const filledGrid = sourceGrid.fillCells(coordinates);
+                const filledGrid = sourceGrid.fillCells(coordinates, Cell.FULL);
 
                 const sourceGridRows = getGridRowsAsObject(sourceGrid);
                 const filledGridRows = getGridRowsAsObject(filledGrid);

@@ -1,8 +1,13 @@
 import { Map } from 'immutable';
-import { Cell, Grid, Row } from '../grid/grid';
+import { Grid, Row } from '../grid/grid';
 import { EnumHelper } from '../utils/enum-helper';
 import { ColumnIndex } from './column-index';
 import { RowIndex } from './row-index';
+
+enum Cell {
+    EMPTY,
+    FULL,
+}
 
 /**
  * Represents a player's grid, i.e. the grid the player owns and on which
@@ -10,7 +15,7 @@ import { RowIndex } from './row-index';
  */
 export class PlayerGrid {
     constructor(
-        private readonly innerGrid: Grid<ColumnIndex, RowIndex> = createEmptyGrid(),
+        private readonly innerGrid: Grid<ColumnIndex, RowIndex, Cell> = createEmptyGrid(),
     ) {
     }
 
@@ -27,7 +32,7 @@ export class PlayerGrid {
     // }
 }
 
-export function createEmptyRow(): Row<ColumnIndex> {
+export function createEmptyRow(): Row<ColumnIndex, Cell> {
     return Map(
         EnumHelper
             .getValues(ColumnIndex)
@@ -35,7 +40,7 @@ export function createEmptyRow(): Row<ColumnIndex> {
     );
 }
 
-export function createEmptyGrid(): Grid<ColumnIndex, RowIndex> {
+export function createEmptyGrid(): Grid<ColumnIndex, RowIndex, Cell> {
     const rows = Map(
         EnumHelper
             .getValues(RowIndex)
