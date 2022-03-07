@@ -336,4 +336,77 @@ describe('Grid filling', () => {
             });
         }
     }
+
+    it('can fill values with an allow write check if there is no overlap', () => {
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+            [
+                'いち',
+                Map<GreekColumnIndex, Cell>([
+                    ['α', Cell.EMPTY],
+                    ['β', Cell.EMPTY],
+                ]),
+            ],
+        ]);
+        const expectedRows = {
+            'いち': {
+                'α': Cell.FULL,
+                'β': Cell.FULL,
+            },
+        };
+
+        const originalGrid = new GreekJapaneseGrid(rows);
+        const originalGridRows = getGridRowsAsObject(originalGrid);
+
+        const sourceGrid = new GreekJapaneseGrid(rows);
+
+        const filledGrid = sourceGrid.fillCells(
+            [
+                new Coordinate('α', 'いち'),
+                new Coordinate('β', 'いち'),
+            ],
+            Cell.FULL,
+            (cell) => cell === Cell.EMPTY,
+        );
+
+        const sourceGridRows = getGridRowsAsObject(sourceGrid);
+        const filledGridRows = getGridRowsAsObject(filledGrid);
+
+        expect(sourceGridRows).to.eqls(originalGridRows);
+        expect(filledGridRows).to.eqls(expectedRows);
+    });
+
+    it('cannot fill values with an allow write check if there is a coordinate overlapping', () => {
+        const rows = Map<JapaneseRowIndex, Map<GreekColumnIndex, Cell>>([
+            [
+                'いち',
+                Map<GreekColumnIndex, Cell>([
+                    ['α', Cell.EMPTY],
+                    ['β', Cell.FULL],
+                ]),
+            ],
+        ]);
+
+        const originalGrid = new GreekJapaneseGrid(rows);
+        const originalGridRows = getGridRowsAsObject(originalGrid);
+
+        const sourceGrid = new GreekJapaneseGrid(rows);
+
+        const fillGrid = () => sourceGrid.fillCells(
+            [
+                new Coordinate('α', 'いち'),
+                new Coordinate('β', 'いち'),
+            ],
+            Cell.FULL,
+            (cell) => cell === Cell.EMPTY,
+        );
+
+        expectError(
+            'CannotOverwriteCell',
+            'Cannot overwrite the value "1" for the coordinate "βいち".',
+            fillGrid,
+        );
+
+        const sourceGridRows = getGridRowsAsObject(sourceGrid);
+        expect(sourceGridRows).to.eqls(originalGridRows);
+    });
 });

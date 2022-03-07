@@ -4,13 +4,73 @@ import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from './coordinate';
 import assert = require('node:assert');
 
+/**
+ * Basic grid which offers an API to easily interact with its cells. The grid
+ * itself is not specific to the game and should be seen as block to help to
+ * build a game grid.
+ */
+export class Grid<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+    Cell,
+> {
+    constructor(
+        private readonly rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
+    ) {
+        assertAllRowsHaveSameColumns(rows);
+    }
+
+    fillCells(
+        coordinates: ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>,
+        value: Cell,
+        allowWrite: (existingValue: Cell)=> boolean = () => true,
+    ): Grid<ColumnIndex, RowIndex, Cell> {
+        let rows = this.rows;
+        let row: Row<ColumnIndex, Cell>;
+
+        coordinates.forEach((coordinate) => {
+            const { columnIndex, rowIndex } = coordinate;
+
+            row = getRow(rows, rowIndex);
+
+            assertRowHasColumn(row, columnIndex);
+            // TS understand Cell|undefined here. This is due to ImmutableJS API
+            // but Cell could very well include undefined hence we cannot do
+            // a non-undefined assertion here.
+            const existingValue = row.get(columnIndex) as Cell;
+
+            if (!allowWrite(existingValue)) {
+                throw CannotOverwriteCell.forCell(coordinate, existingValue);
+            }
+
+            row = row.set(columnIndex, value);
+
+            rows = rows.set(rowIndex, row);
+        });
+
+        return new Grid(rows);
+    }
+
+    getCell(coordinate: Coordinate<ColumnIndex, RowIndex>): Cell {
+        const row = getRow(this.rows, coordinate.rowIndex);
+
+        assertRowHasColumn(row, coordinate.columnIndex);
+
+        return row.get(coordinate.columnIndex) as Cell;
+    }
+
+    getRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>> {
+        return this.rows;
+    }
+}
+
 export type Row<ColumnIndex extends PropertyKey, Cell> = Map<ColumnIndex, Cell>;
 
 export type GridRows<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
     Cell,
-> = Map<RowIndex, Row<ColumnIndex, Cell>>;
+    > = Map<RowIndex, Row<ColumnIndex, Cell>>;
 
 function getRow<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, Cell>(
     rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
@@ -40,55 +100,6 @@ function assertRowHasColumn<ColumnIndex extends PropertyKey, Cell>(
             row.keySeq().toArray(),
         ),
     );
-}
-
-/**
- * Basic grid which offers an API to easily interact with its cells. The grid
- * itself is not specific to the game and should be seen as block to help to
- * build a game grid.
- */
-export class Grid<
-    ColumnIndex extends PropertyKey,
-    RowIndex extends PropertyKey,
-    Cell,
-> {
-    constructor(
-        private readonly rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
-    ) {
-        assertAllRowsHaveSameColumns(rows);
-    }
-
-    fillCells(
-        coordinates: ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>,
-        value: Cell,
-    ): Grid<ColumnIndex, RowIndex, Cell> {
-        let rows = this.rows;
-        let row: Row<ColumnIndex, Cell>;
-
-        coordinates.forEach(({ columnIndex, rowIndex }) => {
-            row = getRow(rows, rowIndex);
-
-            assertRowHasColumn(row, columnIndex);
-
-            row = row.set(columnIndex, value);
-
-            rows = rows.set(rowIndex, row);
-        });
-
-        return new Grid(rows);
-    }
-
-    getCell(coordinate: Coordinate<ColumnIndex, RowIndex>): Cell {
-        const row = getRow(this.rows, coordinate.rowIndex);
-
-        assertRowHasColumn(row, coordinate.columnIndex);
-
-        return row.get(coordinate.columnIndex) as Cell;
-    }
-
-    getRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>> {
-        return this.rows;
-    }
 }
 
 function assertAllRowsHaveSameColumns<
@@ -138,7 +149,8 @@ class GridOutOfBoundCoordinate extends Error {
         this.name = 'OutOfBoundCoordinate';
     }
 
-    static forRow<RowIndex extends PropertyKey>(
+    static forRow<
+        RowIndex extends PropertyKey>(
         rowIndex: RowIndex,
         rowIndices: RowIndex[],
     ): GridOutOfBoundCoordinate {
@@ -147,12 +159,34 @@ class GridOutOfBoundCoordinate extends Error {
         );
     }
 
-    static forColumn<ColumnIndex extends PropertyKey>(
+    static forColumn<
+        ColumnIndex extends PropertyKey>(
         columnIndex: ColumnIndex,
         columnIndices: ColumnIndex[],
     ): GridOutOfBoundCoordinate {
         return new GridOutOfBoundCoordinate(
             `Unknown column index "${columnIndex}". Expected one of "${stringifyIndices(columnIndices)}".`,
+        );
+    }
+}
+
+class CannotOverwriteCell extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'CannotOverwriteCell';
+    }
+
+    static forCell<
+        ColumnIndex extends PropertyKey,
+        RowIndex extends PropertyKey,
+        Cell,
+    >(
+        coordinate: Coordinate<ColumnIndex, RowIndex>,
+        existingValue: Cell,
+    ): CannotOverwriteCell {
+        return new CannotOverwriteCell(
+            `Cannot overwrite the value "${existingValue}" for the coordinate "${coordinate}".`,
         );
     }
 }

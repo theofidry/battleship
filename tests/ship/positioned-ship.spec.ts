@@ -4,6 +4,68 @@ import { Coordinate } from '../../src/grid/coordinate';
 import { PositionedShip } from '../../src/ship/positioned-ship';
 import { Ship } from '../../src/ship/ship';
 
+class ShipToStringSet {
+    constructor(
+        readonly title: string,
+        readonly ship: PositionedShip<'A', '1' | '2' | '3'>,
+        readonly expected: string,
+    ) {
+    }
+}
+
+function* shipToStringProvider(): Generator<ShipToStringSet> {
+    yield new ShipToStringSet(
+        'intact ship',
+        new PositionedShip(
+            new Ship('IntactShip', 2),
+            OrderedSet([
+                new Coordinate('A', '1'),
+                new Coordinate('A', '2'),
+            ]),
+
+        ),
+        'IntactShip:(A1, A2)=(0, 0)',
+    );
+
+    yield new ShipToStringSet(
+        'damaged ship',
+        (() => {
+            const ship = new PositionedShip(
+                new Ship('DamagedShip', 2),
+                OrderedSet([
+                    new Coordinate('A', '1'),
+                    new Coordinate('A', '2'),
+                ]),
+            );
+
+            ship.markAsHit(new Coordinate('A', '1'));
+
+            return ship;
+        })(),
+        'DamagedShip:(A1, A2)=(1, 0)',
+    );
+
+    yield new ShipToStringSet(
+        'sunk ship',
+        (() => {
+            const coordinates = [
+                new Coordinate('A', '1'),
+                new Coordinate('A', '2'),
+            ];
+
+            const ship = new PositionedShip(
+                new Ship('SunkShip', 2),
+                OrderedSet(coordinates),
+            );
+
+            coordinates.forEach((coordinate) => ship.markAsHit(coordinate));
+
+            return ship;
+        })(),
+        'SunkShip:(A1, A2)=(1, 1)',
+    );
+}
+
 describe('PositionedShip', () => {
     const ship = new Ship('TestShip', 3);
     let positionedShip: PositionedShip<'A', '1' | '2' | '3'>;
@@ -75,4 +137,10 @@ describe('PositionedShip', () => {
 
         expect(hit).to.throw('Unknown coordinate "A3". Expected one of "A1", "A2".');
     });
+
+    for(const { title, ship: toStringShip, expected } of shipToStringProvider()) {
+        it(`can be cast to string: ${title}`, () => {
+            expect(toStringShip.toString()).to.equal(expected);
+        });
+    }
 });

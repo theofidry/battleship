@@ -39,6 +39,16 @@ export class PositionedShip<
         return List(this.hitCoordinates.values());
     }
 
+    toString(): string {
+        const shipName = this.ship.name;
+        const coordinates = this.coordinates;
+        const hitCoordinates = coordinates
+            .toArray()
+            .map((coordinate) => Number(this.hitCoordinates.get(coordinate.toString())));
+
+        return `${shipName}:(${coordinates.join(', ')})=(${hitCoordinates.join(', ')})`;
+    }
+
     private assertIsKnownCoordinate(coordinate: string): void {
         assert(
             this.hitCoordinates.has(coordinate),
