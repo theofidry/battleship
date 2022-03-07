@@ -33,6 +33,7 @@ export class StandardPlayerGrid implements PlayerGrid<
             (grid, positionedShip) => grid.fillCells(
                 positionedShip.coordinates.toArray(),
                 positionedShip,
+                (cell) => undefined === cell,
             ),
             createEmptyGrid(),
         );

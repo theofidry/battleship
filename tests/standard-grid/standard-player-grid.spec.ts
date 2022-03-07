@@ -207,6 +207,31 @@ describe('StandardPlayerGrid', () => {
 
             expect(printGrid(grid)).to.equal(expected);
         });
+
+        it('cannot create a grid with ships overlapping', () => {
+            const createGrid = () => new StandardPlayerGrid([
+                {
+                    ship: new Ship('ShipX0', 2),
+                    position: new ShipPosition(
+                        new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                        ShipDirection.VERTICAL,
+                    ),
+                },
+                {
+                    ship: new Ship('ShipX0', 3),
+                    position: new ShipPosition(
+                        new Coordinate(StdColumnIndex.A, StdRowIndex.Row3),
+                        ShipDirection.HORIZONTAL,
+                    ),
+                },
+            ]);
+
+            expectError(
+                'CannotOverwriteCell',
+                'Cannot overwrite the value "ShipX0:(B2, B3)=(0, 0)" for the coordinate "B3".',
+                createGrid,
+            );
+        });
     });
 
     describe('::recordHit()', () => {
