@@ -49,7 +49,7 @@ describe('GridPrinter', () => {
         └─────────┴───┴───┘
         `);
 
-        const actual = printGrid(grid, cellPrinter);
+        const actual = printGrid(grid.getRows(), cellPrinter);
 
         expect(actual).to.equal(expected);
     });

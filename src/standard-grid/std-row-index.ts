@@ -1,5 +1,5 @@
-export enum RowIndex {
-    Row1,
+export enum StdRowIndex {
+    Row1 = 1,
     Row2,
     Row3,
     Row4,

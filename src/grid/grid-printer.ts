@@ -1,16 +1,16 @@
 import stringConsole from '../utils/string-console';
-import { Grid } from './grid';
+import { GridRows } from './grid';
 
 export function printGrid<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
     Cell,
 >(
-    grid: Grid<ColumnIndex, RowIndex, Cell>,
+    gridRows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
     cellPrinter: (cell: Cell)=> number | string | null,
 ): string {
     const table = {
-        ...grid.getRows()
+        ...gridRows
             .map((row) => ({
                 ...row
                     .map((cell) => cellPrinter(cell))
