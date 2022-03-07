@@ -1,14 +1,20 @@
 import { expect } from 'chai';
 import { OrderedSet } from 'immutable';
+import heredoc from 'tsheredoc';
+import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
+import { printGrid as printGenericGrid } from '../../src/grid/grid-printer';
 import { ShipPlacement } from '../../src/grid/player-grid';
 import { Ship } from '../../src/ship/ship';
 import { ShipDirection } from '../../src/ship/ship-direction';
 import { ShipPosition } from '../../src/ship/ship-position';
-import { getCoordinates } from '../../src/standard-grid/standard-player-grid';
+import {
+    Cell, getCoordinates, StandardPlayerGrid,
+} from '../../src/standard-grid/standard-player-grid';
 import { StdColumnIndex } from '../../src/standard-grid/std-column-index';
 import { StdRowIndex } from '../../src/standard-grid/std-row-index';
 import { expectError } from '../chai-assertions';
+import assert = require('node:assert');
 
 function normalizeCoordinates(values: OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>>): ReadonlyArray<string> {
     return values
@@ -75,6 +81,24 @@ function* coordinatesProvider(): Generator<CoordinateSet> {
     );
 }
 
+const cellPrinter = (cell: Cell) => Number(undefined !== cell);
+const printGrid = (grid: StandardPlayerGrid) => printGenericGrid(grid.getRows(), cellPrinter);
+const hit = (grid: StandardPlayerGrid, columnIndex: StdColumnIndex, rowIndex: StdRowIndex) => {
+    const coordinate = new Coordinate(columnIndex, rowIndex);
+
+    const hitResponse = grid.recordHit(coordinate);
+    const ship = grid.getRows().get(rowIndex)!.get(columnIndex);
+
+    const shipMessage = undefined === ship
+        ? 'No ship found.'
+        : `Found ship ${ship.ship.name} with the coordinates "${ship.coordinates.map((shipCoordinate) => shipCoordinate.toString()).join('", "')}".`;
+
+    assert(
+        hitResponse === HitResponse.HIT || hitResponse === HitResponse.SUNK,
+        `Expected to record a hit or sunk for the coordinate "${coordinate.toString()}". Got "${hitResponse}". ${shipMessage}`,
+    );
+};
+
 describe('StandardPlayerGrid', () => {
     describe('getCoordinates()', () => {
         for (const { title, shipPosition, expected } of coordinatesProvider()) {
@@ -122,9 +146,132 @@ describe('StandardPlayerGrid', () => {
         });
     });
 
-    describe('::recordHit()', () => {
-        it('', () => {
+    describe('instantiation', () => {
+        it('creates an empty grid if no ship is given', () => {
+            const grid = new StandardPlayerGrid([]);
 
+            const expected = heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │ F │ G │ H │ I │ J │
+            ├─────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    2    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    3    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    4    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    5    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    6    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    7    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    8    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    9    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │   10    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘
+            `);
+
+            expect(printGrid(grid)).to.equal(expected);
+        });
+
+        it('creates a grid with the ships on it', () => {
+            const grid = new StandardPlayerGrid([
+                {
+                    ship: new Ship('ShipX0', 2),
+                    position: new ShipPosition(
+                        new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                        ShipDirection.VERTICAL,
+                    ),
+                },
+                {
+                    ship: new Ship('ShipX0', 3),
+                    position: new ShipPosition(
+                        new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
+                        ShipDirection.HORIZONTAL,
+                    ),
+                },
+            ]);
+
+            const expected = heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │ F │ G │ H │ I │ J │
+            ├─────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    2    │ 0 │ 1 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    3    │ 0 │ 1 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    4    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    5    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    6    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    7    │ 0 │ 0 │ 0 │ 0 │ 1 │ 1 │ 1 │ 0 │ 0 │ 0 │
+            │    8    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │    9    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            │   10    │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘
+            `);
+
+            expect(printGrid(grid)).to.equal(expected);
+        });
+    });
+
+    describe('::recordHit()', () => {
+        let grid: StandardPlayerGrid;
+
+        beforeEach(() => {
+            grid = new StandardPlayerGrid([
+                {
+                    ship: new Ship('ShipX0', 2),
+                    position: new ShipPosition(
+                        new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                        ShipDirection.VERTICAL,
+                    ),
+                },
+                {
+                    ship: new Ship('ShipX0', 3),
+                    position: new ShipPosition(
+                        new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
+                        ShipDirection.HORIZONTAL,
+                    ),
+                },
+            ]);
+        });
+
+        it('records "hit" if the given coordinate hits a ship', () => {
+            const coordinate = new Coordinate(StdColumnIndex.B, StdRowIndex.Row2);
+            const expected = HitResponse.HIT;
+
+            const actual = grid.recordHit(coordinate);
+
+            expect(actual).to.equal(expected);
+        });
+
+        it('records "miss" if the given coordinate does not hit a ship', () => {
+            const coordinate = new Coordinate(StdColumnIndex.B, StdRowIndex.Row1);
+            const expected = HitResponse.MISS;
+
+            const actual = grid.recordHit(coordinate);
+
+            expect(actual).to.equal(expected);
+        });
+
+        it('records "sunk" if the given coordinate hits a ship and sunk it', () => {
+            hit(grid, StdColumnIndex.B, StdRowIndex.Row2);
+
+            const coordinate = new Coordinate(StdColumnIndex.B, StdRowIndex.Row3);
+            const expected = HitResponse.SUNK;
+
+            const actual = grid.recordHit(coordinate);
+
+            expect(actual).to.equal(expected);
+        });
+
+        it('records "won" if the given coordinate sunks the last ship', () => {
+            hit(grid, StdColumnIndex.B, StdRowIndex.Row2);
+            hit(grid, StdColumnIndex.B, StdRowIndex.Row3);
+            hit(grid, StdColumnIndex.E, StdRowIndex.Row7);
+            hit(grid, StdColumnIndex.F, StdRowIndex.Row7);
+
+            const coordinate = new Coordinate(StdColumnIndex.G, StdRowIndex.Row7);
+            const expected = HitResponse.WON;
+
+            const actual = grid.recordHit(coordinate);
+
+            expect(actual).to.equal(expected);
         });
     });
 });

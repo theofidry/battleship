@@ -10,7 +10,7 @@ import { StdColumnIndex } from './std-column-index';
 import { StdRowIndex } from './std-row-index';
 import assert = require('node:assert');
 
-type Cell = PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
+export type Cell = PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
 
 export class StandardPlayerGrid implements PlayerGrid<
     StdColumnIndex,
