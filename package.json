@@ -37,6 +37,7 @@
         "mocha": "^9.2.1",
         "ts-node": "^10.5.0",
         "tsconfig-paths": "^3.12.0",
+        "tsheredoc": "^1.0.1",
         "typescript": "^4.5.5"
     },
     "dependencies": {

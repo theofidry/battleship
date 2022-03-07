@@ -53,7 +53,7 @@ export class Grid<
     Cell,
 > {
     constructor(
-        readonly rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
+        private readonly rows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
     ) {
         assertAllRowsHaveSameColumns(rows);
     }
