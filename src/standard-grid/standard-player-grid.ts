@@ -52,7 +52,7 @@ export class StandardPlayerGrid implements PlayerGrid<
         }
 
         const fleetSunk = this.fleet.reduce(
-            (sunk, ship) => sunk = sunk && ship.isSunk(),
+            (sunk, ship) => sunk && ship.isSunk(),
             true,
         );
 
