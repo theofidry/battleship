@@ -53,6 +53,7 @@ module.exports = {
         '@typescript-eslint/no-unsafe-call': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
         '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/restrict-plus-operands': 'off',
         '@typescript-eslint/restrict-template-expressions': 'off',
         '@typescript-eslint/sort-type-union-intersection-members': ['error'],
         '@typescript-eslint/type-annotation-spacing': ['error', { 'before': false, 'after': true }],
