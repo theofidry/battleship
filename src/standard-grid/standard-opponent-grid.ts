@@ -23,6 +23,10 @@ export class StandardOpponentGrid implements OpponentGrid<StdColumnIndex, StdRow
         this.innerGrid = this.innerGrid.fillCells([coordinate], Cell.MISSED);
     }
 
+    getCell(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): Cell {
+        return this.innerGrid.getCell(coordinate);
+    }
+
     getRows(): Readonly<GridRows<StdColumnIndex, StdRowIndex, Cell>> {
         return this.innerGrid.getRows();
     }

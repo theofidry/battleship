@@ -14,5 +14,7 @@ export interface OpponentGrid<
 
     markAsHit(coordinate: Coordinate<ColumnIndex, RowIndex>): void;
 
+    getCell(coordinate: Coordinate<ColumnIndex, RowIndex>): Cell;
+
     getRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>>;
 }
