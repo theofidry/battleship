@@ -1,0 +1,18 @@
+import { AdaptablePlayer } from '../player/adaptable-player';
+import { Player } from '../player/player';
+import { Fleet } from '../ship/fleet';
+import { RandomHitStrategy } from './hit-strategy/random-hit-strategy';
+import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
+import { StandardOpponentGrid } from './standard-opponent-grid';
+import { StdColumnIndex } from './std-column-index';
+import { StdRowIndex } from './std-row-index';
+
+export function createDumbPlayer(name: string, fleet: Fleet): Player<StdColumnIndex, StdRowIndex> {
+    return new AdaptablePlayer(
+        `DumbPlayer ${name}`.trim(),
+        fleet,
+        RandomPlacementStrategy,
+        RandomHitStrategy,
+        () => new StandardOpponentGrid(),
+    );
+}
