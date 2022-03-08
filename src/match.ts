@@ -1,4 +1,6 @@
-import { map, Observable, range, shareReplay, Subject, takeUntil, tap } from 'rxjs';
+import {
+    map, Observable, OperatorFunction, range, shareReplay, Subject, switchMap, takeUntil, tap,
+} from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
@@ -56,8 +58,15 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
     ) {
     }
 
-    play(): TurnResult<ColumnIndex, RowIndex> {
-        const targetCoordinate = this.player.askMove();
+    play(): Observable<TurnResult<ColumnIndex, RowIndex>> {
+        return this.player
+            .askMove()
+            .pipe(
+                map((targetCoordinate) => this.getResult(targetCoordinate)),
+            );
+    }
+
+    private getResult(targetCoordinate: Coordinate<ColumnIndex, RowIndex>): TurnResult<ColumnIndex, RowIndex> {
         this.logger.log(`"${this.player.name}" targets "${targetCoordinate.toString()}".`);
 
         return this.opponent
@@ -123,6 +132,24 @@ class MaxTurnReached extends Error {
     }
 }
 
+function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
+    logger: Logger,
+): OperatorFunction<
+    { turn: number, player: Player<ColumnIndex, RowIndex>, opponent: Player<ColumnIndex, RowIndex> },
+    TurnResult<ColumnIndex, RowIndex>
+> {
+    return switchMap(({ turn, player, opponent }) => {
+        const playerTurn = new PlayerTurn(
+            logger,
+            turn,
+            player,
+            opponent,
+        );
+
+        return playerTurn.play();
+    });
+}
+
 export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
     constructor(private readonly logger: Logger) {
     }
@@ -154,16 +181,7 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
                 }),
                 tap((turn) => this.logger.log(`Turn ${turn}.`)),
                 selectPlayer(playerA, playerB),
-                map(({ turn, player, opponent }) => {
-                    const playerTurn = new PlayerTurn(
-                        this.logger,
-                        turn,
-                        player,
-                        opponent,
-                    );
-
-                    return playerTurn.play();
-                }),
+                playTurn(this.logger),
                 tap(({ winner, turn }) => {
                     if (winner !== undefined) {
                         this.logger.log(`"${winner.name}" has won the match in ${turn} turns.`);

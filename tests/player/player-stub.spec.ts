@@ -1,12 +1,13 @@
 import { expect } from 'chai';
 import { List } from 'immutable';
+import { map, switchMap, tap } from 'rxjs';
 import { HitResponse } from '../../src/communication/hit-response';
 import { ShotAcknowledgement } from '../../src/communication/shot-acknowledgement';
 import { Coordinate } from '../../src/grid/coordinate';
 import { PlayerStub } from './player-stub';
 
 describe('PlayerStub', () => {
-    it('plays the given actions', () => {
+    it('plays the given actions', (done) => {
         const player = new PlayerStub<string, string>(
             'PStub',
             List([
@@ -25,15 +26,33 @@ describe('PlayerStub', () => {
 
         expect(player.name).to.equal('PStub');
 
-        expect(player.askMove()).to.eqls(new Coordinate('A', '2'));
+        player
+            .askMove()
+            .pipe(
+                tap(() => {
+                    const action = player.askResponse(new Coordinate('B', '1')).getValue();
 
-        expect(
-            player.askResponse(new Coordinate('B', '1')).getValue(),
-        ).to.equal(HitResponse.MISS);
+                    expect(action).to.equal(HitResponse.MISS);
+                }),
+                tap(() => {
+                    const action = player.sendResponse(HitResponse.MISS).getValue();
 
-        expect(player.sendResponse(HitResponse.MISS).getValue()).to.eqls(ShotAcknowledgement.OK);
+                    expect(action).to.equal(ShotAcknowledgement.OK);
+                }),
+                switchMap((firstMove) => {
+                    return player
+                        .askMove()
+                        .pipe(
+                            map((secondMove) => ({ firstMove, secondMove })),
+                        );
+                })
+            )
+            .subscribe(({ firstMove, secondMove }) => {
+                expect(firstMove).to.eqls(new Coordinate('A', '2'));
+                expect(secondMove).to.eqls(new Coordinate('A', '4'));
 
-        expect(player.askMove()).to.eqls(new Coordinate('A', '4'));
+                done();
+            });
     });
 
     it('throws an error if no action is available', () => {
