@@ -13,7 +13,7 @@ export enum Cell {
 }
 
 export class StandardOpponentGrid implements OpponentGrid<StdColumnIndex, StdRowIndex, Cell> {
-    private innerGrid: Readonly<Grid<StdColumnIndex, StdRowIndex, Cell>> = createEmptyGrid();
+    private innerGrid: Grid<StdColumnIndex, StdRowIndex, Cell> = createEmptyGrid();
 
     markAsHit(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): void {
         this.innerGrid = this.innerGrid.fillCells([coordinate], Cell.HIT);
@@ -21,6 +21,10 @@ export class StandardOpponentGrid implements OpponentGrid<StdColumnIndex, StdRow
 
     markAsMissed(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): void {
         this.innerGrid = this.innerGrid.fillCells([coordinate], Cell.MISSED);
+    }
+
+    getCell(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): Cell {
+        return this.innerGrid.getCell(coordinate);
     }
 
     getRows(): Readonly<GridRows<StdColumnIndex, StdRowIndex, Cell>> {

@@ -1,3 +1,5 @@
+import { EnumHelper } from '../utils/enum-helper';
+
 export enum StdColumnIndex {
     A = 'A',
     B = 'B',
@@ -10,3 +12,5 @@ export enum StdColumnIndex {
     I = 'I',
     J = 'J',
 }
+
+export const COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);

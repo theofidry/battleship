@@ -1,17 +1,13 @@
 import { List } from 'immutable';
-import * as _ from 'lodash';
-import { Coordinate } from '../../grid/coordinate';
 import { ShipPlacement } from '../../grid/player-grid';
 import { PlacementStrategy } from '../../player/placement-strategy';
 import { Fleet } from '../../ship/fleet';
 import { Ship } from '../../ship/ship';
-import { ShipDirection } from '../../ship/ship-direction';
 import { ShipPosition } from '../../ship/ship-position';
-import { EnumHelper } from '../../utils/enum-helper';
+import { selectRandomCoordinate, selectRandomDirection } from '../random-selector';
 import { StandardPlayerGrid } from '../standard-player-grid';
 import { StdColumnIndex } from '../std-column-index';
 import { StdRowIndex } from '../std-row-index';
-import assert = require('node:assert');
 
 export const RandomPlacementStrategy: PlacementStrategy<StdColumnIndex, StdRowIndex> = {
     place: (fleet: Fleet): StandardPlayerGrid => {
@@ -33,10 +29,6 @@ type FleetPlacement = {
     grid: StandardPlayerGrid,
     placements: List<ShipPlacement<StdColumnIndex, StdRowIndex>>,
 };
-
-const SHIP_DIRECTION_INDICES = EnumHelper.getValues(ShipDirection);
-const COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
-const ROWS_INDICES = EnumHelper.getValues(StdRowIndex);
 
 const placeShip = ({ grid, placements }: FleetPlacement, ship: Ship): FleetPlacement => {
     let placement: ShipPlacement<StdColumnIndex, StdRowIndex>;
@@ -63,25 +55,7 @@ const placeShip = ({ grid, placements }: FleetPlacement, ship: Ship): FleetPlace
 const selectRandomPlacement = (ship: Ship): ShipPlacement<StdColumnIndex, StdRowIndex> => ({
     ship,
     position: new ShipPosition(
-        selectRandomOrigin(),
+        selectRandomCoordinate(),
         selectRandomDirection(),
     ),
 });
-
-const selectRandomOrigin = (): Coordinate<StdColumnIndex, StdRowIndex> => new Coordinate(
-    selectRandomColumn(),
-    selectRandomRow(),
-);
-
-function createSelectRandomIndex<T>(indices: T[]): ()=> T {
-    return () => {
-        const index = _.sample(indices);
-        assert(undefined !== index);
-
-        return index;
-    };
-}
-
-const selectRandomColumn = createSelectRandomIndex(COLUMN_INDICES);
-const selectRandomRow = createSelectRandomIndex(ROWS_INDICES);
-const selectRandomDirection = createSelectRandomIndex(SHIP_DIRECTION_INDICES);

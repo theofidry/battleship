@@ -1,3 +1,5 @@
+import { EnumHelper } from '../utils/enum-helper';
+
 export enum StdRowIndex {
     Row1 = 1,
     Row2,
@@ -10,3 +12,5 @@ export enum StdRowIndex {
     Row9,
     Row10,
 }
+
+export const ROWS_INDICES = EnumHelper.getValues(StdRowIndex);
