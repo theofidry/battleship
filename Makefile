@@ -72,7 +72,8 @@ fast_run: $(SRC_DEPS)
 
 .PHONY: run
 run:		## Runs the (compiled) application
-run: dist/src
+run:
+	$(MAKE) compile
 	TS_NODE_PROJECT=tsconfig.src.json node --require=ts-node/register dist/src/main.js
 
 
