@@ -1,5 +1,6 @@
 import { List } from 'immutable';
 import * as _ from 'lodash';
+import { Observable, of } from 'rxjs';
 import { assertIsNonNullObject } from '../../src/assert/assert-is-non-null-object';
 import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../src/communication/hit-response';
@@ -80,11 +81,11 @@ export class PlayerStub<
         this.turnActions = turnActions.toArray();
     }
 
-    askMove(): Coordinate<ColumnIndex, RowIndex> {
+    askMove(): Observable<Coordinate<ColumnIndex, RowIndex>> {
         const action = this.getNextMove();
         assertIsAMoveAction(action, 'Invalid action.');
 
-        return action.targetCoordinate;
+        return of(action.targetCoordinate);
     }
 
     askResponse(coordinates: Coordinate<ColumnIndex, RowIndex>): Optional<HitResponse> {

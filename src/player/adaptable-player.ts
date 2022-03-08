@@ -1,3 +1,4 @@
+import { Observable, of } from 'rxjs';
 import { HitResponse } from '../communication/hit-response';
 import { ShotAcknowledgement } from '../communication/shot-acknowledgement';
 import { Coordinate } from '../grid/coordinate';
@@ -36,12 +37,12 @@ export class AdaptablePlayer<
         this.opponentGrid = opponentGridFactory();
     }
 
-    askMove(): Coordinate<ColumnIndex, RowIndex> {
+    askMove(): Observable<Coordinate<ColumnIndex, RowIndex>> {
         const nextMove = this.hitStrategy.decide(this.opponentGrid);
 
         this.lastMove = nextMove;
 
-        return nextMove;
+        return of(nextMove);
     }
 
     sendResponse(response: HitResponse): Optional<ShotAcknowledgement> {
