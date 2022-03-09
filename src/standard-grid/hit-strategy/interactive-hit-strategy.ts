@@ -17,10 +17,18 @@ export class InteractiveHitStrategy implements HitStrategy<StdColumnIndex, StdRo
     }
 
     decide (_grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<Coordinate<StdColumnIndex, StdRowIndex>> {
-        return bindCallback(question)('Target: ')
+        console.log('––––––––––––––––––––––––––––––––––––––––––');
+        askTurn(
+            (answer) => {
+                console.log('HELLLOOOOOOOOOO');
+                console.log(answer);
+            }
+        );
+
+        return bindCallback(askTurn)()
             .pipe(
-                debounceTime(2000),
                 tap(() => console.log('HELLO')),
+                debounceTime(2000),
                 map((value) => this.coordinateParser(value as unknown as string)),
             );
     }
@@ -28,8 +36,7 @@ export class InteractiveHitStrategy implements HitStrategy<StdColumnIndex, StdRo
 
 export type CoordinateParser = (value: string)=> Coordinate<StdColumnIndex, StdRowIndex>;
 
-const question = (
-    query: string,
+export const askTurn = (
     callback: (answer: string)=> void
 ) => {
     const readlineInterface = readline.createInterface(
@@ -39,7 +46,7 @@ const question = (
         true,
     );
 
-    readlineInterface.question(query, (answer) => {
+    readlineInterface.question('Target: ', (answer) => {
         readlineInterface.close();
 
         return callback(answer);
