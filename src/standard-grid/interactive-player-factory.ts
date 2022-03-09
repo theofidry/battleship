@@ -1,4 +1,5 @@
 import { Coordinate } from '../grid/coordinate';
+import { Logger } from '../logger/logger';
 import { AdaptablePlayer } from '../player/adaptable-player';
 import { Player } from '../player/player';
 import { Fleet } from '../ship/fleet';
@@ -10,13 +11,14 @@ import { STD_COLUMN_INDICES, StdColumnIndex } from './std-column-index';
 import { STD_ROW_INDICES, StdRowIndex } from './std-row-index';
 import assert = require('node:assert');
 
-export function createInteractivePlayer(fleet: Fleet): Player<StdColumnIndex, StdRowIndex> {
+export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<StdColumnIndex, StdRowIndex> {
     return new AdaptablePlayer(
         'You',
         fleet,
         RandomPlacementStrategy,
         new InteractiveHitStrategy(
             parseCoordinate,
+            logger,
         ),
         () => new StandardOpponentGrid(),
     );
