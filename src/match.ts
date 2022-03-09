@@ -1,6 +1,6 @@
 import {
-    map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay, Subject,
-    switchMap, takeUntil, tap,
+    concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
+    Subject, takeUntil, tap,
 } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
@@ -41,13 +41,11 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
     }
 }
 
-function checkMaxTurn(maxTurn: number): OperatorFunction<number, number> {
-    return map((turn) => {
+function checkMaxTurn(maxTurn: number): MonoTypeOperatorFunction<number> {
+    return tap((turn) => {
         if (turn > maxTurn) {
             throw MaxTurnReached.forMaxTurn(maxTurn);
         }
-
-        return turn;
     });
 }
 
@@ -89,7 +87,7 @@ function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>
     TurnBeginning<ColumnIndex, RowIndex>,
     TurnResult<ColumnIndex, RowIndex>
 > {
-    return switchMap(({ turn, player, opponent }) => {
+    return concatMap(({ turn, player, opponent }) => {
         const playerTurn = new PlayerTurn(
             logger,
             turn,
