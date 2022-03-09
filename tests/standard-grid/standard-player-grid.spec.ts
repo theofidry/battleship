@@ -12,11 +12,12 @@ import {
     Cell, getCoordinates, StandardPlayerGrid,
 } from '../../src/standard-grid/standard-player-grid';
 import { StdColumnIndex } from '../../src/standard-grid/std-column-index';
+import { StdCoordinate } from '../../src/standard-grid/std-coordinate';
 import { StdRowIndex } from '../../src/standard-grid/std-row-index';
 import { expectError } from '../chai-assertions';
 import assert = require('node:assert');
 
-function normalizeCoordinates(values: OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>>): ReadonlyArray<string> {
+function normalizeCoordinates(values: OrderedSet<StdCoordinate>): ReadonlyArray<string> {
     return values
         .toArray()
         .map((coordinate) => coordinate.toString());

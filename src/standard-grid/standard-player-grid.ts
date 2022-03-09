@@ -7,6 +7,7 @@ import { PositionedShip } from '../ship/positioned-ship';
 import { ShipDirection } from '../ship/ship-direction';
 import { EnumHelper } from '../utils/enum-helper';
 import { StdColumnIndex } from './std-column-index';
+import { StdCoordinate } from './std-coordinate';
 import { StdRowIndex } from './std-row-index';
 import assert = require('node:assert');
 
@@ -39,7 +40,7 @@ export class StandardPlayerGrid implements PlayerGrid<
         );
     }
 
-    recordHit(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): HitResponse {
+    recordHit(coordinate: StdCoordinate): HitResponse {
         const hitShip = this.innerGrid.getCell(coordinate);
 
         if (undefined === hitShip) {
@@ -67,7 +68,7 @@ export class StandardPlayerGrid implements PlayerGrid<
 
 export function getCoordinates(
     shipPlacement: ShipPlacement<StdColumnIndex, StdRowIndex>,
-): OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>> {
+): OrderedSet<StdCoordinate> {
     const columns = EnumHelper.getValues(StdColumnIndex);
     const rows = EnumHelper.getValues(StdRowIndex);
 
@@ -80,7 +81,7 @@ export function getCoordinates(
             shipPlacement.ship.size,
         );
 
-        return OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>>(
+        return OrderedSet<StdCoordinate>(
             subColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex)),
         );
     }
@@ -93,7 +94,7 @@ export function getCoordinates(
         shipPlacement.ship.size,
     );
 
-    return OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>>(
+    return OrderedSet<StdCoordinate>(
         subRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex)),
     );
 }

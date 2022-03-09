@@ -5,11 +5,12 @@ import { OpponentGrid } from '../../grid/opponent-grid';
 import { HitStrategy } from '../../player/hit-strategy';
 import { Cell } from '../standard-opponent-grid';
 import { StdColumnIndex } from '../std-column-index';
+import { StdCoordinate } from '../std-coordinate';
 import { StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
 export const RandomHitStrategy: HitStrategy<StdColumnIndex, StdRowIndex, Cell> = {
-    decide: (grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<Coordinate<StdColumnIndex, StdRowIndex>> => {
+    decide: (grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<StdCoordinate> => {
         const availableCoordinates = grid
             .getRows()
             .toArray()
@@ -23,9 +24,8 @@ export const RandomHitStrategy: HitStrategy<StdColumnIndex, StdRowIndex, Cell> =
         return of(createSelectRandomCoordinate(availableCoordinates));
     },
 };
-// TODO: introduce StdCoordinate type
 
-function createSelectRandomCoordinate(choices: Array<Coordinate<StdColumnIndex, StdRowIndex>>): Coordinate<StdColumnIndex, StdRowIndex> {
+function createSelectRandomCoordinate(choices: Array<StdCoordinate>): StdCoordinate {
     const value = _.sample(choices);
     assert(undefined !== value);
 

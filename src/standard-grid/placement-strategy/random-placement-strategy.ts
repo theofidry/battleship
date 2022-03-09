@@ -10,6 +10,7 @@ import { ShipPosition } from '../../ship/ship-position';
 import { EnumHelper } from '../../utils/enum-helper';
 import { StandardPlayerGrid } from '../standard-player-grid';
 import { StdColumnIndex } from '../std-column-index';
+import { StdCoordinate } from '../std-coordinate';
 import { StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
@@ -68,7 +69,7 @@ const selectRandomPlacement = (ship: Ship): ShipPlacement<StdColumnIndex, StdRow
     ),
 });
 
-const selectRandomOrigin = (): Coordinate<StdColumnIndex, StdRowIndex> => new Coordinate(
+const selectRandomOrigin = (): StdCoordinate => new Coordinate(
     selectRandomColumn(),
     selectRandomRow(),
 );

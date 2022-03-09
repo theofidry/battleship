@@ -1,9 +1,9 @@
 import { Map } from 'immutable';
-import { Coordinate } from '../grid/coordinate';
 import { Grid, GridRows, Row } from '../grid/grid';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { EnumHelper } from '../utils/enum-helper';
 import { StdColumnIndex } from './std-column-index';
+import { StdCoordinate } from './std-coordinate';
 import { StdRowIndex } from './std-row-index';
 
 export enum Cell {
@@ -15,15 +15,15 @@ export enum Cell {
 export class StandardOpponentGrid implements OpponentGrid<StdColumnIndex, StdRowIndex, Cell> {
     private innerGrid: Readonly<Grid<StdColumnIndex, StdRowIndex, Cell>> = createEmptyGrid();
 
-    markAsHit(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): void {
+    markAsHit(coordinate: StdCoordinate): void {
         this.innerGrid = this.innerGrid.fillCells([coordinate], Cell.HIT);
     }
 
-    markAsMissed(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): void {
+    markAsMissed(coordinate: StdCoordinate): void {
         this.innerGrid = this.innerGrid.fillCells([coordinate], Cell.MISSED);
     }
 
-    getCell(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): Cell {
+    getCell(coordinate: StdCoordinate): Cell {
         return this.innerGrid.getCell(coordinate);
     }
 
