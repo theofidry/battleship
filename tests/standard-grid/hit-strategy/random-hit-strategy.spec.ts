@@ -1,20 +1,27 @@
+import { fail } from 'assert';
 import { expect } from 'chai';
 import { Coordinate } from '../../../src/grid/coordinate';
 import { RandomHitStrategy } from '../../../src/standard-grid/hit-strategy/random-hit-strategy';
 import { StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
-import { COLUMN_INDICES, StdColumnIndex } from '../../../src/standard-grid/std-column-index';
-import { ROWS_INDICES, StdRowIndex } from '../../../src/standard-grid/std-row-index';
+import { StdColumnIndex } from '../../../src/standard-grid/std-column-index';
+import { StdRowIndex } from '../../../src/standard-grid/std-row-index';
+import { EnumHelper } from '../../../src/utils/enum-helper';
+
+const COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
+const ROWS_INDICES = EnumHelper.getValues(StdRowIndex);
 
 describe('RandomHitStrategy', () => {
-    it('can provide a random coordinate', () => {
+    it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
 
-        const decide = () => RandomHitStrategy.decide(opponentGrid);
-
-        expect(decide).to.not.throw();
+        RandomHitStrategy.decide(opponentGrid)
+            .subscribe({
+                next: () => done(),
+                error: () => fail('Did not expect to have an error.'),
+            });
     });
 
-    it('provides a random coordinate for which no hit has been recorded yet', () => {
+    it('provides a random coordinate for which no hit has been recorded yet', (done) => {
         const opponentGrid = new StandardOpponentGrid();
         const expectedCoordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
 
@@ -40,8 +47,14 @@ describe('RandomHitStrategy', () => {
             )
         );
 
-        const actual = RandomHitStrategy.decide(opponentGrid);
+        RandomHitStrategy.decide(opponentGrid)
+            .subscribe({
+                next: (nextMove) => {
+                    expect(nextMove).to.eqls(expectedCoordinate);
 
-        expect(actual).to.eqls(expectedCoordinate);
+                    done();
+                },
+                error: () => fail('Did not expect to have an error.'),
+            });
     });
 });

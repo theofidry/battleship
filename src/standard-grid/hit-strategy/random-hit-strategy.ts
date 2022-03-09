@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { Observable, of } from 'rxjs';
 import { Coordinate } from '../../grid/coordinate';
 import { OpponentGrid } from '../../grid/opponent-grid';
 import { HitStrategy } from '../../player/hit-strategy';
@@ -8,7 +9,7 @@ import { StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
 export const RandomHitStrategy: HitStrategy<StdColumnIndex, StdRowIndex, Cell> = {
-    decide: (grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Coordinate<StdColumnIndex, StdRowIndex> => {
+    decide: (grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<Coordinate<StdColumnIndex, StdRowIndex>> => {
         const availableCoordinates = grid
             .getRows()
             .toArray()
@@ -19,7 +20,7 @@ export const RandomHitStrategy: HitStrategy<StdColumnIndex, StdRowIndex, Cell> =
                 .map(([columnIndex]) => new Coordinate(columnIndex, rowIndex)),
         );
 
-        return createSelectRandomCoordinate(availableCoordinates);
+        return of(createSelectRandomCoordinate(availableCoordinates));
     },
 };
 // TODO: introduce StdCoordinate type
