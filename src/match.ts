@@ -1,4 +1,5 @@
 import {
+    concatMap,
     map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay, Subject,
     switchMap, takeUntil, tap,
 } from 'rxjs';
@@ -7,6 +8,7 @@ import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
 import { Player } from './player/player';
+import { askTurn } from './standard-grid/hit-strategy/interactive-hit-strategy';
 import assert = require('node:assert');
 
 export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
@@ -30,6 +32,12 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
 
         return range(1, maxTurnOffset + 1)
             .pipe(
+                // switchMap((result) => {
+                //     return askTurn().pipe(
+                //         tap((value) => console.log(value)),
+                //         map(() => result),
+                //     );
+                // }),
                 takeUntil(playing),
                 checkMaxTurn(maxTurn),
                 tap((turn) => this.logger.log(`Turn ${turn}.`)),
@@ -89,7 +97,7 @@ function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>
     TurnBeginning<ColumnIndex, RowIndex>,
     TurnResult<ColumnIndex, RowIndex>
 > {
-    return switchMap(({ turn, player, opponent }) => {
+    return concatMap(({ turn, player, opponent }) => {
         const playerTurn = new PlayerTurn(
             logger,
             turn,
