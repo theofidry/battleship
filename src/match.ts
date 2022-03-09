@@ -1,4 +1,5 @@
 import {
+    concatMap,
     map, Observable, OperatorFunction, range, shareReplay, Subject, switchMap, takeUntil, tap,
 } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
@@ -138,7 +139,7 @@ function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>
     { turn: number, player: Player<ColumnIndex, RowIndex>, opponent: Player<ColumnIndex, RowIndex> },
     TurnResult<ColumnIndex, RowIndex>
 > {
-    return switchMap(({ turn, player, opponent }) => {
+    return concatMap(({ turn, player, opponent }) => {
         const playerTurn = new PlayerTurn(
             logger,
             turn,

@@ -1,25 +1,49 @@
+import readline from 'readline';
+import { bindCallback, concatMap, range, switchMap, tap } from 'rxjs';
 import { ConsoleLogger } from './logger/console-logger';
 import { Match } from './match';
 import { createFleet } from './ship/fleet';
-import { createDumbPlayer } from './standard-grid/dump-player';
+import { createDumbPlayer } from './standard-grid/create-dump-player';
+import { createInteractivePlayer } from './standard-grid/create-interactive-player';
 import { StdColumnIndex } from './standard-grid/std-column-index';
 import { StdRowIndex } from './standard-grid/std-row-index';
 import { EnumHelper } from './utils/enum-helper';
-import cli, { Command } from 'commander';
 
 const match = new Match(new ConsoleLogger());
 const fleet = createFleet();
 
+// const question = (
+//     query: string,
+//     callback: (answer: string)=> void
+// ) => {
+//     const readlineInterface = readline.createInterface(
+//         process.stdin,
+//         process.stdout,
+//         undefined,
+//         true,
+//     );
+//
+//     readlineInterface.question(query, (answer) => {
+//         readlineInterface.close();
+//
+//         return callback(answer);
+//     });
+// };
+//
+// range(0, 3)
+//     .pipe(
+//         concatMap(() => bindCallback(question)('Target: ')),
+//         tap((value) => console.log(value)),
+//     )
+//     .subscribe();
+
+
+
 match
     .play(
         createDumbPlayer('A', fleet),
-        createDumbPlayer('B', fleet),
-        EnumHelper.getValues(StdColumnIndex).length * EnumHelper.getValues(StdRowIndex).length * 2,
+        createInteractivePlayer(fleet),
+        3,
+        //EnumHelper.getValues(StdColumnIndex).length * EnumHelper.getValues(StdRowIndex).length * 2,
     )
     .subscribe();
-
-const program = new Command('start');
-
-program.description('Starts a match against the AI');
-
-program.
