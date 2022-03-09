@@ -55,6 +55,38 @@ describe('EnumHelper', () => {
         expect(EnumHelper.getValues(MixedEnum)).to.eqls(expectedValues);
         expect(EnumHelper.getNamesAndValues(MixedEnum)).to.eqls(expectedNamesAndValues);
     });
+
+    it('can check if the enum has a name', () => {
+        expect(EnumHelper.hasName(RegularEnum, 'RED')).to.be.true;
+        expect(EnumHelper.hasName(RegularEnum, 'UNKNOWN')).to.be.false;
+    });
+
+    it('can check if the enum has a value', () => {
+        expect(EnumHelper.hasValue(RegularEnum, 0)).to.be.true;
+        expect(EnumHelper.hasValue(RegularEnum, 'UNKNOWN')).to.be.false;
+    });
+
+    it('can check if the string enum has a name', () => {
+        expect(EnumHelper.hasName(StringEnum, 'RED')).to.be.true;
+        expect(EnumHelper.hasName(StringEnum, 'UNKNOWN')).to.be.false;
+    });
+
+    it('can check if the string enum has a value', () => {
+        expect(EnumHelper.hasValue(StringEnum, 'red')).to.be.true;
+        expect(EnumHelper.hasValue(StringEnum, 'UNKNOWN')).to.be.false;
+    });
+
+    it('can check if the mixed enum has a name', () => {
+        expect(EnumHelper.hasName(MixedEnum, 'RED')).to.be.true;
+        expect(EnumHelper.hasName(MixedEnum, 'GREEN')).to.be.true;
+        expect(EnumHelper.hasName(MixedEnum, 'UNKNOWN')).to.be.false;
+    });
+
+    it('can check if the mixed enum has a value', () => {
+        expect(EnumHelper.hasValue(MixedEnum, 0)).to.be.true;
+        expect(EnumHelper.hasValue(MixedEnum, 'green')).to.be.true;
+        expect(EnumHelper.hasValue(MixedEnum, 'UNKNOWN')).to.be.false;
+    });
 });
 
 describe('EnumHelper::takeByKeyOrElse()', () => {
