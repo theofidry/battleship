@@ -1,7 +1,7 @@
 import { ConsoleLogger } from './logger/console-logger';
 import { Match } from './match';
 import { createFleet } from './ship/fleet';
-import { createDumbPlayer } from './standard-grid/create-dump-player';
+import { createDumbPlayer } from './standard-grid/dump-player-factory';
 import { createInteractivePlayer } from './standard-grid/interactive-player-factory';
 import { STD_COLUMN_INDICES } from './standard-grid/std-column-index';
 import { STD_ROW_INDICES } from './standard-grid/std-row-index';
