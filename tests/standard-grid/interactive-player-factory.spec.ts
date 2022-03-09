@@ -40,15 +40,26 @@ class InvalidCoordinateSet {
 
 function* provideInvalidCoordinates(): Generator<InvalidCoordinateSet> {
     yield new InvalidCoordinateSet(
-        'unknown column',
+        'unknown column (one letter)',
         'P1',
-        'Could not parse the coordinate "P1". Expected a value following the format CR where C is one of the column "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" and R one of the row "1", "2", "3", "4", "5", "6", "7", "8", "9", "10".',
+        'Could not parse the coordinate "P1". Expected column to be one of "A", "B", "C", "D", "E", "F", "G", "H", "I", "J". Got "P".',
+    );
+    yield new InvalidCoordinateSet(
+        'unknown column (two letters)',
+        'PP1',
+        'Could not parse the coordinate "PP1". Expected column to be one of "A", "B", "C", "D", "E", "F", "G", "H", "I", "J". Got "PP".',
     );
 
     yield new InvalidCoordinateSet(
-        'unknown row',
+        'unknown row (lower)',
         'J0',
-        'Could not parse the coordinate "J0". Expected a value following the format CR where C is one of the column "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" and R one of the row "1", "2", "3", "4", "5", "6", "7", "8", "9", "10".',
+        'Could not parse the coordinate "J0". Expected row to be one of "1", "2", "3", "4", "5", "6", "7", "8", "9", "10". Got "0".',
+    );
+
+    yield new InvalidCoordinateSet(
+        'unknown row (higher)',
+        'J11',
+        'Could not parse the coordinate "J11". Expected row to be one of "1", "2", "3", "4", "5", "6", "7", "8", "9", "10". Got "11".',
     );
 
     yield new InvalidCoordinateSet(
