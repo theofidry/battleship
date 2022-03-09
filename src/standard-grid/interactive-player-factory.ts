@@ -16,14 +16,14 @@ export function createInteractivePlayer(fleet: Fleet): Player<StdColumnIndex, St
         fleet,
         RandomPlacementStrategy,
         new InteractiveHitStrategy(
-            coordinateParser,
+            parseCoordinate,
         ),
         () => new StandardOpponentGrid(),
     );
 }
 
-export const coordinateParser: CoordinateParser = (rawCoordinate) => {
-    const result = rawCoordinate.match(/([A-J])([1-9]|10)/);
+export const parseCoordinate: CoordinateParser = (rawCoordinate) => {
+    const result = rawCoordinate.match(/([A-J])(10|[1-9])/);
 
     assert(
         null !== result,
@@ -33,14 +33,8 @@ export const coordinateParser: CoordinateParser = (rawCoordinate) => {
     const columnIndex = result[1] || '';
     const rowIndex = Number(result[2]);
 
-    assert(
-        EnumHelper.hasValue(StdColumnIndex, columnIndex),
-        InvalidCoordinate.forColumn(rawCoordinate, columnIndex),
-    );
-    assert(
-        EnumHelper.hasValue(StdRowIndex, rowIndex),
-        InvalidCoordinate.forRow(rawCoordinate, rowIndex),
-    );
+    assert(EnumHelper.hasValue(StdColumnIndex, columnIndex));
+    assert(EnumHelper.hasValue(StdRowIndex, rowIndex));
 
     return new Coordinate(columnIndex, rowIndex);
 };
@@ -55,18 +49,6 @@ class InvalidCoordinate extends Error {
     static forValue(original: string): InvalidCoordinate {
         return new InvalidCoordinate(
             `Could not parse the coordinate "${original}". Expected a value following the format CR where C is one of the column "${STD_COLUMN_INDICES.join('", "')}" and R one of the row "${STD_ROW_INDICES.join('", "')}".`,
-        );
-    }
-
-    static forColumn(original: string, columnIndex: string): InvalidCoordinate {
-        return new InvalidCoordinate(
-            `Could not parse the coordinate "${original}". The parsed the column "${columnIndex}" is not one of "${STD_COLUMN_INDICES.join('", "')}".`,
-        );
-    }
-
-    static forRow(original: string, rowIndex: number): InvalidCoordinate {
-        return new InvalidCoordinate(
-            `Could not parse the coordinate "${original}". The parsed the row "${rowIndex}" is not one of "${STD_ROW_INDICES.join('", "')}".`,
         );
     }
 }
