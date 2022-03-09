@@ -6,9 +6,9 @@ import { PlayerGrid, ShipPlacement } from '../grid/player-grid';
 import { PositionedShip } from '../ship/positioned-ship';
 import { ShipDirection } from '../ship/ship-direction';
 import { EnumHelper } from '../utils/enum-helper';
-import { StdColumnIndex } from './std-column-index';
+import { STD_COLUMN_INDICES, StdColumnIndex } from './std-column-index';
 import { StdCoordinate } from './std-coordinate';
-import { StdRowIndex } from './std-row-index';
+import { STD_ROW_INDICES, StdRowIndex } from './std-row-index';
 import assert = require('node:assert');
 
 export type Cell = PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
@@ -69,15 +69,12 @@ export class StandardPlayerGrid implements PlayerGrid<
 export function getCoordinates(
     shipPlacement: ShipPlacement<StdColumnIndex, StdRowIndex>,
 ): OrderedSet<StdCoordinate> {
-    const columns = EnumHelper.getValues(StdColumnIndex);
-    const rows = EnumHelper.getValues(StdRowIndex);
-
     if (shipPlacement.position.direction === ShipDirection.HORIZONTAL) {
         const rowIndex = shipPlacement.position.origin.rowIndex;
 
         const subColumns = getSubIndices(
             shipPlacement.position.origin.columnIndex,
-            columns,
+            STD_COLUMN_INDICES,
             shipPlacement.ship.size,
         );
 
@@ -90,7 +87,7 @@ export function getCoordinates(
 
     const subRows = getSubIndices(
         shipPlacement.position.origin.rowIndex,
-        rows,
+        STD_ROW_INDICES,
         shipPlacement.ship.size,
     );
 

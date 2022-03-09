@@ -9,7 +9,7 @@ export class EnumHelper {
 
     static getNames<O extends Object, K extends keyof O = keyof O>(
         enumObject: O,
-    ): K[] {
+    ): ReadonlyArray<K> {
         return Object
             .keys(enumObject)
             .filter((key) => Number.isNaN(+key)) as K[];
@@ -24,7 +24,7 @@ export class EnumHelper {
             .includes(enumKey as string);
     }
 
-    static getValues<O extends Object>(enumObject: O): Array<O[keyof O]> {
+    static getValues<O extends Object>(enumObject: O): ReadonlyArray<O[keyof O]> {
         return EnumHelper
             .getNames(enumObject)
             .map((key) => enumObject[key]);

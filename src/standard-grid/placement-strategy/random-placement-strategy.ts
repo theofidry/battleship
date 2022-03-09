@@ -9,9 +9,9 @@ import { ShipDirection } from '../../ship/ship-direction';
 import { ShipPosition } from '../../ship/ship-position';
 import { EnumHelper } from '../../utils/enum-helper';
 import { StandardPlayerGrid } from '../standard-player-grid';
-import { StdColumnIndex } from '../std-column-index';
+import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { StdCoordinate } from '../std-coordinate';
-import { StdRowIndex } from '../std-row-index';
+import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
 export const RandomPlacementStrategy: PlacementStrategy<StdColumnIndex, StdRowIndex> = {
@@ -36,8 +36,6 @@ type FleetPlacement = {
 };
 
 const SHIP_DIRECTION_INDICES = EnumHelper.getValues(ShipDirection);
-const COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
-const ROWS_INDICES = EnumHelper.getValues(StdRowIndex);
 
 const placeShip = ({ grid, placements }: FleetPlacement, ship: Ship): FleetPlacement => {
     let placement: ShipPlacement<StdColumnIndex, StdRowIndex>;
@@ -83,6 +81,6 @@ function createSelectRandomIndex<T>(indices: T[]): ()=> T {
     };
 }
 
-const selectRandomColumn = createSelectRandomIndex(COLUMN_INDICES);
-const selectRandomRow = createSelectRandomIndex(ROWS_INDICES);
+const selectRandomColumn = createSelectRandomIndex(STD_COLUMN_INDICES);
+const selectRandomRow = createSelectRandomIndex(STD_ROW_INDICES);
 const selectRandomDirection = createSelectRandomIndex(SHIP_DIRECTION_INDICES);
