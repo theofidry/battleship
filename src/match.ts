@@ -1,14 +1,12 @@
 import {
-    concatMap,
-    map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay, Subject,
-    switchMap, takeUntil, tap,
+    concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
+    Subject, takeUntil, tap,
 } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
 import { Player } from './player/player';
-import { askTurn } from './standard-grid/hit-strategy/interactive-hit-strategy';
 import assert = require('node:assert');
 
 export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
@@ -32,12 +30,6 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
 
         return range(1, maxTurnOffset + 1)
             .pipe(
-                // switchMap((result) => {
-                //     return askTurn().pipe(
-                //         tap((value) => console.log(value)),
-                //         map(() => result),
-                //     );
-                // }),
                 takeUntil(playing),
                 checkMaxTurn(maxTurn),
                 tap((turn) => this.logger.log(`Turn ${turn}.`)),
@@ -51,8 +43,6 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
 
 export function checkMaxTurn(maxTurn: number): MonoTypeOperatorFunction<number> {
     return tap((turn) => {
-        console.log({ turn, maxTurn });
-
         if (turn > maxTurn) {
             throw MaxTurnReached.forMaxTurn(maxTurn);
         }

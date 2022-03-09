@@ -1,8 +1,5 @@
-import * as inquirer from 'inquirer';
-import * as readline from 'readline';
-import {
-    bindCallback, bindNodeCallback, debounceTime, from, map, Observable, Subject, tap,
-} from 'rxjs';
+import readlineSync from 'readline-sync';
+import { Observable, of } from 'rxjs';
 import { Coordinate } from '../../grid/coordinate';
 import { OpponentGrid } from '../../grid/opponent-grid';
 import { HitStrategy } from '../../player/hit-strategy';
@@ -17,38 +14,10 @@ export class InteractiveHitStrategy implements HitStrategy<StdColumnIndex, StdRo
     }
 
     decide (_grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<Coordinate<StdColumnIndex, StdRowIndex>> {
-        console.log('––––––––––––––––––––––––––––––––––––––––––');
-        askTurn(
-            (answer) => {
-                console.log('HELLLOOOOOOOOOO');
-                console.log(answer);
-            }
-        );
+        const target = readlineSync.question('Target: ');
 
-        return bindCallback(askTurn)()
-            .pipe(
-                tap(() => console.log('HELLO')),
-                debounceTime(2000),
-                map((value) => this.coordinateParser(value as unknown as string)),
-            );
+        return of(this.coordinateParser(target));
     }
 }
 
 export type CoordinateParser = (value: string)=> Coordinate<StdColumnIndex, StdRowIndex>;
-
-export const askTurn = (
-    callback: (answer: string)=> void
-) => {
-    const readlineInterface = readline.createInterface(
-        process.stdin,
-        process.stdout,
-        undefined,
-        true,
-    );
-
-    readlineInterface.question('Target: ', (answer) => {
-        readlineInterface.close();
-
-        return callback(answer);
-    });
-};

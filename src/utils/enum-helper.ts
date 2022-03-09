@@ -30,6 +30,10 @@ export class EnumHelper {
             .map((key) => enumObject[key]);
     }
 
+    static hasValue<O extends Object>(enumObject: O, value: unknown): value is O[keyof O] {
+        return EnumHelper.getValues(enumObject).includes(value as O[keyof O]);
+    }
+
     static takeByKeyOrElse<O extends Object, T>(
         enumObject: O, enumKey: number | string,
         defaultValue: T,
