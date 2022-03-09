@@ -72,7 +72,7 @@ const selectRandomOrigin = (): StdCoordinate => new Coordinate(
     selectRandomRow(),
 );
 
-function createSelectRandomIndex<T>(indices: T[]): ()=> T {
+function createSelectRandomIndex<T>(indices: ReadonlyArray<T>): ()=> T {
     return () => {
         const index = _.sample(indices);
         assert(undefined !== index);

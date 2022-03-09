@@ -114,7 +114,7 @@ function createEmptyGrid(): Grid<StdColumnIndex, StdRowIndex, Cell> {
     return new Grid(rows);
 }
 
-function getSubIndices<T extends PropertyKey>(start: T, source: T[], length: number): T[] {
+function getSubIndices<T extends PropertyKey>(start: T, source: ReadonlyArray<T>, length: number): T[] {
     const startIndex = source.findIndex((value) => value === start);
     assert(-1 !== startIndex);
 
