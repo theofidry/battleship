@@ -49,13 +49,13 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
     }
 }
 
-function checkMaxTurn(maxTurn: number): OperatorFunction<number, number> {
-    return map((turn) => {
+export function checkMaxTurn(maxTurn: number): MonoTypeOperatorFunction<number> {
+    return tap((turn) => {
+        console.log({ turn, maxTurn });
+
         if (turn > maxTurn) {
             throw MaxTurnReached.forMaxTurn(maxTurn);
         }
-
-        return turn;
     });
 }
 
@@ -65,7 +65,7 @@ type TurnBeginning<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
     opponent: Player<ColumnIndex, RowIndex>,
 };
 
-function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
+export function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
     playerA: Player<ColumnIndex, RowIndex>,
     playerB: Player<ColumnIndex, RowIndex>,
 ): OperatorFunction<number, TurnBeginning<ColumnIndex, RowIndex>> {
@@ -91,7 +91,7 @@ export type TurnResult<
     turn: number,
 };
 
-function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
+export function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
     logger: Logger,
 ): OperatorFunction<
     TurnBeginning<ColumnIndex, RowIndex>,
@@ -109,7 +109,7 @@ function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>
     });
 }
 
-function endGameIfWinnerDecided<
+export function endGameIfWinnerDecided<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(

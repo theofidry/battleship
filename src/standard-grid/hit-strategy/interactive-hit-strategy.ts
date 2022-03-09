@@ -1,7 +1,7 @@
 import * as readline from 'readline';
 import { bindCallback, Observable } from 'rxjs';
 
-export function askTurn(): Observable<unknown> {
+export function askTurn(): Observable<string> {
     return bindCallback(askTurnNode)();
 }
 
