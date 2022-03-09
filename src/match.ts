@@ -1,19 +1,75 @@
 import {
     concatMap,
-    map, Observable, OperatorFunction, range, shareReplay, Subject, switchMap, takeUntil, tap,
+    map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay, Subject,
+    switchMap, takeUntil, tap,
 } from 'rxjs';
 import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
 import { Player } from './player/player';
+import { askTurn } from './standard-grid/hit-strategy/interactive-hit-strategy';
 import assert = require('node:assert');
 
-function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
+export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
+    constructor(private readonly logger: Logger) {
+    }
+
+    /**
+     * Plays the match between two players. Once the game is finished, the
+     * winner is returned.
+     */
+    play(
+        playerA: Player<ColumnIndex, RowIndex>,
+        playerB: Player<ColumnIndex, RowIndex>,
+        maxTurn: number,
+    ): Observable<TurnResult<ColumnIndex, RowIndex>> {
+        assert(maxTurn > 1, `Expect the match to allow at least 2 turns. Got ${maxTurn}.`);
+
+        const maxTurnOffset = maxTurn + 1;
+        const playing = new Subject();
+        this.logger.log(`Starting a match between the player "${playerA.name}" and "${playerB.name}".`);
+
+        return range(1, maxTurnOffset + 1)
+            .pipe(
+                // switchMap((result) => {
+                //     return askTurn().pipe(
+                //         tap((value) => console.log(value)),
+                //         map(() => result),
+                //     );
+                // }),
+                takeUntil(playing),
+                checkMaxTurn(maxTurn),
+                tap((turn) => this.logger.log(`Turn ${turn}.`)),
+                selectPlayer(playerA, playerB),
+                playTurn(this.logger),
+                endGameIfWinnerDecided(this.logger, playing),
+                shareReplay(maxTurnOffset),
+            );
+    }
+}
+
+export function checkMaxTurn(maxTurn: number): MonoTypeOperatorFunction<number> {
+    return tap((turn) => {
+        console.log({ turn, maxTurn });
+
+        if (turn > maxTurn) {
+            throw MaxTurnReached.forMaxTurn(maxTurn);
+        }
+    });
+}
+
+type TurnBeginning<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> = {
+    turn: number,
+    player: Player<ColumnIndex, RowIndex>,
+    opponent: Player<ColumnIndex, RowIndex>,
+};
+
+export function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
     playerA: Player<ColumnIndex, RowIndex>,
     playerB: Player<ColumnIndex, RowIndex>,
-) {
-    return map((turn: number) => {
+): OperatorFunction<number, TurnBeginning<ColumnIndex, RowIndex>> {
+    return map((turn) => {
         const players = [playerB, playerA];
 
         const playerIndex = turn % 2;
@@ -35,19 +91,38 @@ export type TurnResult<
     turn: number,
 };
 
-class InvalidPlayerResponse<
+export function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
+    logger: Logger,
+): OperatorFunction<
+    TurnBeginning<ColumnIndex, RowIndex>,
+    TurnResult<ColumnIndex, RowIndex>
+> {
+    return concatMap(({ turn, player, opponent }) => {
+        const playerTurn = new PlayerTurn(
+            logger,
+            turn,
+            player,
+            opponent,
+        );
+
+        return playerTurn.play();
+    });
+}
+
+export function endGameIfWinnerDecided<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> extends Error {
-    constructor(
-        message: string,
-        public readonly turn: number,
-        public readonly playerName: string,
-        public readonly opponentName: string,
-        public readonly target: Coordinate<ColumnIndex, RowIndex>,
-    ) {
-        super(message);
-    }
+>(
+    logger: Logger,
+    playing: Subject<any>,
+): MonoTypeOperatorFunction<TurnResult<ColumnIndex, RowIndex>> {
+    return tap(({ winner, turn }) => {
+        if (winner !== undefined) {
+            logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
+            playing.next(true);
+            playing.complete();
+        }
+    });
 }
 
 class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
@@ -133,64 +208,17 @@ class MaxTurnReached extends Error {
     }
 }
 
-function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
-    logger: Logger,
-): OperatorFunction<
-    { turn: number, player: Player<ColumnIndex, RowIndex>, opponent: Player<ColumnIndex, RowIndex> },
-    TurnResult<ColumnIndex, RowIndex>
-> {
-    return concatMap(({ turn, player, opponent }) => {
-        const playerTurn = new PlayerTurn(
-            logger,
-            turn,
-            player,
-            opponent,
-        );
-
-        return playerTurn.play();
-    });
-}
-
-export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
-    constructor(private readonly logger: Logger) {
-    }
-
-    /**
-     * Plays the match between two players. Once the game is finished, the
-     * winner is returned.
-     */
-    play(
-        playerA: Player<ColumnIndex, RowIndex>,
-        playerB: Player<ColumnIndex, RowIndex>,
-        maxTurn: number,
-    ): Observable<TurnResult<ColumnIndex, RowIndex>> {
-        assert(maxTurn > 1, `Expect the match to allow at least 2 turns. Got ${maxTurn}.`);
-
-        const maxTurnOffset = maxTurn + 1;
-        const playing = new Subject();
-        this.logger.log(`Starting a match between the player "${playerA.name}" and "${playerB.name}".`);
-
-        return range(1, maxTurnOffset + 1)
-            .pipe(
-                takeUntil(playing),
-                map((turn) => {
-                    if (turn > maxTurn) {
-                        throw MaxTurnReached.forMaxTurn(maxTurn);
-                    }
-
-                    return turn;
-                }),
-                tap((turn) => this.logger.log(`Turn ${turn}.`)),
-                selectPlayer(playerA, playerB),
-                playTurn(this.logger),
-                tap(({ winner, turn }) => {
-                    if (winner !== undefined) {
-                        this.logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
-                        playing.next(true);
-                        playing.complete();
-                    }
-                }),
-                shareReplay(maxTurnOffset),
-            );
+class InvalidPlayerResponse<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> extends Error {
+    constructor(
+        message: string,
+        public readonly turn: number,
+        public readonly playerName: string,
+        public readonly opponentName: string,
+        public readonly target: Coordinate<ColumnIndex, RowIndex>,
+    ) {
+        super(message);
     }
 }

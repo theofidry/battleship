@@ -9,8 +9,9 @@ import { ShipDirection } from '../../ship/ship-direction';
 import { ShipPosition } from '../../ship/ship-position';
 import { EnumHelper } from '../../utils/enum-helper';
 import { StandardPlayerGrid } from '../standard-player-grid';
-import { StdColumnIndex } from '../std-column-index';
-import { StdRowIndex } from '../std-row-index';
+import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
+import { StdCoordinate } from '../std-coordinate';
+import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
 export const RandomPlacementStrategy: PlacementStrategy<StdColumnIndex, StdRowIndex> = {
@@ -35,8 +36,6 @@ type FleetPlacement = {
 };
 
 const SHIP_DIRECTION_INDICES = EnumHelper.getValues(ShipDirection);
-const COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
-const ROWS_INDICES = EnumHelper.getValues(StdRowIndex);
 
 const placeShip = ({ grid, placements }: FleetPlacement, ship: Ship): FleetPlacement => {
     let placement: ShipPlacement<StdColumnIndex, StdRowIndex>;
@@ -68,12 +67,12 @@ const selectRandomPlacement = (ship: Ship): ShipPlacement<StdColumnIndex, StdRow
     ),
 });
 
-const selectRandomOrigin = (): Coordinate<StdColumnIndex, StdRowIndex> => new Coordinate(
+const selectRandomOrigin = (): StdCoordinate => new Coordinate(
     selectRandomColumn(),
     selectRandomRow(),
 );
 
-function createSelectRandomIndex<T>(indices: T[]): ()=> T {
+function createSelectRandomIndex<T>(indices: ReadonlyArray<T>): ()=> T {
     return () => {
         const index = _.sample(indices);
         assert(undefined !== index);
@@ -82,6 +81,6 @@ function createSelectRandomIndex<T>(indices: T[]): ()=> T {
     };
 }
 
-const selectRandomColumn = createSelectRandomIndex(COLUMN_INDICES);
-const selectRandomRow = createSelectRandomIndex(ROWS_INDICES);
+const selectRandomColumn = createSelectRandomIndex(STD_COLUMN_INDICES);
+const selectRandomRow = createSelectRandomIndex(STD_ROW_INDICES);
 const selectRandomDirection = createSelectRandomIndex(SHIP_DIRECTION_INDICES);

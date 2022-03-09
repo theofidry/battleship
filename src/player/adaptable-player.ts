@@ -1,4 +1,4 @@
-import { Observable, of, tap } from 'rxjs';
+import { Observable, single, tap } from 'rxjs';
 import { HitResponse } from '../communication/hit-response';
 import { ShotAcknowledgement } from '../communication/shot-acknowledgement';
 import { Coordinate } from '../grid/coordinate';
@@ -42,6 +42,7 @@ export class AdaptablePlayer<
             .decide(this.opponentGrid)
             .pipe(
                 tap((nextMove) => this.lastMove = nextMove),
+                single(),    // This is to ensure it behaves the same way as if the input was a user input
             );
     }
 

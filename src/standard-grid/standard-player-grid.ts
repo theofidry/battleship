@@ -6,8 +6,9 @@ import { PlayerGrid, ShipPlacement } from '../grid/player-grid';
 import { PositionedShip } from '../ship/positioned-ship';
 import { ShipDirection } from '../ship/ship-direction';
 import { EnumHelper } from '../utils/enum-helper';
-import { StdColumnIndex } from './std-column-index';
-import { StdRowIndex } from './std-row-index';
+import { STD_COLUMN_INDICES, StdColumnIndex } from './std-column-index';
+import { StdCoordinate } from './std-coordinate';
+import { STD_ROW_INDICES, StdRowIndex } from './std-row-index';
 import assert = require('node:assert');
 
 export type Cell = PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
@@ -39,7 +40,7 @@ export class StandardPlayerGrid implements PlayerGrid<
         );
     }
 
-    recordHit(coordinate: Coordinate<StdColumnIndex, StdRowIndex>): HitResponse {
+    recordHit(coordinate: StdCoordinate): HitResponse {
         const hitShip = this.innerGrid.getCell(coordinate);
 
         if (undefined === hitShip) {
@@ -67,20 +68,17 @@ export class StandardPlayerGrid implements PlayerGrid<
 
 export function getCoordinates(
     shipPlacement: ShipPlacement<StdColumnIndex, StdRowIndex>,
-): OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>> {
-    const columns = EnumHelper.getValues(StdColumnIndex);
-    const rows = EnumHelper.getValues(StdRowIndex);
-
+): OrderedSet<StdCoordinate> {
     if (shipPlacement.position.direction === ShipDirection.HORIZONTAL) {
         const rowIndex = shipPlacement.position.origin.rowIndex;
 
         const subColumns = getSubIndices(
             shipPlacement.position.origin.columnIndex,
-            columns,
+            STD_COLUMN_INDICES,
             shipPlacement.ship.size,
         );
 
-        return OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>>(
+        return OrderedSet<StdCoordinate>(
             subColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex)),
         );
     }
@@ -89,11 +87,11 @@ export function getCoordinates(
 
     const subRows = getSubIndices(
         shipPlacement.position.origin.rowIndex,
-        rows,
+        STD_ROW_INDICES,
         shipPlacement.ship.size,
     );
 
-    return OrderedSet<Coordinate<StdColumnIndex, StdRowIndex>>(
+    return OrderedSet<StdCoordinate>(
         subRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex)),
     );
 }
@@ -116,7 +114,7 @@ function createEmptyGrid(): Grid<StdColumnIndex, StdRowIndex, Cell> {
     return new Grid(rows);
 }
 
-function getSubIndices<T extends PropertyKey>(start: T, source: T[], length: number): T[] {
+function getSubIndices<T extends PropertyKey>(start: T, source: ReadonlyArray<T>, length: number): T[] {
     const startIndex = source.findIndex((value) => value === start);
     assert(-1 !== startIndex);
 
