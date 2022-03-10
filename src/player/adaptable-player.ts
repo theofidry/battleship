@@ -2,6 +2,7 @@ import { Observable, single, tap } from 'rxjs';
 import { HitResponse } from '../communication/hit-response';
 import { ShotAcknowledgement } from '../communication/shot-acknowledgement';
 import { Coordinate } from '../grid/coordinate';
+import { GridRows } from '../grid/grid';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { PlayerGrid } from '../grid/player-grid';
 import { Fleet } from '../ship/fleet';
@@ -19,7 +20,7 @@ export class AdaptablePlayer<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
     Cell,
-> implements Player<ColumnIndex, RowIndex> {
+> implements Player<ColumnIndex, RowIndex, Cell> {
     private readonly grid: PlayerGrid<ColumnIndex, RowIndex, PositionedShip<ColumnIndex, RowIndex>|undefined>;
 
     private readonly opponentGrid: OpponentGrid<ColumnIndex, RowIndex, Cell>;
@@ -76,5 +77,13 @@ export class AdaptablePlayer<
         } catch (error) {
             return nothing();
         }
+    }
+
+    getPlayerGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, PositionedShip<ColumnIndex, RowIndex>|undefined>> {
+        return this.grid.getRows();
+    }
+
+    getOpponentGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>> {
+        return this.opponentGrid.getRows();
     }
 }

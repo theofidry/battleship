@@ -9,7 +9,11 @@ import { Logger } from './logger/logger';
 import { Player } from './player/player';
 import assert = require('node:assert');
 
-export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
+export class Match<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+    OpponentGridCell,
+> {
     constructor(private readonly logger: Logger) {
     }
 
@@ -18,10 +22,10 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
      * winner is returned.
      */
     play(
-        playerA: Player<ColumnIndex, RowIndex>,
-        playerB: Player<ColumnIndex, RowIndex>,
+        playerA: Player<ColumnIndex, RowIndex, OpponentGridCell>,
+        playerB: Player<ColumnIndex, RowIndex, OpponentGridCell>,
         maxTurn: number,
-    ): Observable<TurnResult<ColumnIndex, RowIndex>> {
+    ): Observable<TurnResult<ColumnIndex, RowIndex, OpponentGridCell>> {
         assert(maxTurn > 1, `Expect the match to allow at least 2 turns. Got ${maxTurn}.`);
 
         const maxTurnOffset = maxTurn + 1;
@@ -49,16 +53,16 @@ function checkMaxTurn(maxTurn: number): MonoTypeOperatorFunction<number> {
     });
 }
 
-type TurnBeginning<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> = {
+type TurnBeginning<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell> = {
     turn: number,
-    player: Player<ColumnIndex, RowIndex>,
-    opponent: Player<ColumnIndex, RowIndex>,
+    player: Player<ColumnIndex, RowIndex, OpponentGridCell>,
+    opponent: Player<ColumnIndex, RowIndex, OpponentGridCell>,
 };
 
-function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
-    playerA: Player<ColumnIndex, RowIndex>,
-    playerB: Player<ColumnIndex, RowIndex>,
-): OperatorFunction<number, TurnBeginning<ColumnIndex, RowIndex>> {
+function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell>(
+    playerA: Player<ColumnIndex, RowIndex, OpponentGridCell>,
+    playerB: Player<ColumnIndex, RowIndex, OpponentGridCell>,
+): OperatorFunction<number, TurnBeginning<ColumnIndex, RowIndex, OpponentGridCell>> {
     return map((turn) => {
         const players = [playerB, playerA];
 
@@ -76,16 +80,17 @@ function selectPlayer<ColumnIndex extends PropertyKey, RowIndex extends Property
 export type TurnResult<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
+    OpponentGridCell,
 > = {
-    winner: Player<ColumnIndex, RowIndex>|undefined,
+    winner: Player<ColumnIndex, RowIndex, OpponentGridCell>|undefined,
     turn: number,
 };
 
-function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>(
+function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell>(
     logger: Logger,
 ): OperatorFunction<
-    TurnBeginning<ColumnIndex, RowIndex>,
-    TurnResult<ColumnIndex, RowIndex>
+    TurnBeginning<ColumnIndex, RowIndex, OpponentGridCell>,
+    TurnResult<ColumnIndex, RowIndex, OpponentGridCell>
 > {
     return concatMap(({ turn, player, opponent }) => {
         const playerTurn = new PlayerTurn(
@@ -102,10 +107,11 @@ function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>
 function endGameIfWinnerDecided<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
+    OpponentGridCell,
 >(
     logger: Logger,
     playing: Subject<any>,
-): MonoTypeOperatorFunction<TurnResult<ColumnIndex, RowIndex>> {
+): MonoTypeOperatorFunction<TurnResult<ColumnIndex, RowIndex, OpponentGridCell>> {
     return tap(({ winner, turn }) => {
         if (winner !== undefined) {
             logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
@@ -115,16 +121,16 @@ function endGameIfWinnerDecided<
     });
 }
 
-class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> {
+class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell> {
     constructor(
         public readonly logger: Logger,
         public readonly turn: number,
-        public readonly player: Player<ColumnIndex, RowIndex>,
-        public readonly opponent: Player<ColumnIndex, RowIndex>,
+        public readonly player: Player<ColumnIndex, RowIndex, OpponentGridCell>,
+        public readonly opponent: Player<ColumnIndex, RowIndex, OpponentGridCell>,
     ) {
     }
 
-    play(): Observable<TurnResult<ColumnIndex, RowIndex>> {
+    play(): Observable<TurnResult<ColumnIndex, RowIndex, OpponentGridCell>> {
         return this.player
             .askMove()
             .pipe(
@@ -132,7 +138,7 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
             );
     }
 
-    private getResult(targetCoordinate: Coordinate<ColumnIndex, RowIndex>): TurnResult<ColumnIndex, RowIndex> {
+    private getResult(targetCoordinate: Coordinate<ColumnIndex, RowIndex>): TurnResult<ColumnIndex, RowIndex, OpponentGridCell> {
         this.logger.log(`"${this.player.name}" targets "${targetCoordinate.toString()}".`);
 
         return this.opponent
@@ -152,7 +158,7 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey> 
     private handleOpponentResponse(
         hitResponse: HitResponse,
         targetCoordinate: Coordinate<ColumnIndex, RowIndex>
-    ): TurnResult<ColumnIndex, RowIndex> {
+    ): TurnResult<ColumnIndex, RowIndex, OpponentGridCell> {
         this.logger.log(`"${this.opponent.name}" replies "${hitResponse}".`);
 
         const acknowledgement = this.player.sendResponse(hitResponse);
