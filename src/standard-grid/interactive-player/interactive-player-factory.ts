@@ -1,5 +1,4 @@
 import { Logger } from '../../logger/logger';
-import { AdaptablePlayer } from '../../player/adaptable-player';
 import { Player } from '../../player/player';
 import { Fleet } from '../../ship/fleet';
 import { InteractiveHitStrategy } from '../hit-strategy/interactive-hit-strategy';
@@ -8,9 +7,11 @@ import { Cell, StandardOpponentGrid } from '../standard-opponent-grid';
 import { StdColumnIndex } from '../std-column-index';
 import { StdRowIndex } from '../std-row-index';
 import { parseCoordinate } from './coordinate-parser';
+import { createGridPrinter } from './grid-printer';
+import { InteractivePlayer } from './interactive-player';
 
 export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<StdColumnIndex, StdRowIndex, Cell> {
-    return new AdaptablePlayer(
+    return new InteractivePlayer(
         'You',
         fleet,
         RandomPlacementStrategy,
@@ -19,5 +20,6 @@ export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<St
             logger,
         ),
         () => new StandardOpponentGrid(),
+        createGridPrinter(logger),
     );
 }
