@@ -15,6 +15,7 @@ export function createGridPrinter(logger: Logger): PlayerGridPrinter {
 }
 
 export function printPlayerGrid(player: AdaptablePlayer<StdColumnIndex, StdRowIndex, Cell>, logger: Logger): void {
+    logger.log('Your fleet:');
     logger.log(
         printGrid(
             player.getPlayerGridRows(),
@@ -22,6 +23,7 @@ export function printPlayerGrid(player: AdaptablePlayer<StdColumnIndex, StdRowIn
         ),
     );
 
+    logger.log('Your target grid:');
     logger.log(
         printGrid(
             player.getOpponentGridRows(),
@@ -32,7 +34,7 @@ export function printPlayerGrid(player: AdaptablePlayer<StdColumnIndex, StdRowIn
 
 function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | undefined, coordinate: StdCoordinate): string {
     if (undefined === cell) {
-        return ' ';
+        return '.';
     }
 
     const positionedShip = cell;
@@ -51,7 +53,7 @@ function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | und
 function printOpponentCell(cell: Cell): string {
     switch (cell) {
         case Cell.NONE:
-            return '';
+            return '.';
 
         case Cell.MISSED:
             return 'M';

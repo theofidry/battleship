@@ -28,5 +28,5 @@ export function printGrid<
 
     const stringTable = stringConsole.table(table) as unknown as string;
 
-    return stringTable.replace(/'(.+)'/, ' $1 ');
+    return stringTable.replaceAll(/'(.+?)'/g, ' $1 ');
 }
