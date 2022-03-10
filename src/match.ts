@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import {
     concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
     Subject, takeUntil, tap,
@@ -7,6 +8,7 @@ import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
 import { Player } from './player/player';
+import { InteractivePlayer } from './standard-grid/interactive-player/interactive-player';
 import assert = require('node:assert');
 
 export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell> {
@@ -26,14 +28,23 @@ export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey
 
         const maxTurnOffset = maxTurn + 1;
         const playing = new Subject();
-        this.logger.log(`Starting a match between the player "${playerA.name}" and "${playerB.name}".`);
+        this.logger.log(`Starting a match between the player "${chalk.redBright(playerA.name)}" and "${chalk.blueBright(playerB.name)}".`);
 
         return range(1, maxTurnOffset + 1)
             .pipe(
                 takeUntil(playing),
                 checkMaxTurn(maxTurn),
-                tap((turn) => this.logger.log(`Turn ${turn}.`)),
                 selectPlayer(playerA, playerB),
+                tap(({ player }) => {
+                    const newLineCount = 4;
+
+                    if (!(player instanceof InteractivePlayer)) {
+                        for (let i = 0; i < newLineCount; i++) {
+                            this.logger.log('');
+                        }
+                    }
+                }),
+                tap(({ turn, player} ) => this.logger.log(`Turn ${turn}: ${playerA.name === player.name ? chalk.redBright(playerA.name) : chalk.blueBright(playerB.name)}`)),
                 playTurn(this.logger),
                 endGameIfWinnerDecided(this.logger, playing),
                 shareReplay(maxTurnOffset),
@@ -143,7 +154,7 @@ class PlayerTurn<
     }
 
     private getResult(targetCoordinate: Coordinate<ColumnIndex, RowIndex>): TurnResult<ColumnIndex, RowIndex, OpponentGridCell> {
-        this.logger.log(`"${this.player.name}" targets "${targetCoordinate.toString()}".`);
+        this.logger.log(`P: targets "${targetCoordinate.toString()}".`);
 
         return this.opponent
             .askResponse(targetCoordinate)
@@ -163,12 +174,32 @@ class PlayerTurn<
         hitResponse: HitResponse,
         targetCoordinate: Coordinate<ColumnIndex, RowIndex>
     ): TurnResult<ColumnIndex, RowIndex, OpponentGridCell> {
-        this.logger.log(`"${this.opponent.name}" replies "${hitResponse}".`);
+        let hitResponseString: string = hitResponse.valueOf();
+
+        switch (hitResponse) {
+            case HitResponse.SUNK:
+                hitResponseString = chalk.yellowBright(hitResponse);
+                break;
+
+            case HitResponse.HIT:
+                hitResponseString = chalk.redBright(hitResponse);
+                break;
+
+            case HitResponse.MISS:
+                hitResponseString = chalk.blueBright(hitResponse);
+                break;
+
+            case HitResponse.WON:
+                hitResponseString = chalk.bold(chalk.yellowBright(hitResponse));
+                break;
+        }
+
+        this.logger.log(`O: replies "${hitResponseString}".`);
 
         const acknowledgement = this.player.sendResponse(hitResponse);
 
         acknowledgement
-            .ifPresent(() => this.logger.log(`"${this.player.name}" acknowledges the answer.`))
+            .ifPresent(() => this.logger.log('P: acknowledges the answer.'))
             .orElseThrow(
                 this.createError(
                     'The player could not acknowledge the opponent response.',

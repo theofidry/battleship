@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { assertIsUnreachableCase } from '../../assert/assert-is-unreachable';
 import { printGrid } from '../../grid/grid-printer';
 import { Logger } from '../../logger/logger';
@@ -44,10 +45,10 @@ function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | und
     }
 
     if (positionedShip.isHit(coordinate)) {
-        return 'H';
+        return '░';
     }
 
-    return 'I';
+    return '▓';
 }
 
 function printOpponentCell(cell: Cell): string {
@@ -56,10 +57,10 @@ function printOpponentCell(cell: Cell): string {
             return '.';
 
         case Cell.MISSED:
-            return 'M';
+            return ' ';
 
         case Cell.HIT:
-            return 'H';
+            return '▓';
     }
 
     assertIsUnreachableCase(cell);
