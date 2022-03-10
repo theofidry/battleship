@@ -1,28 +1,9 @@
-import { Coordinate } from '../grid/coordinate';
-import { Logger } from '../logger/logger';
-import { AdaptablePlayer } from '../player/adaptable-player';
-import { Player } from '../player/player';
-import { Fleet } from '../ship/fleet';
-import { EnumHelper } from '../utils/enum-helper';
-import { CoordinateParser, InteractiveHitStrategy } from './hit-strategy/interactive-hit-strategy';
-import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
-import { StandardOpponentGrid } from './standard-opponent-grid';
-import { STD_COLUMN_INDICES, StdColumnIndex } from './std-column-index';
-import { STD_ROW_INDICES, StdRowIndex } from './std-row-index';
+import { Coordinate } from '../../grid/coordinate';
+import { EnumHelper } from '../../utils/enum-helper';
+import { CoordinateParser } from '../hit-strategy/interactive-hit-strategy';
+import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
+import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
-
-export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<StdColumnIndex, StdRowIndex> {
-    return new AdaptablePlayer(
-        'You',
-        fleet,
-        RandomPlacementStrategy,
-        new InteractiveHitStrategy(
-            parseCoordinate,
-            logger,
-        ),
-        () => new StandardOpponentGrid(),
-    );
-}
 
 export const parseCoordinate: CoordinateParser = (rawCoordinate) => {
     const result = rawCoordinate.match(/([A-Z]+)([0-9]+)/);
