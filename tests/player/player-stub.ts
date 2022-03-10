@@ -8,6 +8,7 @@ import { ShotAcknowledgement } from '../../src/communication/shot-acknowledgemen
 import { Coordinate } from '../../src/grid/coordinate';
 import { GridRows } from '../../src/grid/grid';
 import { Player } from '../../src/player/player';
+import { PositionedShip } from '../../src/ship/positioned-ship';
 import { hasOwnProperty } from '../../src/utils/has-own-property';
 import { nothingIfUndefined, Optional } from '../../src/utils/optional';
 import assert = require('node:assert');
@@ -117,7 +118,7 @@ export class PlayerStub<
         return Map();
     }
 
-    getPlayerGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, unknown>> {
+    getPlayerGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, PositionedShip<ColumnIndex, RowIndex> | undefined>> {
         return Map();
     }
 

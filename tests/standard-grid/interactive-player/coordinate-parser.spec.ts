@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { Coordinate } from '../../src/grid/coordinate';
-import { parseCoordinate } from '../../src/standard-grid/interactive-player/interactive-player-factory';
-import { StdColumnIndex } from '../../src/standard-grid/std-column-index';
-import { StdCoordinate } from '../../src/standard-grid/std-coordinate';
-import { StdRowIndex } from '../../src/standard-grid/std-row-index';
-import { expectError } from '../chai-assertions';
+import { Coordinate } from '../../../src/grid/coordinate';
+import { parseCoordinate } from '../../../src/standard-grid/interactive-player/coordinate-parser';
+import { StdColumnIndex } from '../../../src/standard-grid/std-column-index';
+import { StdCoordinate } from '../../../src/standard-grid/std-coordinate';
+import { StdRowIndex } from '../../../src/standard-grid/std-row-index';
+import { expectError } from '../../chai-assertions';
 
 class ValidCoordinateSet {
     constructor(

@@ -11,7 +11,11 @@ import { Player } from './player/player';
 import { InteractivePlayer } from './standard-grid/interactive-player/interactive-player';
 import assert = require('node:assert');
 
-export class Match<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell> {
+export class Match<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+    OpponentGridCell,
+> {
     constructor(private readonly logger: Logger) {
     }
 

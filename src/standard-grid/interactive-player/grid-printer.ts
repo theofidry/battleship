@@ -1,21 +1,20 @@
-import chalk from 'chalk';
 import { assertIsUnreachableCase } from '../../assert/assert-is-unreachable';
 import { printGrid } from '../../grid/grid-printer';
 import { Logger } from '../../logger/logger';
-import { AdaptablePlayer } from '../../player/adaptable-player';
+import { Player } from '../../player/player';
 import { PositionedShip } from '../../ship/positioned-ship';
 import { Cell } from '../standard-opponent-grid';
 import { StdColumnIndex } from '../std-column-index';
 import { StdCoordinate } from '../std-coordinate';
 import { StdRowIndex } from '../std-row-index';
 
-export type PlayerGridPrinter = (player: AdaptablePlayer<StdColumnIndex, StdRowIndex, Cell>)=> void;
+export type PlayerGridPrinter = (player: Player<StdColumnIndex, StdRowIndex, Cell>)=> void;
 
 export function createGridPrinter(logger: Logger): PlayerGridPrinter {
     return (player) => printPlayerGrid(player, logger);
 }
 
-export function printPlayerGrid(player: AdaptablePlayer<StdColumnIndex, StdRowIndex, Cell>, logger: Logger): void {
+function printPlayerGrid(player: Player<StdColumnIndex, StdRowIndex, Cell>, logger: Logger): void {
     logger.log('Your fleet:');
     logger.log(
         printGrid(
@@ -33,7 +32,7 @@ export function printPlayerGrid(player: AdaptablePlayer<StdColumnIndex, StdRowIn
     );
 }
 
-function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | undefined, coordinate: StdCoordinate): string {
+function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | undefined, _coordinate: StdCoordinate): string {
     if (undefined === cell) {
         return '.';
     }
