@@ -35,6 +35,13 @@ export class PositionedShip<
         return this.sunk;
     }
 
+    isHit(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
+        const coordinateKey = coordinate.toString();
+        this.assertIsKnownCoordinate(coordinateKey);
+
+        return this.hitCoordinates.has(coordinateKey);
+    }
+
     getHits(): List<boolean> {
         return List(this.hitCoordinates.values());
     }

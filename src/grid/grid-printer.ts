@@ -1,5 +1,12 @@
 import stringConsole from '../utils/string-console';
+import { Coordinate } from './coordinate';
 import { GridRows } from './grid';
+
+export type CellPrinter<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+    Cell,
+> = (cell: Cell, coordinate: Coordinate<ColumnIndex, RowIndex>)=> number | string | null;
 
 export function printGrid<
     ColumnIndex extends PropertyKey,
@@ -7,13 +14,13 @@ export function printGrid<
     Cell,
 >(
     gridRows: Readonly<GridRows<ColumnIndex, RowIndex, Cell>>,
-    cellPrinter: (cell: Cell)=> number | string | null,
+    cellPrinter: CellPrinter<ColumnIndex, RowIndex, Cell>,
 ): string {
     const table = {
         ...gridRows
-            .map((row) => ({
+            .map((row, rowIndex) => ({
                 ...row
-                    .map((cell) => cellPrinter(cell))
+                    .map((cell, columnIndex) => cellPrinter(cell, new Coordinate(columnIndex, rowIndex)))
                     .toObject(),
             }))
             .toObject(),
