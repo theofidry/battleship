@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 import * as _ from 'lodash';
 import { Observable, of } from 'rxjs';
 import { assertIsNonNullObject } from '../../src/assert/assert-is-non-null-object';
@@ -6,6 +6,7 @@ import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../src/communication/hit-response';
 import { ShotAcknowledgement } from '../../src/communication/shot-acknowledgement';
 import { Coordinate } from '../../src/grid/coordinate';
+import { GridRows } from '../../src/grid/grid';
 import { Player } from '../../src/player/player';
 import { hasOwnProperty } from '../../src/utils/has-own-property';
 import { nothingIfUndefined, Optional } from '../../src/utils/optional';
@@ -71,7 +72,7 @@ type PlayerAction<
 export class PlayerStub<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> implements Player<ColumnIndex, RowIndex> {
+> implements Player<ColumnIndex, RowIndex, unknown> {
     private turnActions: Array<PlayerAction<ColumnIndex, RowIndex>>;
 
     constructor(
@@ -110,6 +111,14 @@ export class PlayerStub<
         );
 
         return nothingIfUndefined(action.acknowledgement);
+    }
+
+    getOpponentGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, unknown>> {
+        return Map();
+    }
+
+    getPlayerGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, unknown>> {
+        return Map();
     }
 
     private getNextMove(): PlayerAction<ColumnIndex, RowIndex> {
