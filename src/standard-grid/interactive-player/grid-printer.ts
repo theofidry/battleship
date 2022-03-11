@@ -112,6 +112,7 @@ function combineTables(tableA: string, tableB: string): string {
     const tableBRows = tableB.split('\n');
 
     return tableARows
-        .map((row, index) => `${row}${TABLE_SEPARATOR}${tableBRows[index]}`)
-        .join('\n');
+        .map((row, index) => row + TABLE_SEPARATOR + tableBRows[index])
+        .join('\n')
+        .trimEnd();
 }
