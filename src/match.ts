@@ -6,6 +6,7 @@ import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
 import { HitResponse } from './communication/hit-response';
 import { Coordinate } from './grid/coordinate';
 import { Logger } from './logger/logger';
+import { MatchLogger } from './match-logger';
 import { Player } from './player/player';
 import assert = require('node:assert');
 
@@ -14,7 +15,10 @@ export class Match<
     RowIndex extends PropertyKey,
     OpponentGridCell,
 > {
-    constructor(private readonly logger: Logger) {
+    private readonly logger: MatchLogger;
+
+    constructor(logger: Logger) {
+        this.logger = new MatchLogger(logger);
     }
 
     /**
@@ -30,15 +34,16 @@ export class Match<
 
         const maxTurnOffset = maxTurn + 1;
         const playing = new Subject();
-        this.logger.log(`Starting a match between the player "${playerA.name}" and "${playerB.name}".`);
+        this.logger.start(playerA, playerB);
 
         return range(1, maxTurnOffset + 1)
             .pipe(
                 takeUntil(playing),
                 checkMaxTurn(maxTurn),
-                tap((turn) => this.logger.log(`Turn ${turn}.`)),
+                tap((turn) => this.logger.startTurn(turn)),
                 selectPlayer(playerA, playerB),
                 playTurn(this.logger),
+                tap(() => this.logger.endTurn()),
                 endGameIfWinnerDecided(this.logger, playing),
                 shareReplay(maxTurnOffset),
             );
@@ -87,7 +92,7 @@ export type TurnResult<
 };
 
 function playTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell>(
-    logger: Logger,
+    logger: MatchLogger,
 ): OperatorFunction<
     TurnBeginning<ColumnIndex, RowIndex, OpponentGridCell>,
     TurnResult<ColumnIndex, RowIndex, OpponentGridCell>
@@ -109,12 +114,12 @@ function endGameIfWinnerDecided<
     RowIndex extends PropertyKey,
     OpponentGridCell,
 >(
-    logger: Logger,
+    logger: MatchLogger,
     playing: Subject<any>,
 ): MonoTypeOperatorFunction<TurnResult<ColumnIndex, RowIndex, OpponentGridCell>> {
     return tap(({ winner, turn }) => {
         if (winner !== undefined) {
-            logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
+            logger.logWinner(winner, turn);
             playing.next(true);
             playing.complete();
         }
@@ -123,7 +128,7 @@ function endGameIfWinnerDecided<
 
 class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, OpponentGridCell> {
     constructor(
-        public readonly logger: Logger,
+        public readonly logger: MatchLogger,
         public readonly turn: number,
         public readonly player: Player<ColumnIndex, RowIndex, OpponentGridCell>,
         public readonly opponent: Player<ColumnIndex, RowIndex, OpponentGridCell>,
@@ -139,7 +144,7 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, 
     }
 
     private getResult(targetCoordinate: Coordinate<ColumnIndex, RowIndex>): TurnResult<ColumnIndex, RowIndex, OpponentGridCell> {
-        this.logger.log(`"${this.player.name}" targets "${targetCoordinate.toString()}".`);
+        this.logger.recordPlayerMove(this.player, targetCoordinate);
 
         return this.opponent
             .askResponse(targetCoordinate)
@@ -159,12 +164,11 @@ class PlayerTurn<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey, 
         hitResponse: HitResponse,
         targetCoordinate: Coordinate<ColumnIndex, RowIndex>
     ): TurnResult<ColumnIndex, RowIndex, OpponentGridCell> {
-        this.logger.log(`"${this.opponent.name}" replies "${hitResponse}".`);
+        this.logger.recordOpponentResponse(this.opponent, hitResponse);
 
         const acknowledgement = this.player.sendResponse(hitResponse);
 
         acknowledgement
-            .ifPresent(() => this.logger.log(`"${this.player.name}" acknowledges the answer.`))
             .orElseThrow(
                 this.createError(
                     'The player could not acknowledge the opponent response.',
