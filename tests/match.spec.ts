@@ -63,15 +63,12 @@ describe('Game', () => {
             createLogRecord('Turn 1.'),
             createLogRecord('"Player A" targets "C1R2".'),
             createLogRecord('"Player B" replies "miss".'),
-            createLogRecord('"Player A" acknowledges the answer.'),
             createLogRecord('Turn 2.'),
             createLogRecord('"Player B" targets "C2R1".'),
             createLogRecord('"Player A" replies "hit".'),
-            createLogRecord('"Player B" acknowledges the answer.'),
             createLogRecord('Turn 3.'),
             createLogRecord('"Player A" targets "C1R1".'),
             createLogRecord('"Player B" replies "won".'),
-            createLogRecord('"Player A" acknowledges the answer.'),
             createLogRecord('"Player A" has won the match in 3 turns.'),
         ];
 
@@ -270,11 +267,9 @@ describe('Game', () => {
             createLogRecord('Turn 1.'),
             createLogRecord('"Player A" targets "C1R2".'),
             createLogRecord('"Player B" replies "miss".'),
-            createLogRecord('"Player A" acknowledges the answer.'),
             createLogRecord('Turn 2.'),
             createLogRecord('"Player B" targets "C2R1".'),
             createLogRecord('"Player A" replies "hit".'),
-            createLogRecord('"Player B" acknowledges the answer.'),
         ];
 
         const result$ = game.play(playerA, playerB, 2);
