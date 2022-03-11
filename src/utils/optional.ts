@@ -9,8 +9,8 @@ const JustTypeDiscriminant = Symbol('just_type');
 const NothingTypeDiscriminant = Symbol('nothing_type');
 
 type Just<T> = {
-    type: typeof JustTypeDiscriminant,
-    value: T,
+    readonly type: typeof JustTypeDiscriminant,
+    readonly value: T,
 };
 
 function isJust<T>(value: unknown): value is Just<T> {
@@ -31,7 +31,7 @@ function justObject<T>(value: T): Just<T> {
 }
 
 type Nothing = {
-    type: typeof NothingTypeDiscriminant,
+    readonly type: typeof NothingTypeDiscriminant,
 };
 
 function nothingObject(): Nothing {
