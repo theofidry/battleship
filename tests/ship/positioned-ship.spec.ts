@@ -90,6 +90,9 @@ describe('PositionedShip', () => {
         positionedShip.markAsHit(new Coordinate('A', '2'));
 
         expect(positionedShip.isSunk()).to.equal(false);
+        expect(positionedShip.isHit(new Coordinate('A', '1'))).to.equal(false);
+        expect(positionedShip.isHit(new Coordinate('A', '2'))).to.equal(true);
+        expect(positionedShip.isHit(new Coordinate('A', '3'))).to.equal(false);
         expect(positionedShip.getHits().toArray()).to.eqls([false, true, false]);
     });
 
@@ -98,6 +101,9 @@ describe('PositionedShip', () => {
         positionedShip.markAsHit(new Coordinate('A', '2'));
 
         expect(positionedShip.isSunk()).to.equal(false);
+        expect(positionedShip.isHit(new Coordinate('A', '1'))).to.equal(false);
+        expect(positionedShip.isHit(new Coordinate('A', '2'))).to.equal(true);
+        expect(positionedShip.isHit(new Coordinate('A', '3'))).to.equal(false);
         expect(positionedShip.getHits().toArray()).to.eqls([false, true, false]);
     });
 
@@ -121,6 +127,9 @@ describe('PositionedShip', () => {
         positionedShip.markAsHit(new Coordinate('A', '1'));
 
         expect(positionedShip.isSunk()).to.equal(true);
+        expect(positionedShip.isHit(new Coordinate('A', '1'))).to.equal(true);
+        expect(positionedShip.isHit(new Coordinate('A', '2'))).to.equal(true);
+        expect(positionedShip.isHit(new Coordinate('A', '3'))).to.equal(true);
         expect(positionedShip.getHits().toArray()).to.eqls([true, true, true]);
     });
 
@@ -134,6 +143,20 @@ describe('PositionedShip', () => {
         );
 
         const hit = () => smallPositionedShip.markAsHit(new Coordinate('A', '3'));
+
+        expect(hit).to.throw('Unknown coordinate "A3". Expected one of "A1", "A2".');
+    });
+
+    it('cannot check if hit if the coordinate is unknown', () => {
+        const smallPositionedShip: PositionedShip<'A', '1' | '2' | '3'> = new PositionedShip(
+            new Ship('TestSmallShip', 2),
+            OrderedSet([
+                new Coordinate('A', '1'),
+                new Coordinate('A', '2'),
+            ]),
+        );
+
+        const hit = () => smallPositionedShip.isHit(new Coordinate('A', '3'));
 
         expect(hit).to.throw('Unknown coordinate "A3". Expected one of "A1", "A2".');
     });

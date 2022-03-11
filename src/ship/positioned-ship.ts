@@ -1,4 +1,5 @@
 import { List, OrderedSet } from 'immutable';
+import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from '../grid/coordinate';
 import { Ship } from './ship';
 import assert = require('node:assert');
@@ -29,6 +30,16 @@ export class PositionedShip<
         this.hitCoordinates.set(coordinateKey, true);
 
         this.sunk = calculateIsSunk(this.getHits().toArray());
+    }
+
+    isHit(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
+        const coordinateKey = coordinate.toString();
+        this.assertIsKnownCoordinate(coordinateKey);
+
+        const hit = this.hitCoordinates.get(coordinateKey);
+        assertIsNotUndefined(hit);
+
+        return hit;
     }
 
     isSunk(): boolean {

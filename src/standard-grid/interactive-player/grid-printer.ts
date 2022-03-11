@@ -32,12 +32,22 @@ function printPlayerGrid(player: Player<StdColumnIndex, StdRowIndex, Cell>, logg
     );
 }
 
-function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | undefined, _coordinate: StdCoordinate): string {
+function printPlayerCell(cell: PositionedShip<StdColumnIndex, StdRowIndex> | undefined, coordinate: StdCoordinate): string {
     if (undefined === cell) {
         return '.';
     }
 
-    return cell.isSunk() ? 'S' : '▓';
+    const positionedShip = cell;
+
+    if (positionedShip.isSunk()) {
+        return 'S';
+    }
+
+    if (positionedShip.isHit(coordinate)) {
+        return '░';
+    }
+
+    return '▓';
 }
 
 function printOpponentCell(cell: Cell): string {
