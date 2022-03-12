@@ -42,6 +42,7 @@ export class Match<
                 checkMaxTurn(maxTurn),
                 tap((turn) => this.logger.startTurn(turn)),
                 selectPlayer(playerA, playerB),
+                tap(({ player }) => this.logger.recordSelectedPlayer(player)),
                 playTurn(this.logger),
                 tap(() => this.logger.endTurn()),
                 endGameIfWinnerDecided(this.logger, playing),

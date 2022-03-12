@@ -12,13 +12,7 @@ import { StdRowIndex } from '../std-row-index';
 
 const TABLE_SEPARATOR = ' '.repeat(10);
 
-export type PlayerGridPrinter = (player: Player<StdColumnIndex, StdRowIndex, Cell>)=> void;
-
-export function createGridPrinter(logger: Logger): PlayerGridPrinter {
-    return (player) => printPlayerGrid(player, logger);
-}
-
-function printPlayerGrid(player: Player<StdColumnIndex, StdRowIndex, Cell>, logger: Logger): void {
+export function printPlayerGrid(player: Player<StdColumnIndex, StdRowIndex, Cell>, logger: Logger): void {
     const targetGrid = printTable(
         createOpponentTable(player.getOpponentGridRows()),
     );

@@ -18,7 +18,7 @@ function createLogRecord(message: string): LogRecord {
     return { message: message, optionalParams: [] };
 }
 
-describe('Game', () => {
+describe('Match', () => {
     const logger = new BufferLogger();
     const createGame = () => {
         const game = new Match(logger);
