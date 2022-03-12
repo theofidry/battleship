@@ -27,6 +27,8 @@ export class AdaptablePlayer<
 
     private lastMove: Coordinate<ColumnIndex, RowIndex> | undefined;
 
+    private lastResponse: HitResponse | undefined;
+
     constructor(
         public readonly name: string,
         fleet: Fleet,
@@ -40,7 +42,11 @@ export class AdaptablePlayer<
 
     askMove(): Observable<Coordinate<ColumnIndex, RowIndex>> {
         return this.hitStrategy
-            .decide(this.opponentGrid)
+            .decide(
+                this.opponentGrid,
+                this.lastMove,
+                this.lastResponse,
+            )
             .pipe(
                 tap((nextMove) => this.lastMove = nextMove),
                 single(),    // This is to ensure it behaves the same way as if the input was a user input
@@ -67,6 +73,8 @@ export class AdaptablePlayer<
             case HitResponse.WON:
                 break;
         }
+
+        this.lastResponse = response;
 
         return just(ShotAcknowledgement.OK);
     }
