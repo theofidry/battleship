@@ -7,7 +7,6 @@ import { Cell, StandardOpponentGrid } from '../standard-opponent-grid';
 import { StdColumnIndex } from '../std-column-index';
 import { StdRowIndex } from '../std-row-index';
 import { parseCoordinate } from './coordinate-parser';
-import { createGridPrinter } from './grid-printer';
 import { InteractivePlayer } from './interactive-player';
 
 export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<StdColumnIndex, StdRowIndex, Cell> {
@@ -20,6 +19,5 @@ export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<St
             logger,
         ),
         () => new StandardOpponentGrid(),
-        createGridPrinter(logger),
     );
 }

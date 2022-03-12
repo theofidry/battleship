@@ -7,9 +7,9 @@ import { Cell, StandardOpponentGrid } from './standard-opponent-grid';
 import { StdColumnIndex } from './std-column-index';
 import { StdRowIndex } from './std-row-index';
 
-export function createDumbPlayer(name: string, fleet: Fleet): Player<StdColumnIndex, StdRowIndex, Cell> {
+export function createDumbAIPlayer(name: string, fleet: Fleet): Player<StdColumnIndex, StdRowIndex, Cell> {
     return new AdaptablePlayer(
-        `DumbPlayer ${name}`.trim(),
+        `AI${name}`.trim(),
         fleet,
         RandomPlacementStrategy,
         RandomHitStrategy,

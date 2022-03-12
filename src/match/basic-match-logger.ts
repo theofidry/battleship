@@ -1,11 +1,8 @@
-import { HitResponse } from './communication/hit-response';
-import { Coordinate } from './grid/coordinate';
-import { Logger } from './logger/logger';
-import { Player } from './player/player';
+import { HitResponse } from '../communication/hit-response';
+import { Logger } from '../logger/logger';
+import { AnyCoordinate, AnyPlayer, MatchLogger } from './match-logger';
 
-type AnyPlayer = Player<any, any, any>;
-
-export class MatchLogger {
+export class BasicMatchLogger implements MatchLogger {
     constructor(private readonly logger: Logger) {
     }
 
@@ -17,7 +14,11 @@ export class MatchLogger {
         this.logger.log(`Turn ${turn}.`);
     }
 
-    recordPlayerMove(player: AnyPlayer, targetCoordinate: Coordinate<any, any>): void {
+    recordSelectedPlayer(player: AnyPlayer): void {
+        // Do nothing
+    }
+
+    recordPlayerMove(player: AnyPlayer, targetCoordinate: AnyCoordinate): void {
         this.logger.log(`"${player.name}" targets "${targetCoordinate.toString()}".`);
     }
 
@@ -29,7 +30,7 @@ export class MatchLogger {
         // Do nothing
     }
 
-    logWinner(winner: AnyPlayer, turn: number): void {
+    recordWinner(winner: AnyPlayer, turn: number): void {
         this.logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
     }
 }

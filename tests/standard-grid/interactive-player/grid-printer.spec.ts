@@ -6,7 +6,7 @@ import { Player } from '../../../src/player/player';
 import { createPatrolBoat, createSubmarine } from '../../../src/ship/ship';
 import { ShipDirection } from '../../../src/ship/ship-direction';
 import { ShipPosition } from '../../../src/ship/ship-position';
-import { createGridPrinter } from '../../../src/standard-grid/interactive-player/grid-printer';
+import { printPlayerGrid } from '../../../src/standard-grid/interactive-player/grid-printer';
 import { Cell, StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
 import { StandardPlayerGrid } from '../../../src/standard-grid/standard-player-grid';
 import { StdColumnIndex } from '../../../src/standard-grid/std-column-index';
@@ -15,7 +15,6 @@ import { StdRowIndex } from '../../../src/standard-grid/std-row-index';
 describe('GridPrinter', () => {
     it('prints a player\'s grid and target grid', () => {
         const logger = new BufferLogger();
-        const printGrid = createGridPrinter(logger);
 
         const playerGrid = new StandardPlayerGrid([
             {
@@ -55,7 +54,7 @@ describe('GridPrinter', () => {
             getOpponentGridRows: () => opponentGrid.getRows(),
         } as unknown as Player<StdColumnIndex, StdRowIndex, Cell>;
 
-        printGrid(playerMock);
+        printPlayerGrid(playerMock, logger);
 
         const expected = heredoc(`
         Your target grid:                                                            Your fleet:

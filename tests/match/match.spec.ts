@@ -1,13 +1,14 @@
 import { expect } from 'chai';
 import { List } from 'immutable';
 import { beforeEach } from 'mocha';
-import { HitResponse } from '../src/communication/hit-response';
-import { ShotAcknowledgement } from '../src/communication/shot-acknowledgement';
-import { Coordinate } from '../src/grid/coordinate';
-import { BufferLogger, Record as LogRecord } from '../src/logger/buffer-logger';
-import { Match } from '../src/match';
-import { Player } from '../src/player/player';
-import { PlayerStub } from './player/player-stub';
+import { HitResponse } from '../../src/communication/hit-response';
+import { ShotAcknowledgement } from '../../src/communication/shot-acknowledgement';
+import { Coordinate } from '../../src/grid/coordinate';
+import { BufferLogger, Record as LogRecord } from '../../src/logger/buffer-logger';
+import { BasicMatchLogger } from '../../src/match/basic-match-logger';
+import { Match } from '../../src/match/match';
+import { Player } from '../../src/player/player';
+import { PlayerStub } from '../player/player-stub';
 
 type SmallGridColumnIndex = 'C1' | 'C2';
 type SmallGridRowIndex = 'R1' | 'R2';
@@ -18,10 +19,10 @@ function createLogRecord(message: string): LogRecord {
     return { message: message, optionalParams: [] };
 }
 
-describe('Game', () => {
+describe('Match', () => {
     const logger = new BufferLogger();
     const createGame = () => {
-        const game = new Match(logger);
+        const game = new Match(new BasicMatchLogger(logger));
 
         const playerA: TestPlayer = new PlayerStub(
             'Player A',
