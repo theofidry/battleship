@@ -1,5 +1,6 @@
 import { ConsoleLogger } from './logger/console-logger';
-import { Match } from './match';
+import { Match } from './match/match';
+import { InteractiveVsAiMatchLogger } from './match/interactive-vs-ai-match-logger';
 import { createFleet } from './ship/fleet';
 import { createDumbAIPlayer } from './standard-grid/dump-player-factory';
 import {
@@ -9,7 +10,7 @@ import { STD_COLUMN_INDICES } from './standard-grid/std-column-index';
 import { STD_ROW_INDICES } from './standard-grid/std-row-index';
 
 const logger = new ConsoleLogger();
-const match = new Match(logger);
+const match = new Match(new InteractiveVsAiMatchLogger(logger));
 const fleet = createFleet();
 
 match

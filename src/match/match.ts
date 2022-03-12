@@ -2,12 +2,12 @@ import {
     concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
     Subject, takeUntil, tap,
 } from 'rxjs';
-import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
-import { HitResponse } from './communication/hit-response';
-import { Coordinate } from './grid/coordinate';
-import { Logger } from './logger/logger';
+import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { HitResponse } from '../communication/hit-response';
+import { Coordinate } from '../grid/coordinate';
+import { Logger } from '../logger/logger';
 import { MatchLogger } from './match-logger';
-import { Player } from './player/player';
+import { Player } from '../player/player';
 import assert = require('node:assert');
 
 export class Match<
@@ -15,10 +15,7 @@ export class Match<
     RowIndex extends PropertyKey,
     OpponentGridCell,
 > {
-    private readonly logger: MatchLogger;
-
-    constructor(logger: Logger) {
-        this.logger = new MatchLogger(logger);
+    constructor(private readonly logger: MatchLogger) {
     }
 
     /**
@@ -120,7 +117,7 @@ function endGameIfWinnerDecided<
 ): MonoTypeOperatorFunction<TurnResult<ColumnIndex, RowIndex, OpponentGridCell>> {
     return tap(({ winner, turn }) => {
         if (winner !== undefined) {
-            logger.logWinner(winner, turn);
+            logger.recordWinner(winner, turn);
             playing.next(true);
             playing.complete();
         }

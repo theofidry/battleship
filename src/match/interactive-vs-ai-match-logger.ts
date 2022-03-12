@@ -1,16 +1,14 @@
 import chalk from 'chalk';
-import { assertIsNotUndefined } from './assert/assert-is-not-undefined';
-import { assertIsUnreachableCase } from './assert/assert-is-unreachable';
-import { HitResponse } from './communication/hit-response';
-import { Coordinate } from './grid/coordinate';
-import { Logger } from './logger/logger';
-import { LOGO } from './logo';
-import { Player } from './player/player';
-import { printPlayerGrid } from './standard-grid/interactive-player/grid-printer';
-import { InteractivePlayer } from './standard-grid/interactive-player/interactive-player';
+import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
+import { HitResponse } from '../communication/hit-response';
+import { Coordinate } from '../grid/coordinate';
+import { Logger } from '../logger/logger';
+import { LOGO } from '../logo';
+import { printPlayerGrid } from '../standard-grid/interactive-player/grid-printer';
+import { InteractivePlayer } from '../standard-grid/interactive-player/interactive-player';
+import { AnyCoordinate, AnyPlayer, MatchLogger } from './match-logger';
 import assert = require('node:assert');
-
-type AnyPlayer = Player<any, any, any>;
 
 type TurnRecord = {
     turn: number,
@@ -26,16 +24,18 @@ function isCompleteTurnRecord(record: Partial<TurnRecord>): record is TurnRecord
         && undefined !== record.hitResponse;
 }
 
-export class MatchLogger {
+export class InteractiveVsAiMatchLogger implements MatchLogger {
     private turnRecord: Partial<TurnRecord> = {};
     private interactivePlayerHistory: TurnRecord[] = [];
+    private playerColorizer: PlayerColorizer | undefined;
 
     constructor(private readonly logger: Logger) {
     }
 
     start(playerA: AnyPlayer, playerB: AnyPlayer): void {
-        // TODO: better assign the player's colors
-        this.logger.log(`Starting a match between the player ${chalk.redBright(playerA.name)} and ${chalk.blueBright(playerB.name)}.`);
+        this.playerColorizer = createPlayerColorizer(playerA, playerB);
+
+        this.logger.log(`Starting a match between the player ${this.colorizePlayer(playerA)} and ${this.colorizePlayer(playerB)}.`);
         this.newLine();
     }
 
@@ -61,7 +61,7 @@ export class MatchLogger {
 
         const interactivePlayerHistory = this.interactivePlayerHistory
             .slice(-5)
-            .map(({ targetCoordinate, hitResponse }) => `${chalk.yellowBright(targetCoordinate.toString())}: ${castHitResponse(hitResponse)}`)
+            .map(({ targetCoordinate, hitResponse }) => `${colorizeCoordinate(targetCoordinate)}: ${colorizeHitResponse(hitResponse)}`)
             .join(', ');
 
         if (interactivePlayerHistory.length > 0) {
@@ -71,7 +71,7 @@ export class MatchLogger {
         }
     }
 
-    recordPlayerMove(_player: AnyPlayer, targetCoordinate: Coordinate<any, any>): void {
+    recordPlayerMove(_player: AnyPlayer, targetCoordinate: AnyCoordinate): void {
         this.turnRecord.targetCoordinate = targetCoordinate;
     }
 
@@ -80,10 +80,8 @@ export class MatchLogger {
     }
 
     endTurn(): void {
-        const record = this.turnRecord;
+        const record = this.getCompleteTurnRecord();
         this.turnRecord = {};
-
-        assert(isCompleteTurnRecord(record));
 
         const { turn, player, targetCoordinate, hitResponse } = record;
 
@@ -94,14 +92,14 @@ export class MatchLogger {
             this.logger.log(LOGO);
             this.newLine(2);
             this.logger.log(
-                `Turn ${turn}: ${chalk.redBright(player.name)} shoot at "${chalk.yellowBright(targetCoordinate.toString())}" and ${castHitResponse(hitResponse)}.`,
+                `Turn ${turn}: ${this.colorizePlayer(player)} shoot at "${colorizeCoordinate(targetCoordinate)}" and ${colorizeHitResponse(hitResponse)}.`,
             );
         }
     }
 
-    logWinner(winner: AnyPlayer, turn: number): void {
+    recordWinner(winner: AnyPlayer, turn: number): void {
         this.newLine(2);
-        this.logger.log(`${chalk.blueBright(winner.name)} ${chalk.bold('WON')} the match in ${chalk.yellowBright(turn)} turns! 🎉`);
+        this.logger.log(`${this.colorizePlayer(winner)} ${chalk.bold('WON')} the match in ${chalk.yellowBright(turn)} turns! 🎉`);
         this.newLine(2);
     }
 
@@ -110,9 +108,40 @@ export class MatchLogger {
             this.logger.log('');
         }
     }
+
+    private colorizePlayer(player: AnyPlayer): string {
+        const playerColorizer = this.playerColorizer;
+        assertIsNotUndefined(playerColorizer);
+
+        return playerColorizer(player);
+    }
+
+    private getCompleteTurnRecord(): TurnRecord {
+        const record = this.turnRecord;
+        assert(isCompleteTurnRecord(record));
+
+        return record;
+    }
 }
 
-function castHitResponse(hitResponse: HitResponse): string {
+type PlayerColorizer = (player: AnyPlayer)=> string;
+
+function createPlayerColorizer(playerA: AnyPlayer, playerB: AnyPlayer): PlayerColorizer {
+    return ({ name }) => {
+        assert([playerA.name, playerB.name].includes(name));
+
+        return name === playerA.name
+            ? chalk.redBright(playerA.name)
+            : chalk.blueBright(playerB.name);
+
+    };
+}
+
+function colorizeCoordinate(coordinate: AnyCoordinate): string {
+    return chalk.yellowBright(coordinate.toString());
+}
+
+function colorizeHitResponse(hitResponse: HitResponse): string {
     switch (hitResponse) {
         case HitResponse.SUNK:
             return chalk.yellowBright(hitResponse);
