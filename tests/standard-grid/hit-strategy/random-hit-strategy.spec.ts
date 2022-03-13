@@ -3,18 +3,14 @@ import { expect } from 'chai';
 import { Coordinate } from '../../../src/grid/coordinate';
 import { RandomHitStrategy } from '../../../src/standard-grid/hit-strategy/random-hit-strategy';
 import { StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
-import { StdColumnIndex } from '../../../src/standard-grid/std-column-index';
-import { StdRowIndex } from '../../../src/standard-grid/std-row-index';
-import { EnumHelper } from '../../../src/utils/enum-helper';
-
-const COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
-const ROWS_INDICES = EnumHelper.getValues(StdRowIndex);
+import { STD_COLUMN_INDICES, StdColumnIndex } from '../../../src/standard-grid/std-column-index';
+import { STD_ROW_INDICES, StdRowIndex } from '../../../src/standard-grid/std-row-index';
 
 describe('RandomHitStrategy', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
 
-        RandomHitStrategy.decide(opponentGrid)
+        RandomHitStrategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: () => done(),
                 error: () => fail('Did not expect to have an error.'),
@@ -27,8 +23,8 @@ describe('RandomHitStrategy', () => {
 
         // Fill all cells except one which is the one we expect to find afterwards.
         let i = 0;
-        COLUMN_INDICES.forEach(
-            (columnIndex) => ROWS_INDICES.forEach(
+        STD_COLUMN_INDICES.forEach(
+            (columnIndex) => STD_ROW_INDICES.forEach(
                 (rowIndex) => {
                     const coordinate = new Coordinate(columnIndex, rowIndex);
 
@@ -47,7 +43,7 @@ describe('RandomHitStrategy', () => {
             )
         );
 
-        RandomHitStrategy.decide(opponentGrid)
+        RandomHitStrategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: (nextMove) => {
                     expect(nextMove).to.eqls(expectedCoordinate);

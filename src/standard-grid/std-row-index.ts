@@ -14,3 +14,15 @@ export enum StdRowIndex {
 }
 
 export const STD_ROW_INDICES = EnumHelper.getValues(StdRowIndex);
+
+export function getPreviousRowIndex(rowIndex: StdRowIndex): StdRowIndex | undefined {
+    const currentIndex = STD_ROW_INDICES.findIndex((index) => index === rowIndex);
+
+    return STD_ROW_INDICES[currentIndex - 1];
+}
+
+export function getNextRowIndex(rowIndex: StdRowIndex): StdRowIndex | undefined {
+    const currentIndex = STD_ROW_INDICES.findIndex((_index) => _index === rowIndex);
+
+    return STD_ROW_INDICES[currentIndex + 1];
+}
