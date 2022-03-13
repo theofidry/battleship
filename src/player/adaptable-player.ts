@@ -41,11 +41,16 @@ export class AdaptablePlayer<
     }
 
     askMove(): Observable<Coordinate<ColumnIndex, RowIndex>> {
+        const { lastMove, lastResponse } = this;
+
+        const previousMove = !lastMove || !lastResponse
+            ? undefined
+            : { target: lastMove, response: lastResponse };
+
         return this.hitStrategy
             .decide(
                 this.opponentGrid,
-                this.lastMove,
-                this.lastResponse,
+                previousMove,
             )
             .pipe(
                 tap((nextMove) => this.lastMove = nextMove),
