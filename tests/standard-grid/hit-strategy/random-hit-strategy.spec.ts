@@ -14,7 +14,7 @@ describe('RandomHitStrategy', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
 
-        RandomHitStrategy.decide(opponentGrid)
+        RandomHitStrategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: () => done(),
                 error: () => fail('Did not expect to have an error.'),
@@ -47,7 +47,7 @@ describe('RandomHitStrategy', () => {
             )
         );
 
-        RandomHitStrategy.decide(opponentGrid)
+        RandomHitStrategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: (nextMove) => {
                     expect(nextMove).to.eqls(expectedCoordinate);
