@@ -17,8 +17,8 @@ export const AIMatchCommand = (new Command('ai:test-match'))
 
         const play$ = match
             .play(
-                createDumbAIPlayer('.I (1)', fleet),
-                createDumbAIPlayer('.I (2)', fleet),
+                createDumbAIPlayer('(1)', fleet),
+                createDumbAIPlayer('(2)', fleet),
                 STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
             )
             // eslint-disable-next-line no-void

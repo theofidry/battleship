@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { Done } from 'mocha';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { assertIsNotUndefined } from '../../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../../src/communication/hit-response';
 import { Coordinate } from '../../../src/grid/coordinate';
@@ -108,6 +108,238 @@ describe('SmartHitStrategy components', () => {
     });
 });
 
+const allCells = List(STD_COLUMN_INDICES)
+    .flatMap((columnIndex) => STD_ROW_INDICES
+        .map((rowIndex) => new Coordinate(columnIndex, rowIndex)),
+    )
+    .map(toString);
+
+function getAllCellsExcept (excludedCoordinates: ReadonlyArray<string>): ReadonlyArray<string> {
+    return allCells
+        .filter((cell) => !excludedCoordinates.includes(cell))
+        .toArray();
+}
+
+class HitChoicesSet {
+    constructor(
+        readonly title: string,
+        readonly moves: ReadonlyArray<PreviousMove<StdColumnIndex, StdRowIndex>>,
+        readonly expectedChoices: ReadonlyArray<string>,
+    ) {
+    }
+}
+
+function* provideHitChoices(): Generator<HitChoicesSet> {
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells after a hit',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+        ],
+        [
+            'C2',
+            'D3',
+            'B3',
+            'C4',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells after a hit (second hit is a miss)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.MISS,
+            },
+        ],
+        [
+            'D3',
+            'B3',
+            'C4',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells after a hit (third hit is a miss)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+        ],
+        [
+            'B3',
+            'C4',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells after a hit (4th hit is a miss)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+        ],
+        [
+            'C4',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells following the direction after a hit (second hit)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+        ],
+        [
+            'C2',
+            'C5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells following the direction after a hit (2nd hit – 3rd miss)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.MISS,
+            },
+        ],
+        [
+            'C5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells following the direction after a hit (second hit after a miss)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+        ],
+        [
+            'C2',
+            'D3',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the surrounding cells following the direction after a hit (second hit after two miss)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+        ],
+        [
+            'C2',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'resumes a random search after sinking the ship',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.SUNK,
+            },
+        ],
+        getAllCellsExcept(['C3', 'B3']),
+    );
+
+    yield new HitChoicesSet(
+        'falls back on a different strategy',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+        ],
+        [
+            'B2',
+            'B4',
+        ],
+    );
+}
+
 describe('SmartHitStrategy', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
@@ -158,56 +390,20 @@ describe('SmartHitStrategy', () => {
             });
     });
 
-    it('restrict the choice to the surrounding cells after a hit', () => {
-        const opponentGrid = new StandardOpponentGrid();
-        const strategy = new SmartHitStrategy();
+    for (const { title, moves, expectedChoices } of provideHitChoices()) {
+        it(title, (done) => {
+            const opponentGrid = new StandardOpponentGrid();
+            const strategy = new SmartHitStrategy();
 
-        const previousMove = new Coordinate(StdColumnIndex.C, StdRowIndex.Row3);
-        const previousResponse = HitResponse.HIT;
-
-        opponentGrid.markAsHit(previousMove);
-
-        const expectedChoices = [
-            'C2',
-            'D3',
-            'B3',
-            'C4',
-        ];
-
-        const actual = strategy
-            .findChoices(
+            expectNextChoices(
+                strategy,
                 opponentGrid,
-                { target: previousMove, response: previousResponse},
-            )
-            .map(toString);
-
-        expect(actual).to.eqls(expectedChoices);
-    });
-
-    it('restrict the choice to the surrounding cells following the direction after a hit (second hit)', (done) => {
-        const opponentGrid = new StandardOpponentGrid();
-        const strategy = new SmartHitStrategy();
-
-        expectNextChoices(
-            strategy,
-            opponentGrid,
-            [
-                {
-                    target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                    response: HitResponse.HIT,
-                },
-                {
-                    target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                    response: HitResponse.HIT,
-                },
-            ],
-            [
-                'C2',
-                'C5',
-            ],
-            done,
-        );
-    });
+                moves.map((value) => value),
+                expectedChoices,
+                done,
+            );
+        });
+    }
 });
 
 function expectNextChoices(
@@ -217,6 +413,10 @@ function expectNextChoices(
     expectedChoices: ReadonlyArray<string>,
     done: Done,
 ): void {
+    const sortedExpectedChoices = expectedChoices
+        .map((value) => value)
+        .sort();
+
     const lastPreviousMove = moves.pop();
     assertIsNotUndefined(lastPreviousMove);
 
@@ -226,7 +426,7 @@ function expectNextChoices(
             moves,
         )
         .subscribe({
-            next: (nextMove) => {
+            next: () => {
                 if (lastPreviousMove.response === HitResponse.MISS) {
                     opponentGrid.markAsMissed(lastPreviousMove.target);
                 } else {
@@ -238,9 +438,10 @@ function expectNextChoices(
                         opponentGrid,
                         lastPreviousMove,
                     )
-                    .map(toString);
+                    .map(toString)
+                    .sort();
 
-                expect(expectedChoices).to.eqls(actual);
+                expect(sortedExpectedChoices).to.eqls(actual);
 
                 done();
             },
@@ -252,7 +453,11 @@ function recordMoves(
     strategy: SmartHitStrategy,
     opponentGrid: StandardOpponentGrid,
     moves: ReadonlyArray<PreviousMove<StdColumnIndex, StdRowIndex>>,
-): Observable<StdCoordinate> {
+): Observable<unknown> {
+    if (moves.length === 0) {
+        return of(undefined);
+    }
+
     const nextMove$ = moves.reduce(
         (previous$, previousMove) => {
             if (undefined === previous$) {

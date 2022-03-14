@@ -24,7 +24,7 @@ AIBenchmarkCommand
         const startTimeInSeconds = process.hrtime()[0];
         const fleet = createFleet();
 
-        console.log(`Starting benchmark between AI.I for ${chalk.yellowBright(samples)} matches.`);
+        console.log(`Starting benchmark between AI.II for ${chalk.yellowBright(samples)} matches.`);
 
         const play$ = playMatches(fleet, samples)
             .pipe(
@@ -72,8 +72,8 @@ function startMatch(logger: Logger, fleet: Fleet): Observable<number> {
 
     return match
         .play(
-            createDumbAIPlayer('.I (1)', fleet),
-            createDumbAIPlayer('.I (2)', fleet),
+            createDumbAIPlayer('(1)', fleet),
+            createDumbAIPlayer('(2)', fleet),
             STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
         )
         .pipe(
