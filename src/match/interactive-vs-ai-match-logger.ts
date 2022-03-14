@@ -60,7 +60,7 @@ export class InteractiveVsAiMatchLogger implements MatchLogger {
         this.newLine();
 
         const interactivePlayerHistory = this.interactivePlayerHistory
-            .slice(-5)
+            .slice(0, 5)
             .map(({ targetCoordinate, hitResponse }) => `${colorizeCoordinate(targetCoordinate)}: ${colorizeHitResponse(hitResponse)}`)
             .join(', ');
 

@@ -20,7 +20,7 @@ export const matchCommand = (new Command('match'))
 
         const play$ = match
             .play(
-                createDumbAIPlayer('.I', fleet),
+                createDumbAIPlayer('', fleet),
                 createInteractivePlayer(fleet, logger),
                 STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
             )

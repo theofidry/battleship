@@ -50,12 +50,13 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
         const untouchedCoordinates = collectUntouchedCoordinates(grid);
 
         const choicesList = List([
-                ...this.previousHits
-                    .map((previousHit) => this.createTargetSurroundingCoordinatesFilter(previousHit))
-                    .map((filter) => untouchedCoordinates.filter(filter)),
-                untouchedCoordinates.filter(this.createTargetFollowingDirectionFilter()),
-                untouchedCoordinates.filter(createNoFilterFilter),
+                ...this.previousHits.map(
+                    (previousHit) => this.createTargetSurroundingCoordinatesFilter(previousHit),
+                ),
+                this.createTargetFollowingDirectionFilter(),
+                createNoFilterFilter(),
             ])
+            .map((filter) => untouchedCoordinates.filter(filter))
             .filter((choices) => choices.size !== 0)
             .sort(sortByLengthAscendingOrder);
 
