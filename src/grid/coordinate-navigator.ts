@@ -36,7 +36,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
 
     /**
      * Gets the coordinates that are adjacent, horizontally and vertically, to
-     * the given origin.
+     * the given target.
      *
      * For example with a grid system of (column,row)=(A-J,1-10), the surrounding
      * coordinates of E8 will be E7,E9,D8,F8.
