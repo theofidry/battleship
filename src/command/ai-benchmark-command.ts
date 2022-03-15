@@ -1,16 +1,19 @@
 import chalk from 'chalk';
 import { Command, InvalidOptionArgumentError } from 'commander';
-import { mean, range } from 'lodash';
+import { isNumber, mean, range } from 'lodash';
 import { combineLatest, filter, firstValueFrom, map, Observable, tap } from 'rxjs';
 import { ConsoleLogger } from '../logger/console-logger';
 import { Logger } from '../logger/logger';
 import { Match } from '../match/match';
 import { NullMatchLogger } from '../match/null-match-logger';
 import { createFleet, Fleet } from '../ship/fleet';
-import { createDumbAIPlayer } from '../standard-grid/dump-player-factory';
+import { AIVersion, AIVersionNames, createAIPlayer } from '../standard-grid/ai-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
+import { EnumHelper } from '../utils/enum-helper';
 import { formatTime } from '../utils/time-formatter';
+import { createAIVersionOption } from './ai-version-option';
+import assert = require('node:assert');
 
 export const AIBenchmarkCommand = new Command('ai:benchmark');
 
@@ -19,14 +22,18 @@ const MAX_TURN = STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2;
 AIBenchmarkCommand
     .description('Runs several matches between two AIs')
     .option('-s, --samples <number>', 'Number of matches to play', parseSampleOption, 50)
+    .addOption(createAIVersionOption())
     .action(() => {
-        const { samples } = AIBenchmarkCommand.opts();
+        const { samples, ai } = AIBenchmarkCommand.opts();
         const startTimeInSeconds = process.hrtime()[0];
         const fleet = createFleet();
 
-        console.log(`Starting benchmark between AI.I for ${chalk.yellowBright(samples)} matches.`);
+        assert(isNumber(samples));
+        assert(EnumHelper.hasValue(AIVersion, ai));
 
-        const play$ = playMatches(fleet, samples)
+        console.log(`Starting benchmark between ${AIVersionNames[ai]} for ${chalk.yellowBright(samples)} matches.`);
+
+        const play$ = playMatches(fleet, samples, ai)
             .pipe(
                 tap((averageEndTurn) => {
                     const endTimeInSeconds = process.hrtime()[0];
@@ -56,10 +63,10 @@ function parseSampleOption(value: string): number {
     return parsedValue;
 }
 
-function playMatches(fleet: Fleet, nbrOfMatches: number): Observable<number> {
+function playMatches(fleet: Fleet, nbrOfMatches: number, version: AIVersion): Observable<number> {
     const logger = new ConsoleLogger();
 
-    const matches = range(0, nbrOfMatches).map(() => startMatch(logger, fleet));
+    const matches = range(0, nbrOfMatches).map(() => startMatch(logger, fleet, version));
 
     return combineLatest(matches)
         .pipe(
@@ -67,13 +74,13 @@ function playMatches(fleet: Fleet, nbrOfMatches: number): Observable<number> {
         );
 }
 
-function startMatch(logger: Logger, fleet: Fleet): Observable<number> {
+function startMatch(logger: Logger, fleet: Fleet, version: AIVersion): Observable<number> {
     const match = new Match(new NullMatchLogger());
 
     return match
         .play(
-            createDumbAIPlayer('.I (1)', fleet),
-            createDumbAIPlayer('.I (2)', fleet),
+            createAIPlayer(fleet, version),
+            createAIPlayer(fleet, version),
             STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
         )
         .pipe(
