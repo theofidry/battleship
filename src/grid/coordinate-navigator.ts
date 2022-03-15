@@ -1,5 +1,7 @@
 import { List } from 'immutable';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
+import { ShipDirection } from '../ship/ship-direction';
+import { ShipSize } from '../ship/ship-size';
 import { Coordinate } from './coordinate';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
@@ -20,6 +22,14 @@ export type StartingCoordinatesFinder<
     minSize: number,
     origin: Coordinate<ColumnIndex, RowIndex>,
 )=> List<Coordinate<ColumnIndex, RowIndex>>;
+
+export type CoordinateAlignment<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = {
+    readonly direction: ShipDirection,
+    readonly coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+};
 
 /**
  * The navigator provides an API to easily consume and navigates a grid-coordinate
@@ -63,6 +73,13 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                 (rowIndex) => new Coordinate(targetColumnIndex, rowIndex),
             ),
         ];
+    }
+
+    findAlignments(
+        coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+        maxDistance: ShipSize,
+    ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        return List();
     }
 
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
