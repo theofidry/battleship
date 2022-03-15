@@ -5,7 +5,7 @@ import { TestCoordinate, testCoordinateNavigator } from './test-coordinates';
 class SurroundingCoordinatesSet {
     constructor(
         readonly title: string,
-        readonly origin: TestCoordinate,
+        readonly target: TestCoordinate,
         readonly expected: ReadonlyArray<string>
     ) {
     }
@@ -26,10 +26,10 @@ function* provideSurroundingCoordinatesSet(): Generator<SurroundingCoordinatesSe
 }
 
 describe('CoordinateNavigator::getSurroundingCoordinates()', () => {
-    for (const { title, origin, expected } of provideSurroundingCoordinatesSet()) {
+    for (const { title, target, expected } of provideSurroundingCoordinatesSet()) {
         it(title, () => {
             const actual = testCoordinateNavigator
-                .getSurroundingCoordinates(origin)
+                .getSurroundingCoordinates(target)
                 .map((coordinate) => coordinate.toString())
                 .sort();
 

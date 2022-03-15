@@ -41,9 +41,9 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
      * For example with a grid system of (column,row)=(A-J,1-10), the surrounding
      * coordinates of E8 will be E7,E9,D8,F8.
      */
-    getSurroundingCoordinates(origin: Coordinate<ColumnIndex, RowIndex>): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
-        const targetColumnIndex = origin.columnIndex;
-        const targetRowIndex = origin.rowIndex;
+    getSurroundingCoordinates(target: Coordinate<ColumnIndex, RowIndex>): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
+        const targetColumnIndex = target.columnIndex;
+        const targetRowIndex = target.rowIndex;
 
         const potentialColumnIndices = [
             this.findPreviousColumnIndex(targetColumnIndex),
