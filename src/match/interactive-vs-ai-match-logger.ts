@@ -24,6 +24,8 @@ function isCompleteTurnRecord(record: Partial<TurnRecord>): record is TurnRecord
         && undefined !== record.hitResponse;
 }
 
+const HISTORY_SIZE = 5;
+
 export class InteractiveVsAiMatchLogger implements MatchLogger {
     private turnRecord: Partial<TurnRecord> = {};
     private interactivePlayerHistory: TurnRecord[] = [];
@@ -60,7 +62,7 @@ export class InteractiveVsAiMatchLogger implements MatchLogger {
         this.newLine();
 
         const interactivePlayerHistory = this.interactivePlayerHistory
-            .slice(-5)
+            .slice(0, HISTORY_SIZE)
             .map(({ targetCoordinate, hitResponse }) => `${colorizeCoordinate(targetCoordinate)}: ${colorizeHitResponse(hitResponse)}`)
             .join(', ');
 
