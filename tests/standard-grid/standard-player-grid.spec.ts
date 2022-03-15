@@ -1,10 +1,12 @@
 import { expect } from 'chai';
 import { OrderedSet } from 'immutable';
 import heredoc from 'tsheredoc';
+import { assertIsUnreachableCase } from '../../src/assert/assert-is-unreachable';
 import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
 import { printGrid as printGenericGrid } from '../../src/grid/grid-printer';
 import { ShipPlacement } from '../../src/grid/player-grid';
+import { isPositionedShip, PositionedShip } from '../../src/ship/positioned-ship';
 import { Ship } from '../../src/ship/ship';
 import { ShipDirection } from '../../src/ship/ship-direction';
 import { ShipPosition } from '../../src/ship/ship-position';
@@ -88,17 +90,32 @@ const hit = (grid: StandardPlayerGrid, columnIndex: StdColumnIndex, rowIndex: St
     const coordinate = new Coordinate(columnIndex, rowIndex);
 
     const hitResponse = grid.recordHit(coordinate);
-    const ship = grid.getRows().get(rowIndex)!.get(columnIndex);
-
-    const shipMessage = undefined === ship
-        ? 'No ship found.'
-        : `Found ship ${ship.ship.name} with the coordinates "${ship.coordinates.map((shipCoordinate) => shipCoordinate.toString()).join('", "')}".`;
+    const cell = grid.getRows().get(rowIndex)!.get(columnIndex);
+    const shipMessage = mapCellToMessage(cell);
 
     assert(
         hitResponse === HitResponse.HIT || hitResponse === HitResponse.SUNK,
         `Expected to record a hit or sunk for the coordinate "${coordinate.toString()}". Got "${hitResponse}". ${shipMessage}`,
     );
 };
+
+function mapCellToMessage(cell: Cell): string {
+    switch (true) {
+        case undefined === cell:
+            return 'No ship found.';
+
+        case HitResponse.MISS === cell:
+            return 'Missed.';
+
+        case isPositionedShip(cell):
+            assert(isPositionedShip(cell));
+            return `Found ship ${cell.ship.name} with the coordinates "${cell.coordinates.map((shipCoordinate) => shipCoordinate.toString()).join('", "')}".`;
+    }
+
+    assertIsUnreachableCase(cell as never);
+
+    return '';
+}
 
 describe('StandardPlayerGrid', () => {
     describe('getCoordinates()', () => {

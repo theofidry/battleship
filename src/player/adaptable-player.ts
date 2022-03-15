@@ -6,7 +6,6 @@ import { GridRows } from '../grid/grid';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { PlayerGrid } from '../grid/player-grid';
 import { Fleet } from '../ship/fleet';
-import { PositionedShip } from '../ship/positioned-ship';
 import { just, nothing, Optional } from '../utils/optional';
 import { HitStrategy } from './hit-strategy';
 import { PlacementStrategy } from './placement-strategy';
@@ -19,11 +18,12 @@ import { Player } from './player';
 export class AdaptablePlayer<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-    Cell,
-> implements Player<ColumnIndex, RowIndex, Cell> {
-    private readonly grid: PlayerGrid<ColumnIndex, RowIndex, PositionedShip<ColumnIndex, RowIndex>|undefined>;
+    PlayerGridCell,
+    OpponentGridCell,
+> implements Player<ColumnIndex, RowIndex, PlayerGridCell, OpponentGridCell> {
+    private readonly grid: PlayerGrid<ColumnIndex, RowIndex, PlayerGridCell>;
 
-    private readonly opponentGrid: OpponentGrid<ColumnIndex, RowIndex, Cell>;
+    private readonly opponentGrid: OpponentGrid<ColumnIndex, RowIndex, OpponentGridCell>;
 
     private lastMove: Coordinate<ColumnIndex, RowIndex> | undefined;
 
@@ -32,9 +32,9 @@ export class AdaptablePlayer<
     constructor(
         public readonly name: string,
         fleet: Fleet,
-        placementStrategy: PlacementStrategy<ColumnIndex, RowIndex>,
-        private readonly hitStrategy: HitStrategy<ColumnIndex, RowIndex, Cell>,
-        opponentGridFactory: ()=> OpponentGrid<ColumnIndex, RowIndex, Cell>,
+        placementStrategy: PlacementStrategy<ColumnIndex, RowIndex, PlayerGridCell>,
+        private readonly hitStrategy: HitStrategy<ColumnIndex, RowIndex, OpponentGridCell>,
+        opponentGridFactory: ()=> OpponentGrid<ColumnIndex, RowIndex, OpponentGridCell>,
     ) {
         this.grid = placementStrategy.place(fleet);
         this.opponentGrid = opponentGridFactory();
@@ -92,11 +92,11 @@ export class AdaptablePlayer<
         }
     }
 
-    getPlayerGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, PositionedShip<ColumnIndex, RowIndex>|undefined>> {
+    getPlayerGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, PlayerGridCell>> {
         return this.grid.getRows();
     }
 
-    getOpponentGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, Cell>> {
+    getOpponentGridRows(): Readonly<GridRows<ColumnIndex, RowIndex, OpponentGridCell>> {
         return this.opponentGrid.getRows();
     }
 }

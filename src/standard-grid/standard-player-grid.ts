@@ -3,7 +3,7 @@ import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { Grid, GridRows, Row } from '../grid/grid';
 import { PlayerGrid, ShipPlacement } from '../grid/player-grid';
-import { PositionedShip } from '../ship/positioned-ship';
+import { isPositionedShip, PositionedShip } from '../ship/positioned-ship';
 import { ShipDirection } from '../ship/ship-direction';
 import { EnumHelper } from '../utils/enum-helper';
 import { STD_COLUMN_INDICES, StdColumnIndex } from './std-column-index';
@@ -11,14 +11,14 @@ import { StdCoordinate } from './std-coordinate';
 import { STD_ROW_INDICES, StdRowIndex } from './std-row-index';
 import assert = require('node:assert');
 
-export type Cell = PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
+export type Cell = HitResponse.MISS | PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
 
 export class StandardPlayerGrid implements PlayerGrid<
     StdColumnIndex,
     StdRowIndex,
     Cell
 > {
-    private readonly innerGrid: Readonly<Grid<StdColumnIndex, StdRowIndex, Cell>>;
+    private innerGrid: Readonly<Grid<StdColumnIndex, StdRowIndex, Cell>>;
     private readonly fleet: ReadonlyArray<PositionedShip<StdColumnIndex, StdRowIndex>>;
 
     constructor(
@@ -41,11 +41,15 @@ export class StandardPlayerGrid implements PlayerGrid<
     }
 
     recordHit(coordinate: StdCoordinate): HitResponse {
-        const hitShip = this.innerGrid.getCell(coordinate);
+        const cell = this.innerGrid.getCell(coordinate);
 
-        if (undefined === hitShip) {
+        if (!isPositionedShip(cell)) {
+            this.innerGrid = this.innerGrid.fillCells([coordinate], HitResponse.MISS);
+
             return HitResponse.MISS;
         }
+
+        const hitShip = cell;
 
         hitShip.markAsHit(coordinate);
 

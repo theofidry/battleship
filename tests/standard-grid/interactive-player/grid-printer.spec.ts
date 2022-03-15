@@ -2,14 +2,14 @@ import { expect } from 'chai';
 import heredoc from 'tsheredoc';
 import { Coordinate } from '../../../src/grid/coordinate';
 import { BufferLogger } from '../../../src/logger/buffer-logger';
-import { Player } from '../../../src/player/player';
 import { createPatrolBoat, createSubmarine } from '../../../src/ship/ship';
 import { ShipDirection } from '../../../src/ship/ship-direction';
 import { ShipPosition } from '../../../src/ship/ship-position';
 import { printPlayerGrid } from '../../../src/standard-grid/interactive-player/grid-printer';
-import { Cell, StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
+import { StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
 import { StandardPlayerGrid } from '../../../src/standard-grid/standard-player-grid';
 import { StdColumnIndex } from '../../../src/standard-grid/std-column-index';
+import { StdPlayer } from '../../../src/standard-grid/std-player';
 import { StdRowIndex } from '../../../src/standard-grid/std-row-index';
 
 describe('GridPrinter', () => {
@@ -41,9 +41,9 @@ describe('GridPrinter', () => {
         ]);
 
         playerGrid.recordHit(new Coordinate(StdColumnIndex.D, StdRowIndex.Row7));
-
         playerGrid.recordHit(new Coordinate(StdColumnIndex.H, StdRowIndex.Row3));
         playerGrid.recordHit(new Coordinate(StdColumnIndex.H, StdRowIndex.Row4));
+        playerGrid.recordHit(new Coordinate(StdColumnIndex.E, StdRowIndex.Row4));
 
         const opponentGrid = new StandardOpponentGrid();
         opponentGrid.markAsMissed(new Coordinate(StdColumnIndex.B, StdRowIndex.Row2));
@@ -52,7 +52,7 @@ describe('GridPrinter', () => {
         const playerMock = {
             getPlayerGridRows: () => playerGrid.getRows(),
             getOpponentGridRows: () => opponentGrid.getRows(),
-        } as unknown as Player<StdColumnIndex, StdRowIndex, Cell>;
+        } as unknown as StdPlayer;
 
         printPlayerGrid(playerMock, logger);
 
@@ -67,7 +67,7 @@ describe('GridPrinter', () => {
         ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤          ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
         │  3  │     │     │     │     │     │     │     │     │     │     │          │  3  │     │     │     │     │     │     │     │  S  │     │     │
         ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤          ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-        │  4  │     │     │     │     │  ▓  │     │     │     │     │     │          │  4  │     │     │     │     │     │     │     │  S  │     │     │
+        │  4  │     │     │     │     │  ▓  │     │     │     │     │     │          │  4  │     │     │     │     │  ✕  │     │     │  S  │     │     │
         ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤          ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
         │  5  │     │     │     │     │     │     │     │     │     │     │          │  5  │     │     │     │     │     │     │     │     │     │     │
         ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤          ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤

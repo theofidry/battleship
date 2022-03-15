@@ -73,7 +73,7 @@ type PlayerAction<
 export class PlayerStub<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> implements Player<ColumnIndex, RowIndex, unknown> {
+> implements Player<ColumnIndex, RowIndex, unknown, unknown> {
     private turnActions: Array<PlayerAction<ColumnIndex, RowIndex>>;
 
     constructor(

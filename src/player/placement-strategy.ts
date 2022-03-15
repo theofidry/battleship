@@ -1,15 +1,16 @@
 import { PlayerGrid } from '../grid/player-grid';
 import { Fleet } from '../ship/fleet';
-import { PositionedShip } from '../ship/positioned-ship';
 
 export type FleetPlacer<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> = (fleet: Fleet)=> PlayerGrid<ColumnIndex, RowIndex, PositionedShip<ColumnIndex, RowIndex>|undefined>;
+    Cell,
+> = (fleet: Fleet)=> PlayerGrid<ColumnIndex, RowIndex, Cell>;
 
 export interface PlacementStrategy<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
+    Cell,
 > {
-    place: FleetPlacer<ColumnIndex, RowIndex>;
+    place: FleetPlacer<ColumnIndex, RowIndex, Cell>;
 }
