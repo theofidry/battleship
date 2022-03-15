@@ -5,6 +5,22 @@ export class Coordinate<ColumnIndex extends PropertyKey, RowIndex extends Proper
     ) {
     }
 
+    equals(other: unknown): boolean {
+        return other instanceof Coordinate
+            && this.toString() === other.toString();
+    }
+
+    hashCode(): number {
+        const string = this.toString();
+        let hash = 0;
+
+        for (let i = 0; i < string.length; i++) {
+            hash = Math.imul(31, hash) + string.charCodeAt(i) | 0;
+        }
+
+        return hash;
+    }
+
     toString(): string {
         return this.columnIndex.toString() + this.rowIndex.toString();
     }
