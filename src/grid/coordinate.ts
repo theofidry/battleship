@@ -10,7 +10,7 @@ export class Coordinate<ColumnIndex extends PropertyKey, RowIndex extends Proper
             && this.toString() === other.toString();
     }
 
-    hashCode(other: Coordinate<ColumnIndex, RowIndex>): number {
+    hashCode(): number {
         const string = this.toString();
         let hash = 0;
 

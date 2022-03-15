@@ -2,6 +2,7 @@ import { List } from 'immutable';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
+import { Either } from '../utils/either';
 import { Coordinate } from './coordinate';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
@@ -75,6 +76,10 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         ];
     }
 
+    calculateDistance(first: Coordinate<ColumnIndex, RowIndex>, second: Coordinate<ColumnIndex, RowIndex>): Either<NonAlignedCoordinates, number> {
+        return Either.left(new NonAlignedCoordinates('TODO'));
+    }
+
     findAlignments(
         coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
         maxDistance: ShipSize,
@@ -90,5 +95,19 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     createStartingCoordinatesFinder(): StartingCoordinatesFinder<ColumnIndex, RowIndex> {
         // TODO
         return () => List();
+    }
+}
+
+export class NonAlignedCoordinates extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'NonAlignedCoordinates';
+    }
+
+    static forPair(first: Coordinate<any, any>, second: Coordinate<any, any>): NonAlignedCoordinates {
+        return new NonAlignedCoordinates(
+            `The coordinates "${first.toString()}" and "${second.toString()}" are not aligned.`,
+        );
     }
 }

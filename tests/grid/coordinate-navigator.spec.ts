@@ -2,9 +2,12 @@ import { expect } from 'chai';
 import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import { Coordinate } from '../../src/grid/coordinate';
+import { NonAlignedCoordinates } from '../../src/grid/coordinate-navigator';
 import { ShipDirection } from '../../src/ship/ship-direction';
 import { ShipSize } from '../../src/ship/ship-size';
+import { expectError } from '../chai-assertions';
 import { TestCoordinate, testCoordinateNavigator } from './test-coordinates';
+import assert = require('node:assert');
 
 class SurroundingCoordinatesSet {
     constructor(
@@ -38,6 +41,74 @@ describe('CoordinateNavigator::getSurroundingCoordinates()', () => {
                 .sort();
 
             expect(actual).to.eqls(expected);
+        });
+    }
+});
+
+class DistanceSet {
+    constructor(
+        readonly title: string,
+        readonly first: TestCoordinate,
+        readonly second: TestCoordinate,
+        readonly expected: NonAlignedCoordinates | number,
+    ) {
+    }
+}
+
+function* provideDistanceSet(): Generator<DistanceSet> {
+    yield new DistanceSet(
+        'two identical coordinates',
+        new Coordinate('C', '3'),
+        new Coordinate('C', '3'),
+        0,
+    );
+
+    yield new DistanceSet(
+        'two adjacent coordinates',
+        new Coordinate('C', '3'),
+        new Coordinate('C', '4'),
+        1,
+    );
+
+    yield new DistanceSet(
+        'two aligned coordinates',
+        new Coordinate('C', '2'),
+        new Coordinate('C', '5'),
+        3,
+    );
+
+    yield new DistanceSet(
+        'two diagonally aligned coordinates',
+        new Coordinate('C', '2'),
+        new Coordinate('D', '3'),
+        new NonAlignedCoordinates('The coordinates "C2" and "D3" are not aligned.'),
+    );
+}
+
+describe('CoordinateNavigator::calculateDistance()', () => {
+    for (const { title, first, second, expected } of provideDistanceSet()) {
+        it(title, () => {
+            testCoordinateNavigator.calculateDistance(first, second)
+                .fold(
+                    (error) => {
+                        expect(expected).to.be.instanceof(NonAlignedCoordinates);
+                        assert(expected instanceof NonAlignedCoordinates);
+
+                        expectError(
+                            'NonAlignedCoordinates',
+                            expected.message,
+                            () => {
+                                throw error;
+                            },
+                        );
+                    },
+                    (distance) => {
+                        expect(expected).to.not.be.instanceof(NonAlignedCoordinates);
+                        assert(Number.isInteger(expected));
+
+                        expect(distance).to.equal(expected);
+                    }
+                );
         });
     }
 });
