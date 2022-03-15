@@ -71,6 +71,10 @@ export class PositionedShip<
     }
 }
 
+export function isPositionedShip(value: unknown): value is PositionedShip<PropertyKey, PropertyKey> {
+    return value instanceof PositionedShip;
+}
+
 class OutOfBoundShipCoordinate extends Error {
     constructor(message?: string) {
         super(message);

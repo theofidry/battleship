@@ -8,13 +8,13 @@ import { Ship } from '../../ship/ship';
 import { ShipDirection } from '../../ship/ship-direction';
 import { ShipPosition } from '../../ship/ship-position';
 import { EnumHelper } from '../../utils/enum-helper';
-import { StandardPlayerGrid } from '../standard-player-grid';
+import { Cell, StandardPlayerGrid } from '../standard-player-grid';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { StdCoordinate } from '../std-coordinate';
 import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
-export const RandomPlacementStrategy: PlacementStrategy<StdColumnIndex, StdRowIndex> = {
+export const RandomPlacementStrategy: PlacementStrategy<StdColumnIndex, StdRowIndex, Cell> = {
     place: (fleet: Fleet): StandardPlayerGrid => {
         const initialValue: FleetPlacement = {
             grid: new StandardPlayerGrid([]),

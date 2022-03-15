@@ -2,7 +2,7 @@ import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { Player } from '../player/player';
 
-export type AnyPlayer = Player<any, any, any>;
+export type AnyPlayer = Player<any, any, any, any>;
 export type AnyCoordinate = Coordinate<any, any>;
 
 export interface MatchLogger {

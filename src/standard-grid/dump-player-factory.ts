@@ -1,13 +1,11 @@
 import { AdaptablePlayer } from '../player/adaptable-player';
-import { Player } from '../player/player';
 import { Fleet } from '../ship/fleet';
 import { RandomHitStrategy } from './hit-strategy/random-hit-strategy';
 import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
-import { Cell, StandardOpponentGrid } from './standard-opponent-grid';
-import { StdColumnIndex } from './std-column-index';
-import { StdRowIndex } from './std-row-index';
+import { StandardOpponentGrid } from './standard-opponent-grid';
+import { StdPlayer } from './std-player';
 
-export function createDumbAIPlayer(name: string, fleet: Fleet): Player<StdColumnIndex, StdRowIndex, Cell> {
+export function createDumbAIPlayer(name: string, fleet: Fleet): StdPlayer {
     return new AdaptablePlayer(
         `AI${name}`.trim(),
         fleet,

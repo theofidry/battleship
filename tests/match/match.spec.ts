@@ -13,7 +13,7 @@ import { PlayerStub } from '../player/player-stub';
 type SmallGridColumnIndex = 'C1' | 'C2';
 type SmallGridRowIndex = 'R1' | 'R2';
 
-type TestPlayer = Player<SmallGridColumnIndex, SmallGridRowIndex, unknown>;
+type TestPlayer = Player<SmallGridColumnIndex, SmallGridRowIndex, unknown, unknown>;
 
 function createLogRecord(message: string): LogRecord {
     return { message: message, optionalParams: [] };
