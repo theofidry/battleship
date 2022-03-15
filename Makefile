@@ -62,6 +62,7 @@ compile:	## Builds the JavaScript app artefacts
 compile:
 	rm -rf dist/src || true
 	$(MAKE) dist/src
+	node dist/src/main.js --version
 
 
 .PHONY: fast_run
