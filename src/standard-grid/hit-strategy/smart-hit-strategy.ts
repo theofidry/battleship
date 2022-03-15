@@ -11,9 +11,9 @@ import { HitStrategy, PreviousMove } from '../../player/hit-strategy';
 import { ShipDirection } from '../../ship/ship-direction';
 import { Either } from '../../utils/either';
 import { Cell } from '../standard-opponent-grid';
-import { getNextColumnIndex, getPreviousColumnIndex, StdColumnIndex } from '../std-column-index';
+import { StdColumnIndex } from '../std-column-index';
 import { StdCoordinate } from '../std-coordinate';
-import { getNextRowIndex, getPreviousRowIndex, StdRowIndex } from '../std-row-index';
+import { StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
 export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
