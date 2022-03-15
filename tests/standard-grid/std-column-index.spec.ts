@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-    getNextColumnIndex, getPreviousColumnIndex, StdColumnIndex,
+    findNextColumnIndex, findPreviousColumnIndex, StdColumnIndex,
 } from '../../src/standard-grid/std-column-index';
 
 class IndexSet {
@@ -52,12 +52,12 @@ function* provideIndexSet(): Generator<IndexSet> {
 
 describe('StdColumnIndex', () => {
     for (const { title, columnIndex, expectedPreviousIndex, expectedNextIndex } of provideIndexSet()) {
-        it(`can give the previous index: ${title}`, () => {
-            expect(getPreviousColumnIndex(columnIndex)).to.equal(expectedPreviousIndex);
+        it(`can find the previous index: ${title}`, () => {
+            expect(findPreviousColumnIndex(columnIndex)).to.equal(expectedPreviousIndex);
         });
 
-        it(`can give the next index: ${title}`, () => {
-            expect(getNextColumnIndex(columnIndex)).to.equal(expectedNextIndex);
+        it(`can find the next index: ${title}`, () => {
+            expect(findNextColumnIndex(columnIndex)).to.equal(expectedNextIndex);
         });
     }
 });

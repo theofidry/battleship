@@ -15,13 +15,13 @@ export enum StdColumnIndex {
 
 export const STD_COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
 
-export function getPreviousColumnIndex(columnIndex: StdColumnIndex): StdColumnIndex | undefined {
+export function findPreviousColumnIndex(columnIndex: StdColumnIndex): StdColumnIndex | undefined {
     const currentIndex = STD_COLUMN_INDICES.findIndex((index) => index === columnIndex);
 
     return STD_COLUMN_INDICES[currentIndex - 1];
 }
 
-export function getNextColumnIndex(columnIndex: StdColumnIndex): StdColumnIndex | undefined {
+export function findNextColumnIndex(columnIndex: StdColumnIndex): StdColumnIndex | undefined {
     const currentIndex = STD_COLUMN_INDICES.findIndex((_index) => _index === columnIndex);
 
     return STD_COLUMN_INDICES[currentIndex + 1];

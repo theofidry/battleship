@@ -3,6 +3,7 @@ import { range } from 'lodash';
 import { isNotUndefined } from '../../assert/assert-is-not-undefined';
 import { ShipSize } from '../../ship/ship-size';
 import { Coordinate } from '../coordinate';
+import { CoordinateNavigator } from '../coordinate-navigator';
 import assert = require('node:assert');
 
 /**
@@ -16,17 +17,13 @@ export function createSearch<
     RowIndex extends PropertyKey,
 >(
     gridOrigin: Coordinate<ColumnIndex, RowIndex>,
-    getNextColumnIndex: (columnIndex: ColumnIndex)=> ColumnIndex | undefined,
-    getNextRowIndex: (rowIndex: RowIndex)=> RowIndex | undefined,
+    coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
 ): (minShipSize: ShipSize)=> List<List<Coordinate<ColumnIndex, RowIndex>>> {
     const findStartingCoordinates = createStartingCoordinatesFinder(
         gridOrigin,
-        getNextRowIndex,
+        coordinateNavigator,
     );
-    const traverseGrid = createGridTraverser(
-        getNextColumnIndex,
-        getNextRowIndex,
-    );
+    const traverseGrid = createGridTraverser(coordinateNavigator);
 
     return (minShipSize) => {
         const startingCoordinates = findStartingCoordinates(minShipSize);
@@ -53,12 +50,12 @@ export function createStartingCoordinatesFinder<
     RowIndex extends PropertyKey,
 >(
     gridOrigin: Coordinate<ColumnIndex, RowIndex>,
-    getNextRowIndex: (rowIndex: RowIndex)=> RowIndex | undefined,
+    coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
 ): (minShipSize: ShipSize)=> List<Coordinate<ColumnIndex, RowIndex>> {
     return (minShipSize) => List(
         range(0, minShipSize)
             .map((distanceToOrigin) => getNextIndexByStep(
-                getNextRowIndex,
+                coordinateNavigator.findNextRowIndex,
                 gridOrigin.rowIndex,
                 distanceToOrigin,
             ))
@@ -77,22 +74,21 @@ function createGridTraverser<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(
-    getNextColumnIndex: (columnIndex: ColumnIndex)=> ColumnIndex | undefined,
-    getNextRowIndex: (rowIndex: RowIndex)=> RowIndex | undefined,
+    coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
 ): (
     minShipSize: ShipSize,
     origin: Coordinate<ColumnIndex, RowIndex>,
     possibleStartingRows: List<RowIndex>,
 )=> List<Coordinate<ColumnIndex, RowIndex>> {
     return (minShipSize, origin, possibleStartingRows) => {
-        const columns = createIndices(origin.columnIndex, getNextColumnIndex);
+        const columns = createIndices(origin.columnIndex, coordinateNavigator.findNextColumnIndex);
         const loopableStartingRows = new LoopableIndices(
             possibleStartingRows,
             origin.rowIndex,
         );
 
         const getNextRowByStep = (originRowIndex: RowIndex) => getNextIndexByStep(
-            getNextRowIndex,
+            coordinateNavigator.findNextRowIndex,
             originRowIndex,
             minShipSize,
         );

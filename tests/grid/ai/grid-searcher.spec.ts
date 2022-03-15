@@ -7,6 +7,7 @@ import {
     LoopableIndices,
 } from '../../../src/grid/ai/grid-searcher';
 import { Coordinate } from '../../../src/grid/coordinate';
+import { CoordinateNavigator } from '../../../src/grid/coordinate-navigator';
 import { Grid } from '../../../src/grid/grid';
 import { printGrid } from '../../../src/grid/grid-printer';
 
@@ -23,17 +24,24 @@ type ColumnIndex = typeof COLUMN_INDICES[number];
 const ROW_INDICES = ['1', '2', '3', '4', '5'] as const;
 type RowIndex = typeof ROW_INDICES[number];
 
-const getNextColumnIndex = (columnIndex: ColumnIndex): ColumnIndex | undefined => {
+const findNextColumnIndex = (columnIndex: ColumnIndex): ColumnIndex | undefined => {
     const index = COLUMN_INDICES.findIndex((_columnIndex) => _columnIndex === columnIndex);
 
     return COLUMN_INDICES[index + 1];
 };
 
-const getNextRowIndex = (rowIndex: RowIndex): RowIndex | undefined => {
+const findNextRowIndex = (rowIndex: RowIndex): RowIndex | undefined => {
     const index = ROW_INDICES.findIndex((_rowIndex) => _rowIndex === rowIndex);
 
     return ROW_INDICES[index + 1];
 };
+
+const coordinateNavigator = new CoordinateNavigator(
+    () => undefined,
+    findNextColumnIndex,
+    () => undefined,
+    findNextRowIndex,
+);
 
 function createEmptyGrid(): Grid<ColumnIndex, RowIndex, Cell> {
     return new Grid(Map(
@@ -76,7 +84,7 @@ describe('AI grid searcher components', () => {
     it('can create indices', () => {
         const indices = createIndices(
             'B',
-            getNextColumnIndex,
+            findNextColumnIndex,
         );
 
         const expected = [
@@ -92,7 +100,7 @@ describe('AI grid searcher components', () => {
 
     it('can get the next index by a step', () => {
         const actual = getNextIndexByStep(
-            getNextColumnIndex,
+            findNextColumnIndex,
             'B',
             2,
         );
@@ -102,7 +110,7 @@ describe('AI grid searcher components', () => {
 
     it('can get the next index by a step (out of bound)', () => {
         const actual = getNextIndexByStep(
-            getNextColumnIndex,
+            findNextColumnIndex,
             'E',
             2,
         );
@@ -113,7 +121,7 @@ describe('AI grid searcher components', () => {
     it('can get the starting coordinates', () => {
         const actual = createStartingCoordinatesFinder(
                 new Coordinate('A', '1'),
-                getNextRowIndex,
+                coordinateNavigator,
             )(2)
             .map(toString)
             .toArray();
@@ -141,8 +149,7 @@ const createMarkedGrisFromSearch = (paths: List<List<Coordinate<ColumnIndex, Row
 describe('AI grid searcher', () => {
     const search = createSearch(
         new Coordinate('A', '1'),
-        getNextColumnIndex,
-        getNextRowIndex,
+        coordinateNavigator,
     );
 
     it('can screen the grid for when the smallest ship searched is of size 2', () => {
