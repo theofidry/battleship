@@ -1,15 +1,13 @@
 import { Logger } from '../../logger/logger';
-import { Player } from '../../player/player';
 import { Fleet } from '../../ship/fleet';
 import { InteractiveHitStrategy } from '../hit-strategy/interactive-hit-strategy';
 import { RandomPlacementStrategy } from '../placement-strategy/random-placement-strategy';
-import { Cell, StandardOpponentGrid } from '../standard-opponent-grid';
-import { StdColumnIndex } from '../std-column-index';
-import { StdRowIndex } from '../std-row-index';
+import { StandardOpponentGrid } from '../standard-opponent-grid';
+import { StdPlayer } from '../std-player';
 import { parseCoordinate } from './coordinate-parser';
 import { InteractivePlayer } from './interactive-player';
 
-export function createInteractivePlayer(fleet: Fleet, logger: Logger): Player<StdColumnIndex, StdRowIndex, Cell> {
+export function createInteractivePlayer(fleet: Fleet, logger: Logger): StdPlayer {
     return new InteractivePlayer(
         'You',
         fleet,
