@@ -1,4 +1,5 @@
 import { List } from 'immutable';
+import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from './coordinate';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
@@ -31,6 +32,37 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         public readonly findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
         public readonly findNextRowIndex: AdjacentIndexFinder<RowIndex>,
     ) {
+    }
+
+    /**
+     * Gets the coordinates that are adjacent, horizontally and vertically, to
+     * the given origin.
+     *
+     * For example with a grid system of (column,row)=(A-J,1-10), the surrounding
+     * coordinates of E8 will be E7,E9,D8,F8.
+     */
+    getSurroundingCoordinates(origin: Coordinate<ColumnIndex, RowIndex>): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
+        const targetColumnIndex = origin.columnIndex;
+        const targetRowIndex = origin.rowIndex;
+
+        const potentialColumnIndices = [
+            this.findPreviousColumnIndex(targetColumnIndex),
+            this.findNextColumnIndex(targetColumnIndex),
+        ].filter(isNotUndefined);
+
+        const potentialRowIndices = [
+            this.findPreviousRowIndex(targetRowIndex),
+            this.findNextRowIndex(targetRowIndex),
+        ].filter(isNotUndefined);
+
+        return [
+            ...potentialColumnIndices.map(
+                (columnIndex) => new Coordinate(columnIndex, targetRowIndex),
+            ),
+            ...potentialRowIndices.map(
+                (rowIndex) => new Coordinate(targetColumnIndex, rowIndex),
+            ),
+        ];
     }
 
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
