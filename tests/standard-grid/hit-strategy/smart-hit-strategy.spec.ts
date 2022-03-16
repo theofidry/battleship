@@ -8,77 +8,11 @@ import { assertIsNotUndefined } from '../../../src/assert/assert-is-not-undefine
 import { HitResponse } from '../../../src/communication/hit-response';
 import { Coordinate } from '../../../src/grid/coordinate';
 import { PreviousMove } from '../../../src/player/hit-strategy';
-import {
-    getSurroundingCoordinatesFollowingDirection, SmartHitStrategy,
-} from '../../../src/standard-grid/hit-strategy/smart-hit-strategy';
+import { SmartHitStrategy } from '../../../src/standard-grid/hit-strategy/smart-hit-strategy';
 import { StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../../../src/standard-grid/std-column-index';
 import { StdCoordinate } from '../../../src/standard-grid/std-coordinate';
 import { STD_ROW_INDICES, StdRowIndex } from '../../../src/standard-grid/std-row-index';
-
-describe('SmartHitStrategy components', () => {
-   it('can get the coordinates surrounding the given one following a direction (vertical)', () => {
-        const coordinates = List([
-            new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
-            new Coordinate(StdColumnIndex.C, StdRowIndex.Row6),
-        ]);
-
-        const expected = [
-            'C4',
-            'C7',
-        ];
-
-        const actual = getSurroundingCoordinatesFollowingDirection(coordinates).map(toString);
-
-        expect(actual).to.eqls(expected);
-    });
-
-   it('can get the coordinates surrounding the given one following a direction (vertical with border)', () => {
-        const coordinates = List([
-            new Coordinate(StdColumnIndex.A, StdRowIndex.Row1),
-            new Coordinate(StdColumnIndex.A, StdRowIndex.Row2),
-        ]);
-
-        const expected = [
-            'A3',
-        ];
-
-        const actual = getSurroundingCoordinatesFollowingDirection(coordinates).map(toString);
-
-        expect(actual).to.eqls(expected);
-    });
-
-   it('can get the coordinates surrounding the given one following a direction (horizontal)', () => {
-        const coordinates = List([
-            new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
-            new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
-        ]);
-
-        const expected = [
-            'B5',
-            'E5',
-        ];
-
-        const actual = getSurroundingCoordinatesFollowingDirection(coordinates).map(toString);
-
-        expect(actual).to.eqls(expected);
-    });
-
-   it('can get the coordinates surrounding the given one following a direction (horizontal with border)', () => {
-        const coordinates = List([
-            new Coordinate(StdColumnIndex.A, StdRowIndex.Row1),
-            new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
-        ]);
-
-        const expected = [
-            'C1',
-        ];
-
-        const actual = getSurroundingCoordinatesFollowingDirection(coordinates).map(toString);
-
-        expect(actual).to.eqls(expected);
-    });
-});
 
 const allCells = List(STD_COLUMN_INDICES)
     .flatMap((columnIndex) => STD_ROW_INDICES

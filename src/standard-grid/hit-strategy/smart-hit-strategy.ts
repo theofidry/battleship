@@ -1,10 +1,11 @@
-import { List, Map } from 'immutable';
+import { List, Map, Set } from 'immutable';
 import { sample, toString } from 'lodash';
 import { Observable, of } from 'rxjs';
 import { assertIsNotUndefined, isNotUndefined } from '../../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../../assert/assert-is-unreachable';
 import { HitResponse } from '../../communication/hit-response';
 import { Coordinate } from '../../grid/coordinate';
+import { CoordinateAlignment } from '../../grid/coordinate-navigator';
 import { printGrid } from '../../grid/grid-printer';
 import { OpponentGrid } from '../../grid/opponent-grid';
 import { HitStrategy, PreviousMove } from '../../player/hit-strategy';
@@ -28,6 +29,7 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
         const availableCoordinates = this.findChoices(grid, previousMove);
 
         return of(
+            // TODO: double check with the other implementation for code-reuse
             createSelectRandomCoordinate(availableCoordinates),
         );
     }
@@ -36,33 +38,42 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
         grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>,
         previousMove: PreviousMove<StdColumnIndex, StdRowIndex> | undefined,
     ): ReadonlyArray<StdCoordinate> {
-        if (undefined !== previousMove) {
-            this.previousMoves = this.previousMoves.push(previousMove);
+        this.recordPreviousMove(previousMove);
 
-            if (previousMove.response === HitResponse.HIT) {
-                this.previousHits = this.previousHits.push(previousMove.target);
-            }
-
-            if (previousMove.response === HitResponse.SUNK) {
-                this.previousHits = List();
-            }
-        }
-
+        // TODO: double check with the other implementation for code-reuse
         const untouchedCoordinates = collectUntouchedCoordinates(grid);
 
-        const choicesList = List([
+        const alignedHitCoordinatesList = StdCoordinateNavigator.findAlignments(
+            this.previousHits,
+            5,  // TODO: double check this number
+        );
+
+        const filters: List<ChoiceStrategy<StdColumnIndex, StdRowIndex>> = List([
                 ...this.previousHits.map(
-                    (previousHit) => this.createTargetSurroundingCoordinatesFilter(previousHit),
+                    (previousHit) => this.createTargetSurroundingCoordinatesFilterStrategy(previousHit),
                 ),
-                this.createTargetFollowingDirectionFilter(),
-                createNoFilterFilter(),
-            ])
-            .map((filter) => untouchedCoordinates.filter(filter))
-            .filter((choices) => choices.size !== 0)
+                ...alignedHitCoordinatesList.flatMap(
+                    (alignedHitCoordinates) => [
+                        this.createTargetAlignmentGapsFilterStrategy(alignedHitCoordinates),
+                        this.createTargetAlignmentExtremumsFilterStrategy(alignedHitCoordinates),
+                    ],
+                ),
+                // Always keep this one as a fallback as any previous strategy may
+                // result in an empty choice
+                createNoFilterFilterStrategy(),
+            ].filter(isNotUndefined)
+        );
+
+        const applyStrategyMapper = createApplyStrategyMapper(untouchedCoordinates);
+
+        const choicesList = filters
+            .map(applyStrategyMapper)
+            .filter(({ coordinates }) => coordinates.size !== 0)
             .sort(sortByLengthAscendingOrder);
 
         const choices = choicesList
             .first()!
+            .coordinates
             .valueSeq()
             .toArray();
 
@@ -71,30 +82,80 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
         return choices;
     }
 
-    private createTargetSurroundingCoordinatesFilter(lastHit: StdCoordinate): (value: StdCoordinate, key: string)=> boolean {
-        // The previous target was a hit: we initiate the hit sequence and
-        // target the surrounding cells.
-        const potentialTargets = StdCoordinateNavigator.getSurroundingCoordinates(lastHit)
-            .map((potentialTarget) => potentialTarget.toString());
-
-        return (coordinate, key) => potentialTargets.includes(key);
-    }
-
-    private createTargetFollowingDirectionFilter(): (value: StdCoordinate, key: string)=> boolean {
-        const lastHit = this.previousHits.last();
-
-        if (undefined === lastHit) {
-            return createNoFilterFilter();
+    private recordPreviousMove(previousMove: PreviousMove<StdColumnIndex, StdRowIndex> | undefined): void {
+        if (undefined === previousMove) {
+            return;
         }
 
-        const potentialTargets = getSurroundingCoordinatesFollowingDirection(this.previousHits)
-            .map((potentialTarget) => potentialTarget.toString());
+        this.previousMoves = this.previousMoves.push(previousMove);
 
-        return (coordinate, key) => potentialTargets.includes(key);
+        if (previousMove.response === HitResponse.HIT) {
+            this.previousHits = this.previousHits.push(previousMove.target);
+        }
+
+        if (previousMove.response === HitResponse.SUNK) {
+            this.previousHits = List();
+        }
+    }
+
+    private createTargetSurroundingCoordinatesFilterStrategy(
+        hitTarget: StdCoordinate,
+    ): ChoiceStrategy<StdColumnIndex, StdRowIndex> | undefined {
+        // Picks the coordinates surrounding the given hit target.
+        const validCandidates = Set(
+            StdCoordinateNavigator.getSurroundingCoordinates(hitTarget),
+        );
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        return {
+            strategy: `HitTargetSurroundings<${hitTarget.toString()}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
+    }
+
+    private createTargetAlignmentGapsFilterStrategy(
+        alignedHitCoordinates: CoordinateAlignment<StdColumnIndex, StdRowIndex>,
+    ): ChoiceStrategy<StdColumnIndex, StdRowIndex> | undefined {
+        // Picks the coordinates between aligned hit coordinates.
+        const validCandidates = StdCoordinateNavigator.findAlignmentGaps(alignedHitCoordinates);
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        const directionString = alignedHitCoordinates.direction.toString();
+        const alignedCoordinatesString = alignedHitCoordinates.coordinates.map(toString);
+
+        return {
+            strategy: `HitAlignedGapsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
+    }
+
+    private createTargetAlignmentExtremumsFilterStrategy(
+        alignedHitCoordinates: CoordinateAlignment<StdColumnIndex, StdRowIndex>,
+    ): ChoiceStrategy<StdColumnIndex, StdRowIndex> | undefined {
+        // Picks the extremums coordinates of aligned hit coordinates.
+        const validCandidates = StdCoordinateNavigator.findNextExtremums(alignedHitCoordinates);
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        const directionString = alignedHitCoordinates.direction.toString();
+        const alignedCoordinatesString = alignedHitCoordinates.coordinates.map(toString);
+
+        return {
+            strategy: `HitAlignedExtremumsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
     }
 
     private assertThereIsAChoiceLeft(
-        choicesList: List<Map<string, StdCoordinate>>,
+        choicesList: List<AppliedChoiceStrategy<StdColumnIndex, StdRowIndex>>,
         untouchedCoordinates: Map<string, StdCoordinate>,
         grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>,
     ): void {
@@ -117,8 +178,10 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
         // before has been cleared with the previous sunk hence the algorithm
         // gets there and "forgot" G7 was a previous hit and hence that G6 is
         // a logical follow up.
+        // TODO: throw an exception with the right data which then can be properly logged even at runtime
         return;
 
+        // TODO: remove this once we are confident with the implementation of the filters.
         // Something went wrong: the following is purely for debugging purposes.
         const normalizedPreviousMoves = this.previousMoves
             .map(({ target, response }) => ({
@@ -136,8 +199,13 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
             .keySeq()
             .toArray();
 
-        const normalizedChoicesList = choicesList
+        const normalizedChoicesStrategies = choicesList
+            .map((list) => list.strategy)
+            .toArray();
+
+        const normalizedChoicesCoordinates = choicesList
             .map((list) => list
+                .coordinates
                 .valueSeq()
                 .map(toString)
                 .toArray()
@@ -148,7 +216,8 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
             normalizedPreviousMoves,
             normalizedPreviousHits,
             normalizedUntouchedCoordinates,
-            normalizedChoicesList,
+            normalizedChoicesStrategies,
+            normalizedChoicesCoordinates,
         });
 
         console.log(
@@ -162,8 +231,11 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
     }
 }
 
-function createNoFilterFilter(): (value: any)=> boolean {
-    return () => true;
+function createNoFilterFilterStrategy(): ChoiceStrategy<StdColumnIndex, StdRowIndex> {
+    return {
+        strategy: 'NoFilter',
+        filter: () => true,
+    };
 }
 
 function collectUntouchedCoordinates(grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Map<string, StdCoordinate> {
@@ -181,118 +253,39 @@ function collectUntouchedCoordinates(grid: OpponentGrid<StdColumnIndex, StdRowIn
     );
 }
 
-export function getSurroundingCoordinatesFollowingDirection(coordinates: List<StdCoordinate>): ReadonlyArray<StdCoordinate> {
-    if (coordinates.size < 2) {
-        return [];
-    }
+type ChoiceStrategy<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = {
+    readonly strategy: string,
+    filter: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean,
+};
 
-    let direction: ShipDirection;
+type AppliedChoiceStrategy<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = {
+    readonly strategy: string,
+    coordinates: Map<string, Coordinate<ColumnIndex, RowIndex>>,
+};
 
-    try {
-        direction = findDirection(coordinates).getOrThrow(new Error('Expected to find a direction'));
-    } catch (error) {
-        return [];
-    }
-
-    const first = coordinates.first();
-    assertIsNotUndefined(first);
-
-    switch (direction) {
-        case ShipDirection.HORIZONTAL:
-            return findHeadTail(
-                    coordinates.map((coordinate) => coordinate.columnIndex),
-                    findPreviousColumnIndex,
-                    findNextColumnIndex,
-                )
-                .map((columnIndex) => new Coordinate(columnIndex, first.rowIndex));
-
-        case ShipDirection.VERTICAL:
-            return findHeadTail(
-                    coordinates.map((coordinate) => coordinate.rowIndex),
-                    findPreviousRowIndex,
-                    findNextRowIndex,
-                )
-                .map((rowIndex) => new Coordinate(first.columnIndex, rowIndex));
-    }
-
-    assertIsUnreachableCase(direction);
+function createApplyStrategyMapper<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(
+    source: Map<string, Coordinate<ColumnIndex, RowIndex>>,
+): (choiceStrategy: ChoiceStrategy<ColumnIndex, RowIndex>)=> AppliedChoiceStrategy<ColumnIndex, RowIndex> {
+    return ({ strategy, filter }) => ({
+        strategy,
+        coordinates: source.filter(filter),
+    });
 }
 
-function findDirection(coordinates: List<StdCoordinate>): Either<undefined, ShipDirection> {
-    const firstCoordinate = coordinates.first();
-    assertIsNotUndefined(firstCoordinate);
-
-    const secondCoordinate = coordinates.get(1);
-    assertIsNotUndefined(secondCoordinate);
-
-    const targetColumnIndex = firstCoordinate.columnIndex;
-    const targetRowIndex = firstCoordinate.rowIndex;
-
-    const potentialColumnIndices = [
-        findPreviousColumnIndex(targetColumnIndex),
-        findNextColumnIndex(targetColumnIndex),
-    ].filter(isNotUndefined);
-
-    if (potentialColumnIndices.includes(secondCoordinate.columnIndex)) {
-        return Either.right(ShipDirection.HORIZONTAL);
-    }
-
-    const potentialRowIndices = [
-        findPreviousRowIndex(targetRowIndex),
-        findNextRowIndex(targetRowIndex),
-    ].filter(isNotUndefined);
-
-    if (potentialRowIndices.includes(secondCoordinate.rowIndex)) {
-        return Either.right(ShipDirection.VERTICAL);
-    }
-
-    return Either.left(undefined);
-}
-
-function findHeadTail<Index extends PropertyKey>(
-    indices: List<Index>,
-    getPreviousIndex: (index: Index)=> Index | undefined,
-    getNextIndex: (index: Index)=> Index | undefined,
-): ReadonlyArray<Index> {
-    const start = indices.first();
-    assertIsNotUndefined(start);
-
-    return [
-        findNextHead(
-            indices,
-            getPreviousIndex,
-        ),
-        findNextHead(
-            indices,
-            getNextIndex,
-        ),
-    ].filter(isNotUndefined);
-}
-
-function findNextHead<Index extends PropertyKey>(
-    indices: List<Index>,
-    getNextIndex: (index: Index)=> Index | undefined,
-): Index | undefined {
-    const start = indices.first();
-    assertIsNotUndefined(start);
-
-    let head: Index | undefined;
-    let previousHead: Index = start;
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        head = getNextIndex(previousHead);
-
-        if (undefined === head) {
-            return undefined;
-        }
-
-        if (!indices.includes(head)) {
-            return head;
-        }
-
-        previousHead = head;
-    }
+function sortByLengthAscendingOrder<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(a: AppliedChoiceStrategy<ColumnIndex, RowIndex>, b: AppliedChoiceStrategy<ColumnIndex, RowIndex>): number {
+    return a.coordinates.size - b.coordinates.size;
 }
 
 function createSelectRandomCoordinate(choices: ReadonlyArray<StdCoordinate>): StdCoordinate {
@@ -300,12 +293,6 @@ function createSelectRandomCoordinate(choices: ReadonlyArray<StdCoordinate>): St
     assert(undefined !== value);
 
     return value;
-}
-
-type ImmutableCollection = List<any> | Map<any, any>;
-
-function sortByLengthAscendingOrder(a: ImmutableCollection, b: ImmutableCollection): number {
-    return a.size - b.size;
 }
 
 function printCell(cell: Cell): string {
