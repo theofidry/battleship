@@ -4,11 +4,9 @@ import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { AdaptablePlayer } from '../player/adaptable-player';
 import { HitStrategy } from '../player/hit-strategy';
 import { Fleet } from '../ship/fleet';
-import { RandomHitStrategy } from './hit-strategy/random-hit-strategy';
-import { SmartHitStrategy } from './hit-strategy/smart-hit-strategy';
 import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
 import { Cell, StandardOpponentGrid } from './standard-opponent-grid';
-import { StdAIHitStrategy } from './std-ai-hit-strategy';
+import { createStdAIHitStrategy } from './std-ai-hit-strategy';
 import { StdColumnIndex } from './std-column-index';
 import { StdPlayer } from './std-player';
 import { StdRowIndex } from './std-row-index';
@@ -57,10 +55,10 @@ export function createAIPlayer(fleet: Fleet, version: AIVersion, name = ''): Std
 function createHitStrategy(version: AIVersion): HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
     switch (version) {
         case AIVersion.V1:
-            return StdAIHitStrategy;
+            return createStdAIHitStrategy(false);
 
         case AIVersion.V2:
-            return new SmartHitStrategy();
+            return createStdAIHitStrategy(true);
     }
 
     assertIsUnreachableCase(version);

@@ -49,6 +49,13 @@ function* provideSortCoordinatesSet(): Generator<SortCoordinatesSet> {
         new Coordinate('B', '2'),
         ['B2', 'D3'],
     );
+
+    yield new SortCoordinatesSet(
+        'nominal (2)',
+        new Coordinate('C', '2'),
+        new Coordinate('B', '3'),
+        ['C2', 'B3'],
+    );
 }
 
 describe('CoordinateNavigator::sortCoordinates()', () => {

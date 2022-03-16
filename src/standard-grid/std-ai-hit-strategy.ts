@@ -27,8 +27,15 @@ const errorHandler: AIErrorHandler<StdColumnIndex, StdRowIndex, OpponentCell> = 
     throw error;
 };
 
-export const StdAIHitStrategy = new AIHitStrategy(
-    StdCoordinateNavigator,
-    findUntouchedCoordinates,
-    errorHandler,
-);
+export type StdAiHitStrategy = AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell>;
+
+export function createStdAIHitStrategy(
+    enableSmartTargeting: boolean,
+): AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell> {
+    return new AIHitStrategy(
+        StdCoordinateNavigator,
+        findUntouchedCoordinates,
+        errorHandler,
+        enableSmartTargeting,
+    );
+}
