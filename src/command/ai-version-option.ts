@@ -1,6 +1,6 @@
 import { Option } from 'commander';
 import { toString } from 'lodash';
-import { AIVersion } from '../standard-grid/ai-player-factory';
+import { AIVersion } from '../standard-grid/std-ai-player-factory';
 import { EnumHelper } from '../utils/enum-helper';
 
 export function createAIVersionOption(flags = '--ai <aiVersion>', description = 'AI version to use'): Option {

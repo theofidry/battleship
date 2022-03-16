@@ -1,16 +1,16 @@
 import { fail } from 'assert';
 import { expect } from 'chai';
-import { Coordinate } from '../../../src/grid/coordinate';
-import { RandomHitStrategy } from '../../../src/standard-grid/hit-strategy/random-hit-strategy';
-import { StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
-import { STD_COLUMN_INDICES, StdColumnIndex } from '../../../src/standard-grid/std-column-index';
-import { STD_ROW_INDICES, StdRowIndex } from '../../../src/standard-grid/std-row-index';
+import { Coordinate } from '../../src/grid/coordinate';
+import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
+import { StdAIHitStrategy } from '../../src/standard-grid/std-ai-hit-strategy';
+import { STD_COLUMN_INDICES, StdColumnIndex } from '../../src/standard-grid/std-column-index';
+import { STD_ROW_INDICES, StdRowIndex } from '../../src/standard-grid/std-row-index';
 
-describe('RandomHitStrategy', () => {
+describe('StdAIHitStrategy', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
 
-        RandomHitStrategy.decide(opponentGrid, undefined)
+        StdAIHitStrategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: () => done(),
                 error: () => fail('Did not expect to have an error.'),
@@ -43,7 +43,7 @@ describe('RandomHitStrategy', () => {
             )
         );
 
-        RandomHitStrategy.decide(opponentGrid, undefined)
+        StdAIHitStrategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: (nextMove) => {
                     expect(nextMove).to.eqls(expectedCoordinate);
