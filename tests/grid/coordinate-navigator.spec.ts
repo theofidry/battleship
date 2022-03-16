@@ -9,6 +9,58 @@ import { expectError } from '../chai-assertions';
 import { TestCoordinate, testCoordinateNavigator } from './test-coordinates';
 import assert = require('node:assert');
 
+class SortCoordinatesSet {
+    constructor(
+        readonly title: string,
+        readonly left: TestCoordinate,
+        readonly right: TestCoordinate,
+        readonly expected: ReadonlyArray<string>,
+    ) {
+    }
+}
+
+function* provideSortCoordinatesSet(): Generator<SortCoordinatesSet> {
+    yield new SortCoordinatesSet(
+        'same coordinate',
+        new Coordinate('C', '3'),
+        new Coordinate('C', '3'),
+        ['C3', 'C3'],
+    );
+
+    yield new SortCoordinatesSet(
+        'left has same row but its column is more on the right',
+        new Coordinate('E', '3'),
+        new Coordinate('C', '3'),
+        ['C3', 'E3'],
+    );
+
+    yield new SortCoordinatesSet(
+        'left has same column but its row is more on the right',
+        new Coordinate('C', '5'),
+        new Coordinate('C', '3'),
+        ['C3', 'C5'],
+    );
+
+    yield new SortCoordinatesSet(
+        'nominal',
+        new Coordinate('D', '3'),
+        new Coordinate('B', '2'),
+        ['B2', 'D3'],
+    );
+}
+
+describe('CoordinateNavigator::sortCoordinates()', () => {
+    for (const { title, left, right, expected } of provideSortCoordinatesSet()) {
+        it(title, () => {
+            const actual = [left, right]
+                .sort(testCoordinateNavigator.createCoordinatesSorter())
+                .map(toString);
+
+            expect(actual).to.eqls(expected);
+        });
+    }
+});
+
 class SurroundingCoordinatesSet {
     constructor(
         readonly title: string,

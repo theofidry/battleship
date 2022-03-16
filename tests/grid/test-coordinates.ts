@@ -1,5 +1,8 @@
 import { Coordinate } from '../../src/grid/coordinate';
 import { CoordinateNavigator } from '../../src/grid/coordinate-navigator';
+import {
+    createFindNextIndex, createFindPreviousIndex, createIndexSorter,
+} from '../../src/grid/index';
 
 export enum TestCell {
     EMPTY,
@@ -16,33 +19,19 @@ export type TestRowIndex = typeof TEST_ROW_INDICES[number];
 
 export type TestCoordinate = Coordinate<TestColumnIndex, TestRowIndex>;
 
-const findNextTestColumnIndex = (columnIndex: TestColumnIndex): TestColumnIndex | undefined => {
-    const index = TEST_COLUMN_INDICES.findIndex((_columnIndex) => _columnIndex === columnIndex);
+const findPreviousTestColumnIndex = createFindPreviousIndex(TEST_COLUMN_INDICES);
+const findNextTestColumnIndex = createFindNextIndex(TEST_COLUMN_INDICES);
+const sortTestColumnIndex = createIndexSorter(TEST_COLUMN_INDICES);
 
-    return TEST_COLUMN_INDICES[index + 1];
-};
-
-const findPreviousTestColumnIndex = (columnIndex: TestColumnIndex): TestColumnIndex | undefined => {
-    const index = TEST_COLUMN_INDICES.findIndex((_columnIndex) => _columnIndex === columnIndex);
-
-    return TEST_COLUMN_INDICES[index - 1];
-};
-
-const findNextTestRowIndex = (rowIndex: TestRowIndex): TestRowIndex | undefined => {
-    const index = TEST_ROW_INDICES.findIndex((_rowIndex) => _rowIndex === rowIndex);
-
-    return TEST_ROW_INDICES[index + 1];
-};
-
-const findPreviousTestRowIndex = (rowIndex: TestRowIndex): TestRowIndex | undefined => {
-    const index = TEST_ROW_INDICES.findIndex((_rowIndex) => _rowIndex === rowIndex);
-
-    return TEST_ROW_INDICES[index - 1];
-};
+const findPreviousTestRowIndex = createFindPreviousIndex(TEST_ROW_INDICES);
+const findNextTestRowIndex = createFindNextIndex(TEST_ROW_INDICES);
+const sortTestRowIndex = createIndexSorter(TEST_ROW_INDICES);
 
 export const testCoordinateNavigator = new CoordinateNavigator(
     findPreviousTestColumnIndex,
     findNextTestColumnIndex,
+    sortTestColumnIndex,
     findPreviousTestRowIndex,
     findNextTestRowIndex,
+    sortTestRowIndex,
 );

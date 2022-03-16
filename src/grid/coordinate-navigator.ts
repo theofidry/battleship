@@ -1,5 +1,4 @@
 import { List, Map, Set } from 'immutable';
-import { toString } from 'lodash';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
@@ -8,6 +7,7 @@ import { Coordinate } from './coordinate';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type DistantIndexFinder<Index extends PropertyKey> = (index: Index, step: number)=> Index | undefined;
+export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
 
 export type GridTraverser<
     ColumnIndex extends PropertyKey,
@@ -33,6 +33,11 @@ export type CoordinateAlignment<
     readonly coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
 };
 
+export type CoordinateSorter<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = (left: Coordinate<ColumnIndex, RowIndex>, right: Coordinate<ColumnIndex, RowIndex>)=> number;
+
 /**
  * The navigator provides an API to easily consume and navigates a grid-coordinate
  * system.
@@ -41,9 +46,23 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     constructor(
         public readonly findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
         public readonly findNextColumnIndex: AdjacentIndexFinder<ColumnIndex>,
+        public readonly columnIndexSorter: IndexSorter<ColumnIndex>,
         public readonly findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
         public readonly findNextRowIndex: AdjacentIndexFinder<RowIndex>,
+        public readonly rowIndexSorter: IndexSorter<RowIndex>,
     ) {
+    }
+
+    createCoordinatesSorter(): CoordinateSorter<ColumnIndex, RowIndex> {
+        return (left, right) => {
+            const rowSortResult = this.rowIndexSorter(left.rowIndex, right.rowIndex);
+
+            if (rowSortResult !== 0) {
+                return rowSortResult;
+            }
+
+            return this.columnIndexSorter(left.columnIndex, right.columnIndex);
+        };
     }
 
     /**
