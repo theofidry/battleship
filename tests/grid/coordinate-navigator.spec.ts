@@ -248,10 +248,6 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
                 direction: ShipDirection.VERTICAL,
                 coordinates: ['C3', 'C4', 'C5'].sort(),
             },
-            // {
-            //     direction: ShipDirection.VERTICAL,
-            //     coordinates: ['C4', 'C5'].sort(),
-            // },
         ],
     );
 }
