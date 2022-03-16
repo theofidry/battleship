@@ -11,6 +11,58 @@ import {
 } from './test-coordinates';
 import assert = require('node:assert');
 
+class SortCoordinatesSet {
+    constructor(
+        readonly title: string,
+        readonly left: TestCoordinate,
+        readonly right: TestCoordinate,
+        readonly expected: ReadonlyArray<string>,
+    ) {
+    }
+}
+
+function* provideSortCoordinatesSet(): Generator<SortCoordinatesSet> {
+    yield new SortCoordinatesSet(
+        'same coordinate',
+        new Coordinate('C', '3'),
+        new Coordinate('C', '3'),
+        ['C3', 'C3'],
+    );
+
+    yield new SortCoordinatesSet(
+        'left has same row but its column is more on the right',
+        new Coordinate('E', '3'),
+        new Coordinate('C', '3'),
+        ['C3', 'E3'],
+    );
+
+    yield new SortCoordinatesSet(
+        'left has same column but its row is more on the right',
+        new Coordinate('C', '5'),
+        new Coordinate('C', '3'),
+        ['C3', 'C5'],
+    );
+
+    yield new SortCoordinatesSet(
+        'nominal',
+        new Coordinate('D', '3'),
+        new Coordinate('B', '2'),
+        ['B2', 'D3'],
+    );
+}
+
+describe('CoordinateNavigator::sortCoordinates()', () => {
+    for (const { title, left, right, expected } of provideSortCoordinatesSet()) {
+        it(title, () => {
+            const actual = [left, right]
+                .sort(testCoordinateNavigator.createCoordinatesSorter())
+                .map(toString);
+
+            expect(actual).to.eqls(expected);
+        });
+    }
+});
+
 class SurroundingCoordinatesSet {
     constructor(
         readonly title: string,
@@ -24,13 +76,13 @@ function* provideSurroundingCoordinatesSet(): Generator<SurroundingCoordinatesSe
     yield new SurroundingCoordinatesSet(
         'origin in the middle of the grid',
         new Coordinate('C', '3'),
-        ['C2', 'C4', 'B3', 'D3'].sort(),
+        ['C2', 'B3', 'D3', 'C4'],
     );
 
     yield new SurroundingCoordinatesSet(
         'origin in a corner of the grid',
         new Coordinate('A', '1'),
-        ['A2', 'B1'].sort(),
+        ['B1', 'A2'],
     );
 }
 
@@ -39,8 +91,7 @@ describe('CoordinateNavigator::getSurroundingCoordinates()', () => {
         it(title, () => {
             const actual = testCoordinateNavigator
                 .getSurroundingCoordinates(target)
-                .map((coordinate) => coordinate.toString())
-                .sort();
+                .map((coordinate) => coordinate.toString());
 
             expect(actual).to.eqls(expected);
         });
@@ -235,6 +286,32 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
             new Coordinate('C', '3'),
             new Coordinate('C', '4'),
             new Coordinate('C', '5'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C1', 'C2', 'C3'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C2', 'C3', 'C4'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C3', 'C4', 'C5'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'unordered aligned coordinates with some out of reach',
+        Set([
+            new Coordinate('C', '2'),
+            new Coordinate('C', '4'),
+            new Coordinate('C', '1'),
+            new Coordinate('C', '5'),
+            new Coordinate('C', '3'),
         ]),
         2,
         [

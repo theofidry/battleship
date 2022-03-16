@@ -26,6 +26,17 @@ describe('Either', () => {
         expect(eitherRight.map(mapper)).to.eqls(Either.right(14));
     });
 
+    it('::mapBoth() maps the right and left value', () => {
+        const eitherLeft: Either<number, number> = Either.left(3);
+        const eitherRight: Either<number, number> = Either.right(7);
+
+        const leftMapper = (value: number) => value * 2;
+        const rightMapper = (value: number) => value * 3;
+
+        expect(eitherLeft.mapBoth(leftMapper, rightMapper)).to.eqls(Either.left(6));
+        expect(eitherRight.mapBoth(leftMapper, rightMapper)).to.eqls(Either.right(21));
+    });
+
     it('::flatMap() maps the right value and leave the left unchanged', () => {
         const eitherLeft: Either<number, number> = Either.left(3);
         const eitherRight: Either<number, number> = Either.right(7);

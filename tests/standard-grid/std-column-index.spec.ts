@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-    findNextColumnIndex, findPreviousColumnIndex, StdColumnIndex,
+    findNextColumnIndex, findPreviousColumnIndex, sortColumnIndex, StdColumnIndex,
 } from '../../src/standard-grid/std-column-index';
 
 class IndexSet {
@@ -60,4 +60,24 @@ describe('StdColumnIndex', () => {
             expect(findNextColumnIndex(columnIndex)).to.equal(expectedNextIndex);
         });
     }
+
+    it('can be sorted', () => {
+        const input = [
+            StdColumnIndex.A,
+            StdColumnIndex.J,
+            StdColumnIndex.I,
+            StdColumnIndex.C,
+            StdColumnIndex.I,
+        ];
+
+        const expected = [
+            StdColumnIndex.A,
+            StdColumnIndex.C,
+            StdColumnIndex.I,
+            StdColumnIndex.I,
+            StdColumnIndex.J,
+        ];
+
+        expect(input.sort(sortColumnIndex)).to.eqls(expected);
+    });
 });
