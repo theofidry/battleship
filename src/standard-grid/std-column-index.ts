@@ -1,3 +1,4 @@
+import { createFindNextIndex, createFindPreviousIndex, createIndexSorter } from '../grid/index';
 import { EnumHelper } from '../utils/enum-helper';
 
 export enum StdColumnIndex {
@@ -15,14 +16,6 @@ export enum StdColumnIndex {
 
 export const STD_COLUMN_INDICES = EnumHelper.getValues(StdColumnIndex);
 
-export function findPreviousColumnIndex(columnIndex: StdColumnIndex): StdColumnIndex | undefined {
-    const currentIndex = STD_COLUMN_INDICES.findIndex((index) => index === columnIndex);
-
-    return STD_COLUMN_INDICES[currentIndex - 1];
-}
-
-export function findNextColumnIndex(columnIndex: StdColumnIndex): StdColumnIndex | undefined {
-    const currentIndex = STD_COLUMN_INDICES.findIndex((_index) => _index === columnIndex);
-
-    return STD_COLUMN_INDICES[currentIndex + 1];
-}
+export const findPreviousColumnIndex = createFindPreviousIndex(STD_COLUMN_INDICES);
+export const findNextColumnIndex = createFindNextIndex(STD_COLUMN_INDICES);
+export const sortColumnIndex = createIndexSorter(STD_COLUMN_INDICES);

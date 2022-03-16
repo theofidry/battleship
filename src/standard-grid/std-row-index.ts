@@ -1,3 +1,4 @@
+import { createFindNextIndex, createFindPreviousIndex, createIndexSorter } from '../grid/index';
 import { EnumHelper } from '../utils/enum-helper';
 
 export enum StdRowIndex {
@@ -15,14 +16,6 @@ export enum StdRowIndex {
 
 export const STD_ROW_INDICES = EnumHelper.getValues(StdRowIndex);
 
-export function findPreviousRowIndex(rowIndex: StdRowIndex): StdRowIndex | undefined {
-    const currentIndex = STD_ROW_INDICES.findIndex((index) => index === rowIndex);
-
-    return STD_ROW_INDICES[currentIndex - 1];
-}
-
-export function findNextRowIndex(rowIndex: StdRowIndex): StdRowIndex | undefined {
-    const currentIndex = STD_ROW_INDICES.findIndex((_index) => _index === rowIndex);
-
-    return STD_ROW_INDICES[currentIndex + 1];
-}
+export const findPreviousRowIndex = createFindPreviousIndex(STD_ROW_INDICES);
+export const findNextRowIndex = createFindNextIndex(STD_ROW_INDICES);
+export const sortRowIndex = createIndexSorter(STD_ROW_INDICES);
