@@ -1,10 +1,10 @@
-import { List, Map } from 'immutable';
-import { sample } from 'lodash';
+import { List, Map, Set } from 'immutable';
+import { sample, toString } from 'lodash';
 import { Observable, of } from 'rxjs';
 import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
 import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
-import { CoordinateNavigator } from '../grid/coordinate-navigator';
+import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { Either } from '../utils/either';
 import { HitStrategy, PreviousMove } from './hit-strategy';
@@ -33,6 +33,7 @@ export class AIHitStrategy<
         private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
+        private readonly enableSmartTargeting: boolean,
     ) {
     }
 
@@ -54,10 +55,20 @@ export class AIHitStrategy<
     ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>> {
         this.recordPreviousMove(previousMove);
 
+        const { previousHits } = this;
+
         const untouchedCoordinates = this.findUntouchedCoordinates(grid);
 
+        const alignedHitCoordinatesList = this.coordinateNavigator.findAlignments(
+            previousHits,
+            5,  // TODO: double check this number
+        );
+
         const filters: List<ChoiceStrategy<ColumnIndex, RowIndex>> = List([
-                ...this.createChoiceStrategies(),
+                ...this.createChoiceStrategies(
+                    previousHits,
+                    alignedHitCoordinatesList,
+                ),
                 // Always keep this one as a fallback as any previous strategy may
                 // result in an empty choice
                 createNoFilterFilterStrategy(),
@@ -77,8 +88,83 @@ export class AIHitStrategy<
         );
     }
 
-    private createChoiceStrategies(): ReadonlyArray<ChoiceStrategy<ColumnIndex, RowIndex>> {
-        return [];
+    private createChoiceStrategies(
+        previousHits: List<Coordinate<ColumnIndex, RowIndex>>,
+        alignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+    ): ReadonlyArray<ChoiceStrategy<ColumnIndex, RowIndex>> {
+        const strategies: Array<ChoiceStrategy<ColumnIndex, RowIndex> | undefined> = [];
+
+        if (this.enableSmartTargeting) {
+            strategies.push(
+                ...previousHits.map(
+                    (previousHit) => this.createTargetSurroundingCoordinatesFilterStrategy(previousHit),
+                ),
+                ...alignedHitCoordinatesList.flatMap(
+                    (alignedHitCoordinates) => [
+                        this.createTargetAlignmentGapsFilterStrategy(alignedHitCoordinates),
+                        this.createTargetAlignmentExtremumsFilterStrategy(alignedHitCoordinates),
+                    ],
+                )
+            );
+        }
+
+        return strategies.filter(isNotUndefined);
+    }
+
+    private createTargetSurroundingCoordinatesFilterStrategy(
+        hitTarget: Coordinate<ColumnIndex, RowIndex>,
+    ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
+        // Picks the coordinates surrounding the given hit target.
+        const validCandidates = Set(
+            this.coordinateNavigator.getSurroundingCoordinates(hitTarget),
+        );
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        return {
+            strategy: `HitTargetSurroundings<${hitTarget.toString()}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
+    }
+
+    private createTargetAlignmentGapsFilterStrategy(
+        alignedHitCoordinates: CoordinateAlignment<ColumnIndex, RowIndex>,
+    ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
+        // Picks the coordinates between aligned hit coordinates.
+        const validCandidates = this.coordinateNavigator.findAlignmentGaps(alignedHitCoordinates);
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        const directionString = alignedHitCoordinates.direction.toString();
+        const alignedCoordinatesString = alignedHitCoordinates.coordinates.map(toString);
+
+        return {
+            strategy: `HitAlignedGapsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
+    }
+
+    private createTargetAlignmentExtremumsFilterStrategy(
+        alignedHitCoordinates: CoordinateAlignment<ColumnIndex, RowIndex>,
+    ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
+        // Picks the extremums coordinates of aligned hit coordinates.
+        const validCandidates = this.coordinateNavigator.findNextExtremums(alignedHitCoordinates);
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        const directionString = alignedHitCoordinates.direction.toString();
+        const alignedCoordinatesString = alignedHitCoordinates.coordinates.map(toString);
+
+        return {
+            strategy: `HitAlignedExtremumsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
     }
 
     private recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
@@ -106,7 +192,9 @@ export class AIHitStrategy<
         const foundEnoughChoices = choicesList.size > 1 || filters.size === 1;
 
         return foundEnoughChoices
-            ? Either.right(selectFirstChoices(choicesList))
+            ? Either.right(
+                selectFirstChoices(choicesList, this.coordinateNavigator),
+            )
             : Either.left(
                 new InvalidAIStrategy(
                     grid,
@@ -169,10 +257,12 @@ function selectFirstChoices<
     RowIndex extends PropertyKey,
 >(
     choicesList: List<AppliedChoiceStrategy<ColumnIndex, RowIndex>>,
+    coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
 ): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
     return choicesList
         .first()!
         .coordinates
+        .sort(coordinateNavigator.createCoordinatesSorter())
         .valueSeq()
         .toArray();
 }

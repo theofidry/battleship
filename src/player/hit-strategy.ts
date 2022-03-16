@@ -6,7 +6,7 @@ import { OpponentGrid } from '../grid/opponent-grid';
 export type PreviousMove<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-    > = {
+> = {
     target: Coordinate<ColumnIndex, RowIndex>,
     response: HitResponse,
 };

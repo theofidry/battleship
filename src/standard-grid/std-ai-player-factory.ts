@@ -1,11 +1,12 @@
 import { sample } from 'lodash';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { AdaptablePlayer } from '../player/adaptable-player';
 import { HitStrategy } from '../player/hit-strategy';
 import { Fleet } from '../ship/fleet';
 import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
 import { Cell, StandardOpponentGrid } from './standard-opponent-grid';
-import { StdAIHitStrategy } from './std-ai-hit-strategy';
+import { createStdAIHitStrategy } from './std-ai-hit-strategy';
 import { StdColumnIndex } from './std-column-index';
 import { StdPlayer } from './std-player';
 import { StdRowIndex } from './std-row-index';
@@ -51,6 +52,14 @@ export function createAIPlayer(fleet: Fleet, version: AIVersion, name = ''): Std
     );
 }
 
-function createHitStrategy(_version: AIVersion): HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
-    return StdAIHitStrategy;
+function createHitStrategy(version: AIVersion): HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
+    switch (version) {
+        case AIVersion.V1:
+            return createStdAIHitStrategy(false);
+
+        case AIVersion.V2:
+            return createStdAIHitStrategy(true);
+    }
+
+    assertIsUnreachableCase(version);
 }
