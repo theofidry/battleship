@@ -1,4 +1,5 @@
 import { Collection, List, Map, OrderedSet } from 'immutable';
+import { findLastIndex } from 'lodash';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
@@ -308,6 +309,50 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         throw new Error('Unreachable.');
     }
 
+    findNextExtremums(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const direction = alignment.direction;
+
+        if (alignment.coordinates.size === 0) {
+            return List();
+        }
+
+        if (direction === ShipDirection.HORIZONTAL) {
+            const rowIndex = alignment.coordinates.first()!.rowIndex;
+
+            const missingColumns = findIndexExtremums(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.columnIndex)
+                    .toOrderedSet(),
+                this.findPreviousColumnIndex,
+                this.findNextColumnIndex,
+            );
+
+            return missingColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        if (direction === ShipDirection.VERTICAL) {
+            const columnIndex = alignment.coordinates.first()!.columnIndex;
+
+            const missingRows = findIndexExtremums(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.rowIndex)
+                    .toOrderedSet(),
+                this.findPreviousRowIndex,
+                this.findNextRowIndex,
+            );
+
+            return missingRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        assertIsUnreachableCase(direction);
+
+        throw new Error('Unreachable.');
+    }
+
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
         // TODO
         return () => List();
@@ -423,4 +468,24 @@ function findIndexGaps<Index extends PropertyKey>(
     }
 
     return List(missingIndices);
+}
+
+function findIndexExtremums<Index extends PropertyKey>(
+    sortedIndices: OrderedSet<Index>,
+    findPreviousIndex: AdjacentIndexFinder<Index>,
+    findNextIndex: AdjacentIndexFinder<Index>,
+): List<Index> {
+    const missingIndices: Array<Index|undefined> = [];
+    const first = sortedIndices.first();
+    const last = sortedIndices.last();
+
+    if (undefined !== first) {
+        missingIndices.push(findPreviousIndex(first));
+    }
+
+    if (undefined !== last) {
+        missingIndices.push(findNextIndex(last));
+    }
+
+    return List(missingIndices.filter(isNotUndefined));
 }
