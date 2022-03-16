@@ -7,49 +7,20 @@ import {
     LoopableIndices,
 } from '../../../src/grid/ai/grid-searcher';
 import { Coordinate } from '../../../src/grid/coordinate';
-import { CoordinateNavigator } from '../../../src/grid/coordinate-navigator';
 import { Grid } from '../../../src/grid/grid';
 import { printGrid } from '../../../src/grid/grid-printer';
+import {
+    TEST_COLUMN_INDICES, TEST_ROW_INDICES, TestCell, testCellPrinter, TestColumnIndex,
+    testCoordinateNavigator, TestRowIndex,
+} from '../test-coordinates';
 
-enum Cell {
-    EMPTY,
-    FULL,
-}
-
-const cellPrinter = (cell: Cell) => cell.valueOf();
-
-const COLUMN_INDICES = ['A', 'B', 'C', 'D', 'E'] as const;
-type ColumnIndex = typeof COLUMN_INDICES[number];
-
-const ROW_INDICES = ['1', '2', '3', '4', '5'] as const;
-type RowIndex = typeof ROW_INDICES[number];
-
-const findNextColumnIndex = (columnIndex: ColumnIndex): ColumnIndex | undefined => {
-    const index = COLUMN_INDICES.findIndex((_columnIndex) => _columnIndex === columnIndex);
-
-    return COLUMN_INDICES[index + 1];
-};
-
-const findNextRowIndex = (rowIndex: RowIndex): RowIndex | undefined => {
-    const index = ROW_INDICES.findIndex((_rowIndex) => _rowIndex === rowIndex);
-
-    return ROW_INDICES[index + 1];
-};
-
-const coordinateNavigator = new CoordinateNavigator(
-    () => undefined,
-    findNextColumnIndex,
-    () => undefined,
-    findNextRowIndex,
-);
-
-function createEmptyGrid(): Grid<ColumnIndex, RowIndex, Cell> {
+function createEmptyGrid(): Grid<TestColumnIndex, TestRowIndex, TestCell> {
     return new Grid(Map(
-        ROW_INDICES.map((rowIndex) => [
+        TEST_ROW_INDICES.map((rowIndex) => [
             rowIndex,
-            Map(COLUMN_INDICES.map((columnIndex) => [
+            Map(TEST_COLUMN_INDICES.map((columnIndex) => [
                 columnIndex,
-                Cell.EMPTY,
+                TestCell.EMPTY,
             ])),
         ]),
     ));
@@ -58,7 +29,7 @@ function createEmptyGrid(): Grid<ColumnIndex, RowIndex, Cell> {
 describe('AI grid searcher components', () => {
     it('has loopable indices', () => {
         const loopableIndices = new LoopableIndices(
-            List(COLUMN_INDICES),
+            List(TEST_COLUMN_INDICES),
             'B',
         );
 
@@ -84,7 +55,7 @@ describe('AI grid searcher components', () => {
     it('can create indices', () => {
         const indices = createIndices(
             'B',
-            findNextColumnIndex,
+            testCoordinateNavigator.findNextColumnIndex,
         );
 
         const expected = [
@@ -100,7 +71,7 @@ describe('AI grid searcher components', () => {
 
     it('can get the next index by a step', () => {
         const actual = getNextIndexByStep(
-            findNextColumnIndex,
+            testCoordinateNavigator.findNextColumnIndex,
             'B',
             2,
         );
@@ -110,7 +81,7 @@ describe('AI grid searcher components', () => {
 
     it('can get the next index by a step (out of bound)', () => {
         const actual = getNextIndexByStep(
-            findNextColumnIndex,
+            testCoordinateNavigator.findNextColumnIndex,
             'E',
             2,
         );
@@ -121,7 +92,7 @@ describe('AI grid searcher components', () => {
     it('can get the starting coordinates', () => {
         const actual = createStartingCoordinatesFinder(
                 new Coordinate('A', '1'),
-                coordinateNavigator,
+                testCoordinateNavigator,
             )(2)
             .map(toString)
             .toArray();
@@ -135,13 +106,13 @@ describe('AI grid searcher components', () => {
     });
 });
 
-const createMarkedGrisFromSearch = (paths: List<List<Coordinate<ColumnIndex, RowIndex>>>): ReadonlyArray<string> => {
+const createMarkedGrisFromSearch = (paths: List<List<Coordinate<TestColumnIndex, TestRowIndex>>>): ReadonlyArray<string> => {
     return paths
         .map((coordinates) => {
             const grid = createEmptyGrid()
-                .fillCells(coordinates.toArray(), Cell.FULL, (existingValue) => existingValue === Cell.EMPTY);
+                .fillCells(coordinates.toArray(), TestCell.FULL, (existingValue) => existingValue === TestCell.EMPTY);
 
-            return printGrid(grid.getRows(), cellPrinter);
+            return printGrid(grid.getRows(), testCellPrinter);
         })
         .toArray();
 };
@@ -149,7 +120,7 @@ const createMarkedGrisFromSearch = (paths: List<List<Coordinate<ColumnIndex, Row
 describe('AI grid searcher', () => {
     const search = createSearch(
         new Coordinate('A', '1'),
-        coordinateNavigator,
+        testCoordinateNavigator,
     );
 
     it('can screen the grid for when the smallest ship searched is of size 2', () => {
