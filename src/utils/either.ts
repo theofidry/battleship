@@ -69,6 +69,17 @@ export class Either<L, R> {
         );
     }
 
+    mapBoth<U, V>(
+        leftMapper: (left: L)=> U,
+        rightMapper: (right: R)=> V,
+    ): Either<U, V> {
+        return this
+            .swap()
+            .map(leftMapper)
+            .swap()
+            .map(rightMapper);
+    }
+
     flatMap<T>(mapper: (right: R)=> Either<L, T>): Either<L, T> {
         return this.fold(
             (leftValue) => Either.left(leftValue),
