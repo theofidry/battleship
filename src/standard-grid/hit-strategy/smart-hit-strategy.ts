@@ -18,6 +18,7 @@ import { StdCoordinateNavigator } from '../std-coordinate-navigator';
 import { findNextRowIndex, findPreviousRowIndex, StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
+// TODO: make it grid-independent
 export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
     private previousMoves: List<PreviousMove<StdColumnIndex, StdRowIndex>> = List();
     private previousHits: List<Coordinate<StdColumnIndex, StdRowIndex>> = List();
