@@ -2,11 +2,13 @@ import { expect } from 'chai';
 import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import { Coordinate } from '../../src/grid/coordinate';
-import { NonAlignedCoordinates } from '../../src/grid/coordinate-navigator';
+import { CoordinateAlignment, NonAlignedCoordinates } from '../../src/grid/coordinate-navigator';
 import { ShipDirection } from '../../src/ship/ship-direction';
 import { ShipSize } from '../../src/ship/ship-size';
 import { expectError } from '../chai-assertions';
-import { TestCoordinate, testCoordinateNavigator } from './test-coordinates';
+import {
+    TestColumnIndex, TestCoordinate, testCoordinateNavigator, TestRowIndex,
+} from './test-coordinates';
 import assert = require('node:assert');
 
 class SurroundingCoordinatesSet {
@@ -262,6 +264,124 @@ describe('CoordinateNavigator::findAlignments()', () => {
                     coordinates: alignedCoordinates.map(toString).toArray().sort(),
                 }))
                 .toArray();
+
+            expect(actual).to.eqls(expected);
+        });
+    }
+});
+
+class CoordinateAlignmentGapsSet {
+    constructor(
+        readonly title: string,
+        readonly alignment: CoordinateAlignment<TestColumnIndex, TestRowIndex>,
+        readonly expected: ReadonlyArray<string>,
+    ) {
+    }
+}
+
+function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentGapsSet> {
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with no coordinates',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List(),
+        },
+        [].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with one coordinate',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '2'),
+            ]),
+        },
+        [].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with two adjacent coordinates',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '2'),
+                new Coordinate('B', '3'),
+            ]),
+        },
+        [].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with two separated coordinates',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '2'),
+                new Coordinate('B', '4'),
+            ]),
+        },
+        ['B3'].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with two separated coordinates (inversed order)',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '4'),
+                new Coordinate('B', '2'),
+            ]),
+        },
+        ['B3'].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with two separated coordinates (horizontally)',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '2'),
+                new Coordinate('D', '2'),
+            ]),
+        },
+        ['C2'].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with two separated coordinates (x2)',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '2'),
+                new Coordinate('B', '5'),
+            ]),
+        },
+        ['B3', 'B4'].sort()
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with multi-gaps',
+        {
+            direction: ShipDirection.HORIZONTAL,
+            coordinates: List([
+                new Coordinate('B', '1'),
+                new Coordinate('B', '3'),
+                new Coordinate('B', '5'),
+            ]),
+        },
+        ['B2', 'B4'].sort()
+    );
+}
+
+describe('CoordinateNavigator::findAlignmentGaps()', () => {
+    for (const { title, alignment, expected } of provideCoordinateAlignmentGapsSet()) {
+        it(title, () => {
+            const actual = testCoordinateNavigator
+                .findAlignmentGaps(alignment)
+                .map(toString)
+                .toArray()
+                .sort();
 
             expect(actual).to.eqls(expected);
         });

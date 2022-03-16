@@ -249,6 +249,10 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             .filter(filterRedundantAlignments);
     }
 
+    findAlignmentGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+
+    }
+
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
         // TODO
         return () => List();
