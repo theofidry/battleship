@@ -34,7 +34,7 @@ describe('Either', () => {
         const rightMapper = (value: number) => value * 3;
 
         expect(eitherLeft.mapBoth(leftMapper, rightMapper)).to.eqls(Either.left(6));
-        expect(eitherRight.map(leftMapper, rightMapper)).to.eqls(Either.right(21));
+        expect(eitherRight.mapBoth(leftMapper, rightMapper)).to.eqls(Either.right(21));
     });
 
     it('::flatMap() maps the right value and leave the left unchanged', () => {
