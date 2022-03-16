@@ -363,7 +363,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentGaps
             direction: ShipDirection.HORIZONTAL,
             coordinates: List(),
         },
-        [].sort()
+        [],
     );
 
     yield new CoordinateAlignmentGapsSet(
@@ -374,43 +374,55 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentGaps
                 new Coordinate('B', '2'),
             ]),
         },
-        [].sort()
+        [],
     );
 
     yield new CoordinateAlignmentGapsSet(
         'alignment with two adjacent coordinates',
         {
-            direction: ShipDirection.HORIZONTAL,
+            direction: ShipDirection.VERTICAL,
             coordinates: List([
                 new Coordinate('B', '2'),
                 new Coordinate('B', '3'),
             ]),
         },
-        [].sort()
+        [],
     );
 
     yield new CoordinateAlignmentGapsSet(
         'alignment with two separated coordinates',
         {
+            direction: ShipDirection.VERTICAL,
+            coordinates: List([
+                new Coordinate('B', '2'),
+                new Coordinate('B', '4'),
+            ]),
+        },
+        ['B3'],
+    );
+
+    yield new CoordinateAlignmentGapsSet(
+        'alignment with two separated coordinates with incorrect direction',
+        {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
                 new Coordinate('B', '2'),
                 new Coordinate('B', '4'),
             ]),
         },
-        ['B3'].sort()
+        [],
     );
 
     yield new CoordinateAlignmentGapsSet(
         'alignment with two separated coordinates (inversed order)',
         {
-            direction: ShipDirection.HORIZONTAL,
+            direction: ShipDirection.VERTICAL,
             coordinates: List([
                 new Coordinate('B', '4'),
                 new Coordinate('B', '2'),
             ]),
         },
-        ['B3'].sort()
+        ['B3'],
     );
 
     yield new CoordinateAlignmentGapsSet(
@@ -422,32 +434,32 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentGaps
                 new Coordinate('D', '2'),
             ]),
         },
-        ['C2'].sort()
+        ['C2'],
     );
 
     yield new CoordinateAlignmentGapsSet(
         'alignment with two separated coordinates (x2)',
         {
-            direction: ShipDirection.HORIZONTAL,
+            direction: ShipDirection.VERTICAL,
             coordinates: List([
                 new Coordinate('B', '2'),
                 new Coordinate('B', '5'),
             ]),
         },
-        ['B3', 'B4'].sort()
+        ['B3', 'B4'],
     );
 
     yield new CoordinateAlignmentGapsSet(
         'alignment with multi-gaps',
         {
-            direction: ShipDirection.HORIZONTAL,
+            direction: ShipDirection.VERTICAL,
             coordinates: List([
                 new Coordinate('B', '1'),
                 new Coordinate('B', '3'),
                 new Coordinate('B', '5'),
             ]),
         },
-        ['B2', 'B4'].sort()
+        ['B2', 'B4'],
     );
 }
 
@@ -457,8 +469,7 @@ describe('CoordinateNavigator::findAlignmentGaps()', () => {
             const actual = testCoordinateNavigator
                 .findAlignmentGaps(alignment)
                 .map(toString)
-                .toArray()
-                .sort();
+                .toArray();
 
             expect(actual).to.eqls(expected);
         });

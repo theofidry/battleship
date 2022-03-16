@@ -1,5 +1,6 @@
-import { Collection, List, Map, Set } from 'immutable';
+import { Collection, List, Map, OrderedSet } from 'immutable';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
@@ -178,10 +179,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         Then this result is transformed to its final form.
         */
 
+        const coordinatesSorter = this.createCoordinatesSorter();
         const candidatesMap: Map<Coordinate<ColumnIndex, RowIndex>, List<Coordinate<ColumnIndex, RowIndex>>> = Map(
             coordinates
                 .toList()
-                .sort(this.createCoordinatesSorter())
+                .sort(coordinatesSorter)
                 .map((coordinate, index, collection) => {
                     const nextCoordinates = collection.slice(index + 1);
 
@@ -217,7 +219,8 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             coordinates: alignmentCandidates
                 .filter(({ alignment }) => alignment === direction)
                 .map(({ candidate }) => candidate)
-                .push(reference),
+                .push(reference)
+                .sort(coordinatesSorter),
         });
 
         const filterRedundantAlignments = (
@@ -264,7 +267,45 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     findAlignmentGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const direction = alignment.direction;
 
+        if (alignment.coordinates.size <= 1) {
+            return List();
+        }
+
+        if (direction === ShipDirection.HORIZONTAL) {
+            const rowIndex = alignment.coordinates.first()!.rowIndex;
+
+            const missingColumns = findIndexGaps(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.columnIndex)
+                    .toOrderedSet(),
+                this.findNextColumnIndex,
+            );
+
+            return missingColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        if (direction === ShipDirection.VERTICAL) {
+            const columnIndex = alignment.coordinates.first()!.columnIndex;
+
+            const missingRows = findIndexGaps(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.rowIndex)
+                    .toOrderedSet(),
+                this.findNextRowIndex,
+            );
+
+            return missingRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        assertIsUnreachableCase(direction);
+
+        throw new Error('Unreachable.');
     }
 
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
@@ -350,3 +391,36 @@ type ValidCoordinateAlignmentCandidate<
     readonly alignment: ShipDirection,
     readonly distance: number,
 };
+
+function findIndexGaps<Index extends PropertyKey>(
+    sortedIndices: OrderedSet<Index>,
+    findNextIndex: AdjacentIndexFinder<Index>,
+): List<Index> {
+    const first = sortedIndices.first();
+    const last = sortedIndices.last();
+
+    if (first === undefined || last === undefined || sortedIndices.size <= 1) {
+        return List();
+    }
+
+    let next = first;
+    let potentialNext: Index | undefined;
+
+    const missingIndices: Index[] = [];
+
+    while (next !== last) {
+        potentialNext = findNextIndex(next);
+
+        if (undefined === potentialNext) {
+            break;
+        }
+
+        next = potentialNext;
+
+        if (!sortedIndices.contains(next)) {
+            missingIndices.push(next);
+        }
+    }
+
+    return List(missingIndices);
+}
