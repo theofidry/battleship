@@ -8,6 +8,7 @@ import { RandomHitStrategy } from './hit-strategy/random-hit-strategy';
 import { SmartHitStrategy } from './hit-strategy/smart-hit-strategy';
 import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
 import { Cell, StandardOpponentGrid } from './standard-opponent-grid';
+import { StdAIHitStrategy } from './std-ai-hit-strategy';
 import { StdColumnIndex } from './std-column-index';
 import { StdPlayer } from './std-player';
 import { StdRowIndex } from './std-row-index';
@@ -56,7 +57,7 @@ export function createAIPlayer(fleet: Fleet, version: AIVersion, name = ''): Std
 function createHitStrategy(version: AIVersion): HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
     switch (version) {
         case AIVersion.V1:
-            return RandomHitStrategy;
+            return StdAIHitStrategy;
 
         case AIVersion.V2:
             return new SmartHitStrategy();

@@ -4,7 +4,7 @@ import { ConsoleLogger } from '../logger/console-logger';
 import { BasicMatchLogger } from '../match/basic-match-logger';
 import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
-import { AIVersion, createAIPlayer } from '../standard-grid/ai-player-factory';
+import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
