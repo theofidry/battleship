@@ -9,7 +9,7 @@ import { HitResponse } from '../../../src/communication/hit-response';
 import { Coordinate } from '../../../src/grid/coordinate';
 import { PreviousMove } from '../../../src/player/hit-strategy';
 import {
-    getSurroundingCoordinates, getSurroundingCoordinatesFollowingDirection, SmartHitStrategy,
+    getSurroundingCoordinatesFollowingDirection, SmartHitStrategy,
 } from '../../../src/standard-grid/hit-strategy/smart-hit-strategy';
 import { StandardOpponentGrid } from '../../../src/standard-grid/standard-opponent-grid';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../../../src/standard-grid/std-column-index';
@@ -17,34 +17,6 @@ import { StdCoordinate } from '../../../src/standard-grid/std-coordinate';
 import { STD_ROW_INDICES, StdRowIndex } from '../../../src/standard-grid/std-row-index';
 
 describe('SmartHitStrategy components', () => {
-   it('can get the coordinates surrounding the given one', () => {
-       const coordinate = new Coordinate(StdColumnIndex.C, StdRowIndex.Row5);
-
-       const expected = [
-           'B5',
-           'D5',
-           'C4',
-           'C6',
-       ];
-
-       const actual = getSurroundingCoordinates(coordinate).map(toString);
-
-       expect(actual).to.eqls(expected);
-   });
-
-   it('can get the coordinates surrounding the given one and accounts for the grid borders', () => {
-       const coordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
-
-       const expected = [
-           'B1',
-           'A2',
-       ];
-
-       const actual = getSurroundingCoordinates(coordinate).map(toString);
-
-       expect(actual).to.eqls(expected);
-   });
-
    it('can get the coordinates surrounding the given one following a direction (vertical)', () => {
         const coordinates = List([
             new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),

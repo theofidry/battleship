@@ -11,9 +11,10 @@ import { HitStrategy, PreviousMove } from '../../player/hit-strategy';
 import { ShipDirection } from '../../ship/ship-direction';
 import { Either } from '../../utils/either';
 import { Cell } from '../standard-opponent-grid';
-import { StdColumnIndex } from '../std-column-index';
+import { findNextColumnIndex, findPreviousColumnIndex, StdColumnIndex } from '../std-column-index';
 import { StdCoordinate } from '../std-coordinate';
-import { StdRowIndex } from '../std-row-index';
+import { StdCoordinateNavigator } from '../std-coordinate-navigator';
+import { findNextRowIndex, findPreviousRowIndex, StdRowIndex } from '../std-row-index';
 import assert = require('node:assert');
 
 export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex, Cell> {
@@ -73,7 +74,7 @@ export class SmartHitStrategy implements HitStrategy<StdColumnIndex, StdRowIndex
     private createTargetSurroundingCoordinatesFilter(lastHit: StdCoordinate): (value: StdCoordinate, key: string)=> boolean {
         // The previous target was a hit: we initiate the hit sequence and
         // target the surrounding cells.
-        const potentialTargets = getSurroundingCoordinates(lastHit)
+        const potentialTargets = StdCoordinateNavigator.getSurroundingCoordinates(lastHit)
             .map((potentialTarget) => potentialTarget.toString());
 
         return (coordinate, key) => potentialTargets.includes(key);
@@ -180,30 +181,6 @@ function collectUntouchedCoordinates(grid: OpponentGrid<StdColumnIndex, StdRowIn
     );
 }
 
-export function getSurroundingCoordinates(coordinate: StdCoordinate): ReadonlyArray<StdCoordinate> {
-    const targetColumnIndex = coordinate.columnIndex;
-    const targetRowIndex = coordinate.rowIndex;
-
-    const potentialColumnIndices = [
-        getPreviousColumnIndex(targetColumnIndex),
-        getNextColumnIndex(targetColumnIndex),
-    ].filter(isNotUndefined);
-
-    const potentialRowIndices = [
-        getPreviousRowIndex(targetRowIndex),
-        getNextRowIndex(targetRowIndex),
-    ].filter(isNotUndefined);
-
-    return [
-        ...potentialColumnIndices.map(
-            (columnIndex) => new Coordinate(columnIndex, targetRowIndex),
-        ),
-        ...potentialRowIndices.map(
-            (rowIndex) => new Coordinate(targetColumnIndex, rowIndex),
-        ),
-    ];
-}
-
 export function getSurroundingCoordinatesFollowingDirection(coordinates: List<StdCoordinate>): ReadonlyArray<StdCoordinate> {
     if (coordinates.size < 2) {
         return [];
@@ -224,16 +201,16 @@ export function getSurroundingCoordinatesFollowingDirection(coordinates: List<St
         case ShipDirection.HORIZONTAL:
             return findHeadTail(
                     coordinates.map((coordinate) => coordinate.columnIndex),
-                    getPreviousColumnIndex,
-                    getNextColumnIndex,
+                    findPreviousColumnIndex,
+                    findNextColumnIndex,
                 )
                 .map((columnIndex) => new Coordinate(columnIndex, first.rowIndex));
 
         case ShipDirection.VERTICAL:
             return findHeadTail(
                     coordinates.map((coordinate) => coordinate.rowIndex),
-                    getPreviousRowIndex,
-                    getNextRowIndex,
+                    findPreviousRowIndex,
+                    findNextRowIndex,
                 )
                 .map((rowIndex) => new Coordinate(first.columnIndex, rowIndex));
     }
@@ -252,8 +229,8 @@ function findDirection(coordinates: List<StdCoordinate>): Either<undefined, Ship
     const targetRowIndex = firstCoordinate.rowIndex;
 
     const potentialColumnIndices = [
-        getPreviousColumnIndex(targetColumnIndex),
-        getNextColumnIndex(targetColumnIndex),
+        findPreviousColumnIndex(targetColumnIndex),
+        findNextColumnIndex(targetColumnIndex),
     ].filter(isNotUndefined);
 
     if (potentialColumnIndices.includes(secondCoordinate.columnIndex)) {
@@ -261,8 +238,8 @@ function findDirection(coordinates: List<StdCoordinate>): Either<undefined, Ship
     }
 
     const potentialRowIndices = [
-        getPreviousRowIndex(targetRowIndex),
-        getNextRowIndex(targetRowIndex),
+        findPreviousRowIndex(targetRowIndex),
+        findNextRowIndex(targetRowIndex),
     ].filter(isNotUndefined);
 
     if (potentialRowIndices.includes(secondCoordinate.rowIndex)) {
