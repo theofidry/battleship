@@ -64,16 +64,30 @@ function* provideDistanceSet(): Generator<DistanceSet> {
     );
 
     yield new DistanceSet(
-        'two adjacent coordinates',
+        'two adjacent coordinates (vertical)',
         new Coordinate('C', '3'),
         new Coordinate('C', '4'),
         1,
     );
 
     yield new DistanceSet(
-        'two aligned coordinates',
+        'two aligned coordinates (vertical)',
         new Coordinate('C', '2'),
         new Coordinate('C', '5'),
+        3,
+    );
+
+    yield new DistanceSet(
+        'two adjacent coordinates (horizontal)',
+        new Coordinate('C', '3'),
+        new Coordinate('D', '3'),
+        1,
+    );
+
+    yield new DistanceSet(
+        'two aligned coordinates (horizontal)',
+        new Coordinate('B', '2'),
+        new Coordinate('E', '2'),
         3,
     );
 
@@ -115,13 +129,13 @@ describe('CoordinateNavigator::calculateDistance()', () => {
 
 type TestAlignment = {
     readonly direction: ShipDirection,
-    readonly coordinates: List<string>,
+    readonly coordinates: ReadonlyArray<string>,
 };
 
 class CoordinateAlignmentsSet {
     constructor(
         readonly title: string,
-        readonly coordinates: List<TestCoordinate>,
+        readonly coordinates: Set<TestCoordinate>,
         readonly maxDistance: ShipSize,
         readonly expected: ReadonlyArray<TestAlignment>,
     ) {
@@ -131,29 +145,127 @@ class CoordinateAlignmentsSet {
 function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     yield new CoordinateAlignmentsSet(
         'single coordinate: no alignment possible',
-        List([new Coordinate('C', '3')]),
+        Set([new Coordinate('C', '3')]),
         2,
-        [],
+        [].sort(),
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'two adjacent coordinates',
+        Set([
+            new Coordinate('C', '3'),
+            new Coordinate('C', '2'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C2', 'C3'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'two aligned coordinates at the border of maximum distance',
+        Set([
+            new Coordinate('C', '3'),
+            new Coordinate('C', '1'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C1', 'C3'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'two aligned (horizontally) coordinates',
+        Set([
+            new Coordinate('C', '3'),
+            new Coordinate('E', '3'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.HORIZONTAL,
+                coordinates: ['C3', 'E3'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'two aligned coordinates more distant that the maximum distance',
+        Set([
+            new Coordinate('C', '4'),
+            new Coordinate('C', '1'),
+        ]),
+        2,
+        [].sort(),
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'coordinate with multiple alignments of different directions',
+        Set([
+            new Coordinate('C', '3'),
+            new Coordinate('C', '5'),
+            new Coordinate('D', '3'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.HORIZONTAL,
+                coordinates: ['C3', 'D3'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C3', 'C5'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'multiple aligned coordinates with some out of reach',
+        Set([
+            new Coordinate('C', '1'),
+            new Coordinate('C', '2'),
+            new Coordinate('C', '3'),
+            new Coordinate('C', '4'),
+            new Coordinate('C', '5'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C1', 'C2', 'C3'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C2', 'C3', 'C4'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C3', 'C4', 'C5'].sort(),
+            },
+            // {
+            //     direction: ShipDirection.VERTICAL,
+            //     coordinates: ['C4', 'C5'].sort(),
+            // },
+        ],
     );
 }
 
 describe('CoordinateNavigator::findAlignments()', () => {
     for (const { title, coordinates, maxDistance, expected } of provideCoordinateAlignmentsSet()) {
         it(title, () => {
-            console.log({
-                set: Set([new Coordinate('A', '1'), new Coordinate('A', '1')])
-                    .toArray()
-                    .map(toString),
-            });
-
             const actual = testCoordinateNavigator
                 .findAlignments(coordinates, maxDistance)
                 .map(({ direction, coordinates: alignedCoordinates }) => ({
                     direction,
-                    coordinates: alignedCoordinates.map(toString).toArray(),
+                    coordinates: alignedCoordinates.map(toString).toArray().sort(),
                 }))
-                .toArray()
-                .sort();
+                .toArray();
 
             expect(actual).to.eqls(expected);
         });
