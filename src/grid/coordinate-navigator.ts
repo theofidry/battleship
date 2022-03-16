@@ -1,6 +1,7 @@
-import { List, Map, Set } from 'immutable';
-import { toString } from 'lodash';
+import { Collection, List, Map, OrderedSet } from 'immutable';
+import { findLastIndex } from 'lodash';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
@@ -8,6 +9,7 @@ import { Coordinate } from './coordinate';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type DistantIndexFinder<Index extends PropertyKey> = (index: Index, step: number)=> Index | undefined;
+export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
 
 export type GridTraverser<
     ColumnIndex extends PropertyKey,
@@ -33,6 +35,11 @@ export type CoordinateAlignment<
     readonly coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
 };
 
+export type CoordinateSorter<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = (left: Coordinate<ColumnIndex, RowIndex>, right: Coordinate<ColumnIndex, RowIndex>)=> number;
+
 /**
  * The navigator provides an API to easily consume and navigates a grid-coordinate
  * system.
@@ -41,9 +48,23 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     constructor(
         public readonly findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
         public readonly findNextColumnIndex: AdjacentIndexFinder<ColumnIndex>,
+        public readonly columnIndexSorter: IndexSorter<ColumnIndex>,
         public readonly findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
         public readonly findNextRowIndex: AdjacentIndexFinder<RowIndex>,
+        public readonly rowIndexSorter: IndexSorter<RowIndex>,
     ) {
+    }
+
+    createCoordinatesSorter(): CoordinateSorter<ColumnIndex, RowIndex> {
+        return (left, right) => {
+            const rowSortResult = this.rowIndexSorter(left.rowIndex, right.rowIndex);
+
+            if (rowSortResult !== 0) {
+                return rowSortResult;
+            }
+
+            return this.columnIndexSorter(left.columnIndex, right.columnIndex);
+        };
     }
 
     /**
@@ -74,56 +95,50 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             ...potentialRowIndices.map(
                 (rowIndex) => new Coordinate(targetColumnIndex, rowIndex),
             ),
-        ];
+        ].sort(this.createCoordinatesSorter());
     }
 
     calculateDistance(
         first: Coordinate<ColumnIndex, RowIndex>,
         second: Coordinate<ColumnIndex, RowIndex>,
     ): Either<NonAlignedCoordinates, number> {
-        if (first.columnIndex === second.columnIndex) {
-            const distances = [
-                calculateDistanceBetweenIndices(
-                    first.rowIndex,
-                    second.rowIndex,
-                    this.findNextRowIndex,
-                ),
-                calculateDistanceBetweenIndices(
-                    first.rowIndex,
-                    second.rowIndex,
-                    this.findPreviousRowIndex,
-                ),
-            ];
+        if (this.createCoordinatesSorter()(first, second) > 0) {
+            return this.calculateDistance(second, first);
+        }
 
-            return Either.right(
-                Math.min(...distances.filter(isNotUndefined)),
+        const error = NonAlignedCoordinates.forPair(first, second);
+
+        if (first.columnIndex === second.columnIndex) {
+            const distance = calculateDistanceBetweenIndices(
+                first.rowIndex,
+                second.rowIndex,
+                this.findNextRowIndex,
             );
+
+            return distance
+                .swap()
+                .map(() => error)
+                .swap();
         }
 
         if (first.rowIndex === second.rowIndex) {
-            const distances = [
-                calculateDistanceBetweenIndices(
-                    first.columnIndex,
-                    second.columnIndex,
-                    this.findNextColumnIndex,
-                ),
-                calculateDistanceBetweenIndices(
-                    first.columnIndex,
-                    second.columnIndex,
-                    this.findPreviousColumnIndex,
-                ),
-            ];
-
-            return Either.right(
-                Math.min(...distances.filter(isNotUndefined)),
+            const distance = calculateDistanceBetweenIndices(
+                first.columnIndex,
+                second.columnIndex,
+                this.findNextColumnIndex,
             );
+
+            return distance
+                .swap()
+                .map(() => error)
+                .swap();
         }
 
-        return Either.left(NonAlignedCoordinates.forPair(first, second));
+        return Either.left(error);
     }
 
     findAlignments(
-        coordinates: Set<Coordinate<ColumnIndex, RowIndex>>,
+        coordinates: Collection<unknown, Coordinate<ColumnIndex, RowIndex>>,
         maxDistance: ShipSize,
     ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
         /*
@@ -165,9 +180,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         Then this result is transformed to its final form.
         */
 
+        const coordinatesSorter = this.createCoordinatesSorter();
         const candidatesMap: Map<Coordinate<ColumnIndex, RowIndex>, List<Coordinate<ColumnIndex, RowIndex>>> = Map(
             coordinates
                 .toList()
+                .sort(coordinatesSorter)
                 .map((coordinate, index, collection) => {
                     const nextCoordinates = collection.slice(index + 1);
 
@@ -203,7 +220,8 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             coordinates: alignmentCandidates
                 .filter(({ alignment }) => alignment === direction)
                 .map(({ candidate }) => candidate)
-                .push(reference),
+                .push(reference)
+                .sort(coordinatesSorter),
         });
 
         const filterRedundantAlignments = (
@@ -249,6 +267,92 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             .filter(filterRedundantAlignments);
     }
 
+    findAlignmentGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const direction = alignment.direction;
+
+        if (alignment.coordinates.size <= 1) {
+            return List();
+        }
+
+        if (direction === ShipDirection.HORIZONTAL) {
+            const rowIndex = alignment.coordinates.first()!.rowIndex;
+
+            const missingColumns = findIndexGaps(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.columnIndex)
+                    .toOrderedSet(),
+                this.findNextColumnIndex,
+            );
+
+            return missingColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        if (direction === ShipDirection.VERTICAL) {
+            const columnIndex = alignment.coordinates.first()!.columnIndex;
+
+            const missingRows = findIndexGaps(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.rowIndex)
+                    .toOrderedSet(),
+                this.findNextRowIndex,
+            );
+
+            return missingRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        assertIsUnreachableCase(direction);
+
+        throw new Error('Unreachable.');
+    }
+
+    findNextExtremums(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const direction = alignment.direction;
+
+        if (alignment.coordinates.size === 0) {
+            return List();
+        }
+
+        if (direction === ShipDirection.HORIZONTAL) {
+            const rowIndex = alignment.coordinates.first()!.rowIndex;
+
+            const missingColumns = findIndexExtremums(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.columnIndex)
+                    .toOrderedSet(),
+                this.findPreviousColumnIndex,
+                this.findNextColumnIndex,
+            );
+
+            return missingColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        if (direction === ShipDirection.VERTICAL) {
+            const columnIndex = alignment.coordinates.first()!.columnIndex;
+
+            const missingRows = findIndexExtremums(
+                alignment
+                    .coordinates
+                    .sort(this.createCoordinatesSorter())
+                    .map((coordinate) => coordinate.rowIndex)
+                    .toOrderedSet(),
+                this.findPreviousRowIndex,
+                this.findNextRowIndex,
+            );
+
+            return missingRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex));
+        }
+
+        assertIsUnreachableCase(direction);
+
+        throw new Error('Unreachable.');
+    }
+
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
         // TODO
         return () => List();
@@ -278,7 +382,7 @@ function calculateDistanceBetweenIndices<Index extends PropertyKey>(
     first: Index,
     second: Index,
     findNextIndex: AdjacentIndexFinder<Index>,
-): number | undefined {
+): Either<undefined, number> {
     let count = 0;
     let next = first;
     let potentialNext: Index | undefined;
@@ -287,14 +391,14 @@ function calculateDistanceBetweenIndices<Index extends PropertyKey>(
         potentialNext = findNextIndex(next);
 
         if (undefined === potentialNext) {
-            return undefined;
+            return Either.left(undefined);
         }
 
         next = potentialNext;
         count++;
     }
 
-    return count;
+    return Either.right(count);
 }
 
 function findCoordinatesAlignmentDirection<
@@ -332,3 +436,56 @@ type ValidCoordinateAlignmentCandidate<
     readonly alignment: ShipDirection,
     readonly distance: number,
 };
+
+function findIndexGaps<Index extends PropertyKey>(
+    sortedIndices: OrderedSet<Index>,
+    findNextIndex: AdjacentIndexFinder<Index>,
+): List<Index> {
+    const first = sortedIndices.first();
+    const last = sortedIndices.last();
+
+    if (first === undefined || last === undefined || sortedIndices.size <= 1) {
+        return List();
+    }
+
+    let next = first;
+    let potentialNext: Index | undefined;
+
+    const missingIndices: Index[] = [];
+
+    while (next !== last) {
+        potentialNext = findNextIndex(next);
+
+        if (undefined === potentialNext) {
+            break;
+        }
+
+        next = potentialNext;
+
+        if (!sortedIndices.contains(next)) {
+            missingIndices.push(next);
+        }
+    }
+
+    return List(missingIndices);
+}
+
+function findIndexExtremums<Index extends PropertyKey>(
+    sortedIndices: OrderedSet<Index>,
+    findPreviousIndex: AdjacentIndexFinder<Index>,
+    findNextIndex: AdjacentIndexFinder<Index>,
+): List<Index> {
+    const missingIndices: Array<Index|undefined> = [];
+    const first = sortedIndices.first();
+    const last = sortedIndices.last();
+
+    if (undefined !== first) {
+        missingIndices.push(findPreviousIndex(first));
+    }
+
+    if (undefined !== last) {
+        missingIndices.push(findNextIndex(last));
+    }
+
+    return List(missingIndices.filter(isNotUndefined));
+}
