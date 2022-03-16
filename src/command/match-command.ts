@@ -4,7 +4,7 @@ import { ConsoleLogger } from '../logger/console-logger';
 import { InteractiveVsAiMatchLogger } from '../match/interactive-vs-ai-match-logger';
 import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
-import { AIVersion, createAIPlayer } from '../standard-grid/ai-player-factory';
+import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import {
     createInteractivePlayer,
 } from '../standard-grid/interactive-player/interactive-player-factory';

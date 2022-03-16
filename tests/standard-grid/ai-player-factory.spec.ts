@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { createFleet } from '../../src/ship/fleet';
-import { AIVersion, createAIPlayer } from '../../src/standard-grid/ai-player-factory';
+import { AIVersion, createAIPlayer } from '../../src/standard-grid/std-ai-player-factory';
 
 describe('AIPlayerFactory', () => {
     const fleet = createFleet();

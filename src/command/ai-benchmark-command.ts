@@ -7,7 +7,7 @@ import { Logger } from '../logger/logger';
 import { Match } from '../match/match';
 import { NullMatchLogger } from '../match/null-match-logger';
 import { createFleet, Fleet } from '../ship/fleet';
-import { AIVersion, AIVersionNames, createAIPlayer } from '../standard-grid/ai-player-factory';
+import { AIVersion, AIVersionNames, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
