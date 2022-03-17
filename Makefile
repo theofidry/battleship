@@ -28,7 +28,7 @@ RUN_ESLINT=npx eslint . --ext .js,.ts
 #---------------------------------------------------------------------------
 
 .PHONY: default
-default: cs test compile
+default: cs test compile benchmark
 
 
 .PHONY: help
@@ -81,6 +81,13 @@ run: dist/src/main.js
 test:		## Runs the tests
 test: $(TEST_DEPS)
 	TS_NODE_PROJECT=tsconfig.tests.json npx mocha --require=ts-node/register --check-leaks --recursive "tests/**/*.spec.ts"
+
+
+.PHONY: benchmark
+benchmark:	## Benchmarks the AIs
+benchmark: dist/src/main.js
+	node dist/src/main.js ai:benchmark --ai=v1
+	node dist/src/main.js ai:benchmark --ai=v2
 
 
 

@@ -17,11 +17,12 @@ import assert = require('node:assert');
 
 export const AIBenchmarkCommand = new Command('ai:benchmark');
 
+const DEFAULT_SAMPLES_SIZE = 50;
 const MAX_TURN = STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2;
 
 AIBenchmarkCommand
     .description('Runs several matches between two AIs')
-    .option('-s, --samples <number>', 'Number of matches to play', parseSampleOption, 50)
+    .option('-s, --samples <number>', 'Number of matches to play', parseSampleOption, DEFAULT_SAMPLES_SIZE)
     .addOption(createAIVersionOption())
     .action(() => {
         const { samples, ai } = AIBenchmarkCommand.opts();
