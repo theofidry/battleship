@@ -192,7 +192,26 @@ export class AIHitStrategy<
         filters: List<ChoiceStrategy<ColumnIndex, RowIndex>>,
         choicesList: List<AppliedChoiceStrategy<ColumnIndex, RowIndex>>,
     ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, AppliedChoiceStrategy<ColumnIndex, RowIndex>> {
-        const foundEnoughChoices = choicesList.size > 1 || filters.size === 1;
+        // Depending on the strategy adopted, the AI may not be smart enough and
+        // end up having to rely on the fallback. For example with only smart
+        // targeting for now we may have the following scenario:
+        //
+        // scenario:
+        //     E  F  G  H
+        //  6
+        //  7  .  x  x
+        //  8     x  x  .
+        //  9     x  x  .
+        // 10     .  x  .
+        //
+        // With the move orders:
+        // F7, F8, G7, F9 (sunk), ..., G10, G9, G8, error!
+        // The error case (scenario we are in) happens because G7 which was hit
+        // before has been cleared with the previous sunk hence the algorithm
+        // gets there and "forgot" G7 was a previous hit and hence that G6 is
+        // a logical follow up.
+        const limitingStrategy = this.enableSmartTargeting;
+        const foundEnoughChoices = limitingStrategy || choicesList.size > 1 || filters.size === 1;
 
         return foundEnoughChoices
             ? Either.right(choicesList.first()!)

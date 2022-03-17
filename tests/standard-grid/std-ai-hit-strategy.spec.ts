@@ -262,6 +262,76 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'B4',
         ],
     );
+
+    // See AIHitStrategy::checkChoicesFound() for the explanation
+    yield new HitChoicesSet(
+        'falls back on a different strategy: v2 limitation falls back to no filter',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row8),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row9),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row8),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row9),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row10),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row10),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row10),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row9),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row8),
+                response: HitResponse.HIT,
+            },
+        ],
+        'NoFilter',
+        getAllCellsExcept([
+            'E7',
+            'F7',
+            'G7',
+            'F8',
+            'G8',
+            'H8',
+            'F9',
+            'G9',
+            'H9',
+            'F10',
+            'G10',
+            'H10',
+        ]),
+    );
 }
 
 describe('minimal HitStrategy', () => {
