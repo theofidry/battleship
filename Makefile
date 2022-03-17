@@ -61,7 +61,7 @@ cs: node_modules
 compile:	## Builds the JavaScript app artefacts
 compile:
 	rm -rf dist/src || true
-	$(MAKE) dist/src
+	$(MAKE) dist/src/main.js
 	node dist/src/main.js --version
 
 
@@ -73,8 +73,7 @@ fast_run: $(SRC_DEPS)
 
 .PHONY: run
 run:		## Runs the (compiled) application
-run:
-	$(MAKE) compile
+run: dist/src/main.js
 	TS_NODE_PROJECT=tsconfig.src.json node --require=ts-node/register dist/src/main.js
 
 
@@ -97,6 +96,6 @@ package-lock.json: package.json
 	@echo $(ERROR_COLOR)$(@) is not up to date.$(NO_COLOR)
 	$(TOUCH) "$@"
 
-dist/src: $(SRC_DEPS)
+dist/src/main.js: $(SRC_DEPS)
 	npx tsc --project tsconfig.src.json
 	$(TOUCH) "$@"
