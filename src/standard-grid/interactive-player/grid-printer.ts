@@ -28,7 +28,7 @@ export function printPlayerGrid(player: StdPlayer, logger: Logger): void {
     logger.log(combineTables(targetGrid, playerGrid));
 }
 
-function createPlayerTable(
+export function createPlayerTable(
     rows: Readonly<GridRows<StdColumnIndex, StdRowIndex, PlayerGridCell>>,
 ): ReadonlyArray<ReadonlyArray<string>> {
     return rows
@@ -72,7 +72,7 @@ function createPlayerCell(cell: PlayerGridCell, coordinate: StdCoordinate): stri
     return '▓';
 }
 
-function createOpponentTable(
+export function createOpponentTable(
     rows: Readonly<GridRows<StdColumnIndex, StdRowIndex, OpponentGridCell>>,
 ): ReadonlyArray<ReadonlyArray<string>> {
     return rows
