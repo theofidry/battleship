@@ -2,7 +2,9 @@ import { expect } from 'chai';
 import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import { Coordinate } from '../../src/grid/coordinate';
-import { CoordinateAlignment, NonAlignedCoordinates } from '../../src/grid/coordinate-navigator';
+import {
+    CoordinateAlignment, DiagonalDirection, NonAlignedCoordinates,
+} from '../../src/grid/coordinate-navigator';
 import { ShipDirection } from '../../src/ship/ship-direction';
 import { ShipSize } from '../../src/ship/ship-size';
 import { expectError } from '../chai-assertions';
@@ -516,4 +518,22 @@ describe('CoordinateNavigator::findNextExtremums()', () => {
             expect(actual).to.eqls(expectedExtremums);
         });
     }
+});
+
+describe('CoordinateNavigator::findGridOrigin()', () => {
+    it('can find the grid origin for a traverse from top left to bottom right', () => {
+        const actual = testCoordinateNavigator
+            .findGridOrigin(DiagonalDirection.TOP_LEFT_TO_BOTTOM_RIGHT);
+
+        expect(actual).to.not.equal(undefined);
+        expect(actual.toString()).to.eqls('A1');
+    });
+
+    it('can find the grid origin for a traverse from bottom left to top right', () => {
+        const actual = testCoordinateNavigator
+            .findGridOrigin(DiagonalDirection.BOTTOM_LEFT_TO_BOTTOM_RIGHT);
+
+        expect(actual).to.not.equal(undefined);
+        expect(actual.toString()).to.eqls('A5');
+    });
 });

@@ -1,6 +1,9 @@
+import { Coordinate } from '../grid/coordinate';
 import { CoordinateNavigator } from '../grid/coordinate-navigator';
-import { findNextColumnIndex, findPreviousColumnIndex, sortColumnIndex } from './std-column-index';
-import { findNextRowIndex, findPreviousRowIndex, sortRowIndex } from './std-row-index';
+import {
+    findNextColumnIndex, findPreviousColumnIndex, sortColumnIndex, StdColumnIndex,
+} from './std-column-index';
+import { findNextRowIndex, findPreviousRowIndex, sortRowIndex, StdRowIndex } from './std-row-index';
 
 export const StdCoordinateNavigator = new CoordinateNavigator(
     findPreviousColumnIndex,
@@ -9,4 +12,5 @@ export const StdCoordinateNavigator = new CoordinateNavigator(
     findPreviousRowIndex,
     findNextRowIndex,
     sortRowIndex,
+    new Coordinate(StdColumnIndex.A, StdRowIndex.Row1),
 );

@@ -1,5 +1,4 @@
-import { Collection, List, Map, OrderedSet } from 'immutable';
-import { findLastIndex } from 'lodash';
+import { Collection, List, Map as ImmutableMap, OrderedSet } from 'immutable';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
@@ -40,11 +39,18 @@ export type CoordinateSorter<
     RowIndex extends PropertyKey,
 > = (left: Coordinate<ColumnIndex, RowIndex>, right: Coordinate<ColumnIndex, RowIndex>)=> number;
 
+export enum DiagonalDirection {
+    TOP_LEFT_TO_BOTTOM_RIGHT,
+    BOTTOM_LEFT_TO_BOTTOM_RIGHT,
+}
+
 /**
  * The navigator provides an API to easily consume and navigates a grid-coordinate
  * system.
  */
 export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>{
+    private readonly cachedOrigins = new Map<DiagonalDirection, Coordinate<ColumnIndex, RowIndex>>();
+
     constructor(
         public readonly findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
         public readonly findNextColumnIndex: AdjacentIndexFinder<ColumnIndex>,
@@ -52,6 +58,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         public readonly findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
         public readonly findNextRowIndex: AdjacentIndexFinder<RowIndex>,
         public readonly rowIndexSorter: IndexSorter<RowIndex>,
+        public readonly reference: Coordinate<ColumnIndex, RowIndex>,
     ) {
     }
 
@@ -181,7 +188,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         */
 
         const coordinatesSorter = this.createCoordinatesSorter();
-        const candidatesMap: Map<Coordinate<ColumnIndex, RowIndex>, List<Coordinate<ColumnIndex, RowIndex>>> = Map(
+        const candidatesMap: ImmutableMap<Coordinate<ColumnIndex, RowIndex>, List<Coordinate<ColumnIndex, RowIndex>>> = ImmutableMap(
             coordinates
                 .toList()
                 .sort(coordinatesSorter)
@@ -353,6 +360,13 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         throw new Error('Unreachable.');
     }
 
+    // traverseDiagonally(
+    //     origin: Coordinate<ColumnIndex, RowIndex>,
+    //     direction: DiagonalDirection,
+    // ): List<Coordinate<ColumnIndex, RowIndex>> {
+    //
+    // }
+
     createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
         // TODO
         return () => List();
@@ -361,6 +375,26 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     createStartingCoordinatesFinder(): StartingCoordinatesFinder<ColumnIndex, RowIndex> {
         // TODO
         return () => List();
+    }
+
+    findGridOrigin(direction: DiagonalDirection): Coordinate<ColumnIndex, RowIndex> {
+        const cachedOrigin = this.cachedOrigins.get(direction);
+
+        if (undefined !== cachedOrigin) {
+            return cachedOrigin;
+        }
+
+        const origin = findOrigin(
+            this.reference,
+            this.findPreviousColumnIndex,
+            this.findPreviousRowIndex,
+            this.findNextRowIndex,
+            direction,
+        );
+
+        this.cachedOrigins.set(direction, origin);
+
+        return origin;
     }
 }
 
@@ -488,4 +522,59 @@ function findIndexExtremums<Index extends PropertyKey>(
     }
 
     return List(missingIndices.filter(isNotUndefined));
+}
+
+function findOrigin<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> (
+    reference: Coordinate<ColumnIndex, RowIndex>,
+    findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
+    findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
+    findNextRowIndex: AdjacentIndexFinder<RowIndex>,
+    direction: DiagonalDirection,
+): Coordinate<ColumnIndex, RowIndex> {
+    const originColumnIndex = findFirstIndex(
+        reference.columnIndex,
+        findPreviousColumnIndex,
+    );
+
+    let originRowIndex: RowIndex;
+
+    switch (direction) {
+        case DiagonalDirection.TOP_LEFT_TO_BOTTOM_RIGHT:
+            originRowIndex = findFirstIndex(
+                reference.rowIndex,
+                findPreviousRowIndex,
+            );
+            break;
+
+        case DiagonalDirection.BOTTOM_LEFT_TO_BOTTOM_RIGHT:
+            originRowIndex = findFirstIndex(
+                reference.rowIndex,
+                findNextRowIndex,
+            );
+            break;
+
+        default:
+            assertIsUnreachableCase(direction);
+            throw new Error('Should not be reached.');
+    }
+
+    return new Coordinate(originColumnIndex, originRowIndex);
+}
+
+function findFirstIndex<Index extends PropertyKey>(
+    reference: Index,
+    findPreviousIndex: AdjacentIndexFinder<Index>,
+): Index {
+    let previousIndex = reference;
+    let potentialPreviousIndex: Index | undefined = reference;
+
+    while (potentialPreviousIndex !== undefined) {
+        previousIndex = potentialPreviousIndex!;
+        potentialPreviousIndex = findPreviousIndex(previousIndex);
+    }
+
+    return previousIndex;
 }

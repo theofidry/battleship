@@ -34,4 +34,5 @@ export const testCoordinateNavigator = new CoordinateNavigator(
     findPreviousTestRowIndex,
     findNextTestRowIndex,
     sortTestRowIndex,
+    new Coordinate('A', '1'),
 );
