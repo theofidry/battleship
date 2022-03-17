@@ -80,3 +80,28 @@ jobs:
 
             -   name: Run tests
                 run: make compile
+
+    benchmark:
+        runs-on: ubuntu-latest
+        name: 'Benchmark'
+        strategy:
+            fail-fast: false
+            matrix:
+                nodejs: [ '17' ]
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v2
+                with:
+                    fetch-depth: 0
+
+            -   name: Set Node.js
+                uses: actions/setup-node@v2.5.1
+                with:
+                    node-version: ${{ matrix.nodejs }}
+                    cache: 'npm'
+
+            -   name: Install dependencies
+                run: npm ci
+
+            -   name: Run tests
+                run: make benchmark
