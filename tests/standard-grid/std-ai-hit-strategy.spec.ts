@@ -37,6 +37,7 @@ class HitChoicesSet {
     constructor(
         readonly title: string,
         readonly moves: ReadonlyArray<PreviousMove<StdColumnIndex, StdRowIndex>>,
+        readonly expectedStrategy: string,
         readonly sortedExpectedChoices: ReadonlyArray<string>,
     ) {
     }
@@ -51,6 +52,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        'HitTargetSurroundings<C3>',
         [
             'C2',
             'B3',
@@ -71,6 +73,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        'HitTargetSurroundings<C3>',
         [
             'B3',
             'D3',
@@ -94,6 +97,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        'HitTargetSurroundings<C3>',
         [
             'B3',
             'C4',
@@ -120,6 +124,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        'HitTargetSurroundings<C3>',
         [
             'C4',
         ],
@@ -137,6 +142,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
             'C5',
@@ -159,6 +165,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C5',
         ],
@@ -180,6 +187,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        'HitTargetSurroundings<C3>',
         [
             'C2',
             'D3',
@@ -206,6 +214,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        'HitTargetSurroundings<C3>',
         [
             'C2',
         ],
@@ -223,11 +232,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
+        'NoFilter',
         getAllCellsExcept(['C3', 'B3']),
     );
 
     yield new HitChoicesSet(
-        'falls back on a different strategy',
+        'falls back on a different strategy: head tail failed, picks surrounding',
         [
             {
                 target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
@@ -246,6 +256,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        'HitTargetSurroundings<B3>',
         [
             'B2',
             'B4',
@@ -305,7 +316,7 @@ describe('minimal HitStrategy', () => {
 });
 
 describe('HitStrategy with smart targeting', () => {
-    for (const { title, moves, sortedExpectedChoices } of provideHitChoices()) {
+    for (const { title, moves, expectedStrategy, sortedExpectedChoices } of provideHitChoices()) {
         it(title, (done) => {
             const opponentGrid = new StandardOpponentGrid();
             const strategy = createHitStrategyWithSmartTargeting();
@@ -314,6 +325,7 @@ describe('HitStrategy with smart targeting', () => {
                 strategy,
                 opponentGrid,
                 moves.map((value) => value),
+                expectedStrategy,
                 sortedExpectedChoices,
                 done,
             );
@@ -322,17 +334,23 @@ describe('HitStrategy with smart targeting', () => {
 });
 
 function expectNextChoices(
-    strategy: StdAiHitStrategy,
+    hitStrategy: StdAiHitStrategy,
     opponentGrid: StandardOpponentGrid,
     moves: Array<PreviousMove<StdColumnIndex, StdRowIndex>>,
+    expectedStrategy: string,
     sortedExpectedChoices: ReadonlyArray<string>,
     done: Done,
 ): void {
+    const expected = {
+        strategy: expectedStrategy,
+        coordinates: sortedExpectedChoices,
+    };
+
     const lastPreviousMove = moves.pop();
     assertIsNotUndefined(lastPreviousMove);
 
     recordMoves(
-            strategy,
+            hitStrategy,
             opponentGrid,
             moves,
         )
@@ -344,7 +362,7 @@ function expectNextChoices(
                     opponentGrid.markAsHit(lastPreviousMove.target);
                 }
 
-                const actual = strategy
+                const actual = hitStrategy
                     .findChoices(
                         opponentGrid,
                         lastPreviousMove,
@@ -352,9 +370,14 @@ function expectNextChoices(
 
                 actual.fold(
                     (error) => fail(error),
-                    (sortedChoices) => expect(
-                        sortedChoices.map(toString),
-                    ).to.eqls(sortedExpectedChoices),
+                    ({ strategy, coordinates }) => {
+                        const normalizedChoices = {
+                            strategy,
+                            coordinates: coordinates.map(toString).valueSeq().toArray(),
+                        };
+
+                        expect(normalizedChoices).to.eqls(expected);
+                    }
                 );
 
                 done();

@@ -45,14 +45,17 @@ export class AIHitStrategy<
 
         return availableCoordinates.fold(
             this.handleError,
-            (coordinates) => ofRandomCoordinate(coordinates),
+            (choices) => ofRandomCoordinate(
+                choices,
+                this.coordinateNavigator,
+            ),
         );
     }
 
     findChoices(
         grid: OpponentGrid<ColumnIndex, RowIndex, OpponentCell>,
         previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined,
-    ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>> {
+    ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, AppliedChoiceStrategy<ColumnIndex, RowIndex>> {
         this.recordPreviousMove(previousMove);
 
         const { previousHits } = this;
@@ -188,13 +191,11 @@ export class AIHitStrategy<
         untouchedCoordinates: Map<string, Coordinate<ColumnIndex, RowIndex>>,
         filters: List<ChoiceStrategy<ColumnIndex, RowIndex>>,
         choicesList: List<AppliedChoiceStrategy<ColumnIndex, RowIndex>>,
-    ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>> {
+    ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, AppliedChoiceStrategy<ColumnIndex, RowIndex>> {
         const foundEnoughChoices = choicesList.size > 1 || filters.size === 1;
 
         return foundEnoughChoices
-            ? Either.right(
-                selectFirstChoices(choicesList, this.coordinateNavigator),
-            )
+            ? Either.right(choicesList.first()!)
             : Either.left(
                 new InvalidAIStrategy(
                     grid,
@@ -212,7 +213,7 @@ type ChoiceStrategy<
     RowIndex extends PropertyKey,
     > = {
     readonly strategy: string,
-    filter: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean,
+    readonly filter: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean,
 };
 
 type AppliedChoiceStrategy<
@@ -220,7 +221,7 @@ type AppliedChoiceStrategy<
     RowIndex extends PropertyKey,
     > = {
     readonly strategy: string,
-    coordinates: Map<string, Coordinate<ColumnIndex, RowIndex>>,
+    readonly coordinates: Map<string, Coordinate<ColumnIndex, RowIndex>>,
 };
 
 function createApplyStrategyMapper<
@@ -252,29 +253,23 @@ function createNoFilterFilterStrategy<
     };
 }
 
-function selectFirstChoices<
+function ofRandomCoordinate<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(
-    choicesList: List<AppliedChoiceStrategy<ColumnIndex, RowIndex>>,
+    choices: AppliedChoiceStrategy<ColumnIndex, RowIndex>,
     coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
-): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
-    return choicesList
-        .first()!
+): Observable<Coordinate<ColumnIndex, RowIndex>> {
+    const coordinates = choices
         .coordinates
         .sort(coordinateNavigator.createCoordinatesSorter())
         .valueSeq()
         .toArray();
-}
 
-function ofRandomCoordinate<
-    ColumnIndex extends PropertyKey,
-    RowIndex extends PropertyKey,
->(choices: ReadonlyArray<Coordinate<ColumnIndex, RowIndex>>): Observable<Coordinate<ColumnIndex, RowIndex>> {
-    const value = sample(choices);
-    assertIsNotUndefined(value);
+    const pickedCoordinate = sample(coordinates);
+    assertIsNotUndefined(pickedCoordinate);
 
-    return of(value);
+    return of(pickedCoordinate);
 }
 
 export class InvalidAIStrategy<
