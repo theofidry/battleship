@@ -90,7 +90,6 @@ benchmark: dist/src/main.js
 	node dist/src/main.js ai:benchmark --ai=v2
 
 
-
 #
 # Basic rules
 #---------------------------------------------------------------------------
