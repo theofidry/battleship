@@ -112,7 +112,10 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     /**
-     * @internal
+     * Calculates the distance between two points. For example the distance
+     * between A1 and C1 is 2.
+     *
+     * If the points are not aligned an error is given.
      */
     calculateDistance(
         first: Coordinate<ColumnIndex, RowIndex>,
