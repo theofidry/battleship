@@ -1,5 +1,7 @@
+import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
 import { CoordinateNavigator } from '../../src/grid/coordinate-navigator';
+import { Grid } from '../../src/grid/grid';
 import {
     createFindNextIndex, createFindPreviousIndex, createIndexSorter,
 } from '../../src/grid/index';
@@ -36,3 +38,15 @@ export const testCoordinateNavigator = new CoordinateNavigator(
     sortTestRowIndex,
     new Coordinate('A', '1'),
 );
+
+export function createEmptyGrid(): Grid<TestColumnIndex, TestRowIndex, TestCell> {
+    return new Grid(Map(
+        TEST_ROW_INDICES.map((rowIndex) => [
+            rowIndex,
+            Map(TEST_COLUMN_INDICES.map((columnIndex) => [
+                columnIndex,
+                TestCell.EMPTY,
+            ])),
+        ]),
+    ));
+}

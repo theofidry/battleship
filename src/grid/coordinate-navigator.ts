@@ -1,10 +1,13 @@
 import { Collection, List, Map as ImmutableMap, OrderedSet } from 'immutable';
+import { range, toString } from 'lodash';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
+import { EnumHelper } from '../utils/enum-helper';
 import { Coordinate } from './coordinate';
+import assert = require('node:assert');
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type DistantIndexFinder<Index extends PropertyKey> = (index: Index, step: number)=> Index | undefined;
@@ -39,9 +42,12 @@ export type CoordinateSorter<
     RowIndex extends PropertyKey,
 > = (left: Coordinate<ColumnIndex, RowIndex>, right: Coordinate<ColumnIndex, RowIndex>)=> number;
 
-export enum DiagonalDirection {
-    TOP_LEFT_TO_BOTTOM_RIGHT,
-    BOTTOM_LEFT_TO_BOTTOM_RIGHT,
+/**
+ * @internal
+ */
+export enum VerticalTraverseDirection {
+    TOP_TO_BOTTOM,
+    BOTTOM_TO_TOP,
 }
 
 /**
@@ -49,7 +55,7 @@ export enum DiagonalDirection {
  * system.
  */
 export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>{
-    private readonly cachedOrigins = new Map<DiagonalDirection, Coordinate<ColumnIndex, RowIndex>>();
+    private readonly cachedOrigins = new Map<VerticalTraverseDirection, Coordinate<ColumnIndex, RowIndex>>();
 
     constructor(
         public readonly findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
@@ -57,8 +63,8 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         public readonly columnIndexSorter: IndexSorter<ColumnIndex>,
         public readonly findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
         public readonly findNextRowIndex: AdjacentIndexFinder<RowIndex>,
-        public readonly rowIndexSorter: IndexSorter<RowIndex>,
-        public readonly reference: Coordinate<ColumnIndex, RowIndex>,
+        private readonly rowIndexSorter: IndexSorter<RowIndex>,
+        private readonly reference: Coordinate<ColumnIndex, RowIndex>,
     ) {
     }
 
@@ -105,6 +111,9 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         ].sort(this.createCoordinatesSorter());
     }
 
+    /**
+     * @internal
+     */
     calculateDistance(
         first: Coordinate<ColumnIndex, RowIndex>,
         second: Coordinate<ColumnIndex, RowIndex>,
@@ -144,6 +153,18 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         return Either.left(error);
     }
 
+    /**
+     * Finds sets of coordinates that are aligned together within the max
+     * distance, i.e. if aligned but the distance between the two points
+     * exceeds the maximum distance given then they will not be recognised
+     * as aligned.
+     *
+     * For example given the points A1, A2, A3, A5 and E1, without considering the
+     * distance then the alignments found will be (A1, A2, A3, A5) and (A1, E1).
+     * If the max distance is less than 4 however, then the last alignment
+     * (A1, E1) will be discarded. A5 will be kept though since the distance
+     * between A3 and A5 is less than 4.
+     */
     findAlignments(
         coordinates: Collection<unknown, Coordinate<ColumnIndex, RowIndex>>,
         maxDistance: ShipSize,
@@ -274,6 +295,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             .filter(filterRedundantAlignments);
     }
 
+    /**
+     * Finds missing coordinates within an alignment. For example for the
+     * alignments (A1, A3) and (B2, E2), the coordinates found will be A2, C2,
+     * and D2.
+     */
     findAlignmentGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const direction = alignment.direction;
 
@@ -316,6 +342,12 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         throw new Error('Unreachable.');
     }
 
+    /**
+     * Finds the coordinates at the extremums of the given alignments.
+     *
+     * For example for the alignments (A1, A3) and (B2, E2), the coordinates
+     * found will be A4, A2 and F2.
+     */
     findNextExtremums(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const direction = alignment.direction;
 
@@ -360,24 +392,56 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         throw new Error('Unreachable.');
     }
 
-    // traverseDiagonally(
-    //     origin: Coordinate<ColumnIndex, RowIndex>,
-    //     direction: DiagonalDirection,
-    // ): List<Coordinate<ColumnIndex, RowIndex>> {
-    //
-    // }
+    traverseGrid(minShipSize: ShipSize): List<List<Coordinate<ColumnIndex, RowIndex>>> {
+        const lists = this.traverseGridDiagonallyInDirection(
+            VerticalTraverseDirection.TOP_TO_BOTTOM,
+            minShipSize,
+        );
 
-    createGridTraverser(): GridTraverser<ColumnIndex, RowIndex> {
-        // TODO
-        return () => List();
+        return lists.flatMap((list) => [list, this.mirror(list)]);
     }
 
-    createStartingCoordinatesFinder(): StartingCoordinatesFinder<ColumnIndex, RowIndex> {
-        // TODO
-        return () => List();
+    private traverseGridDiagonallyInDirection(
+        direction: VerticalTraverseDirection,
+        minShipSize: ShipSize,
+    ): List<List<Coordinate<ColumnIndex, RowIndex>>> {
+        // TODO: something here can probably be cached
+        /*
+        Implementation details.
+
+        Uses the pattern "traverse grid diagonally" to find a result (list of
+        coordinates) and then apply the transformation "translation" to this
+        pattern to obtain a different result.
+
+        It applies this transformation as many times as necessary to obtain the
+        exhaustive list of results.
+         */
+        const origin = this.findGridOrigin(direction);
+
+        const columnIndices = createIndices(
+            origin.columnIndex,
+            this.findNextColumnIndex,
+        );
+
+        const startingCoordinates = this.findStartingCoordinates(
+            direction,
+            minShipSize,
+        );
+
+        return startingCoordinates
+            .map((startingCoordinate) => traverseGridDiagonally(
+                columnIndices,
+                minShipSize,
+                startingCoordinates,
+                startingCoordinate,
+                this.getFindNextRowIndexForDirection(direction),
+            ));
     }
 
-    findGridOrigin(direction: DiagonalDirection): Coordinate<ColumnIndex, RowIndex> {
+    /**
+     * @internal
+     */
+    findGridOrigin(direction: VerticalTraverseDirection): Coordinate<ColumnIndex, RowIndex> {
         const cachedOrigin = this.cachedOrigins.get(direction);
 
         if (undefined !== cachedOrigin) {
@@ -395,6 +459,62 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         this.cachedOrigins.set(direction, origin);
 
         return origin;
+    }
+
+    /**
+     * @internal
+     */
+    findStartingCoordinates(
+        direction: VerticalTraverseDirection,
+        minShipSize: ShipSize,
+    ): List<Coordinate<ColumnIndex, RowIndex>> {
+        // TODO: something here can probably be cached
+        const findNextRowIndex = this.getFindNextRowIndexForDirection(direction);
+        const origin = this.findGridOrigin(direction);
+
+        return List(
+            range(0, minShipSize)
+                .map((distanceToOrigin) => findNextIndexByStep(
+                    findNextRowIndex,
+                    origin.rowIndex,
+                    distanceToOrigin,
+                ))
+                .filter(isNotUndefined)
+                .map((newRowIndex) => new Coordinate(
+                    origin.columnIndex,
+                    newRowIndex,
+                ))
+                .sort(this.createCoordinatesSorter()),
+        );
+    }
+
+    mirror(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const origin = this.findGridOrigin(VerticalTraverseDirection.TOP_TO_BOTTOM);
+
+        const columnIndices = createIndices(
+            origin.columnIndex,
+            this.findNextColumnIndex,
+        );
+        const inversedColumnIndices = createIndices(
+            origin.columnIndex,
+            this.findNextColumnIndex,
+        );
+        const rowIndices = createIndices(
+            origin.columnIndex,
+            this.findNextColumnIndex,
+        );
+    }
+
+    private getFindNextRowIndexForDirection(direction: VerticalTraverseDirection): AdjacentIndexFinder<RowIndex> {
+        switch (direction) {
+            case VerticalTraverseDirection.TOP_TO_BOTTOM:
+                return this.findNextRowIndex;
+
+            case VerticalTraverseDirection.BOTTOM_TO_TOP:
+                return this.findPreviousRowIndex;
+        }
+
+        assertIsUnreachableCase(direction);
     }
 }
 
@@ -527,12 +647,12 @@ function findIndexExtremums<Index extends PropertyKey>(
 function findOrigin<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> (
+>(
     reference: Coordinate<ColumnIndex, RowIndex>,
     findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
     findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
     findNextRowIndex: AdjacentIndexFinder<RowIndex>,
-    direction: DiagonalDirection,
+    direction: VerticalTraverseDirection,
 ): Coordinate<ColumnIndex, RowIndex> {
     const originColumnIndex = findFirstIndex(
         reference.columnIndex,
@@ -542,14 +662,14 @@ function findOrigin<
     let originRowIndex: RowIndex;
 
     switch (direction) {
-        case DiagonalDirection.TOP_LEFT_TO_BOTTOM_RIGHT:
+        case VerticalTraverseDirection.TOP_TO_BOTTOM:
             originRowIndex = findFirstIndex(
                 reference.rowIndex,
                 findPreviousRowIndex,
             );
             break;
 
-        case DiagonalDirection.BOTTOM_LEFT_TO_BOTTOM_RIGHT:
+        case VerticalTraverseDirection.BOTTOM_TO_TOP:
             originRowIndex = findFirstIndex(
                 reference.rowIndex,
                 findNextRowIndex,
@@ -577,4 +697,172 @@ function findFirstIndex<Index extends PropertyKey>(
     }
 
     return previousIndex;
+}
+
+/**
+ * For example goes from 1 to 3 if the step is 2.
+ */
+export function findNextIndexByStep<Index extends PropertyKey>(
+    getNextIndex: (index: Index)=> Index | undefined,
+    initialValue: Index,
+    stepSize: number,
+): Index | undefined {
+    assert(Number.isInteger(stepSize));
+    assert(stepSize >= 0);
+
+    return range(0, stepSize)
+        .reduce(
+            (previousValue: Index | undefined) => {
+                if (undefined === previousValue) {
+                    return undefined;
+                }
+
+                return getNextIndex(previousValue);
+            },
+            initialValue,
+        );
+}
+
+export function createIndices<Index>(
+    originIndex: Index,
+    getNextIndex: (index: Index)=> Index | undefined,
+): List<Index> {
+    const indices = [originIndex];
+
+    let previousColumnIndex: Index = originIndex;
+    let nextColumnIndex: Index | undefined;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        nextColumnIndex = getNextIndex(previousColumnIndex);
+
+        if (undefined === nextColumnIndex) {
+            break;
+        }
+
+        indices.push(nextColumnIndex);
+        previousColumnIndex = nextColumnIndex;
+    }
+
+    return List(indices);
+}
+
+/**
+ * @internal
+ */
+export class LoopableIndices<Index extends PropertyKey>{
+    private nextIndexIndex: number | undefined;
+
+    constructor(
+        private readonly indices: List<Index>,
+        private readonly initialIndex: Index,
+    ) {
+        assert(indices.contains(initialIndex));
+    }
+
+    getNextIndex(): Index {
+        const { nextIndexIndex, initialIndex } = this;
+
+        if (nextIndexIndex === undefined) {
+            // The first one we pick should be the initial index
+            this.nextIndexIndex = this.indices.keyOf(initialIndex);
+
+            return initialIndex;
+        }
+
+        let newNextIndexIndex = nextIndexIndex + 1;
+
+        if (!this.indices.has(newNextIndexIndex)) {
+            // Loop back to the beginning
+            newNextIndexIndex = 0;
+        }
+
+        this.nextIndexIndex = newNextIndexIndex;
+
+        return this.indices.get(newNextIndexIndex)!;
+    }
+}
+
+/**
+ * Traverses the grid diagonally leaving a certain gap between diagonals. For
+ * example a traverse (the result changes depending of the starting coordinate)
+ * the grid with a ship size of 2 (leaves a gap of one cell):
+ *
+ * ┌───┬───┬───┬───┬───┬───┐
+ * │   │ A │ B │ C │ D │ E │
+ * ├───┼───┼───┼───┼───┼───┤
+ * │ 1 │ 0 │ 1 │ 0 │ 1 │ 0 │
+ * │ 2 │ 1 │ 0 │ 1 │ 0 │ 1 │
+ * │ 3 │ 0 │ 1 │ 0 │ 1 │ 0 │
+ * │ 4 │ 1 │ 0 │ 1 │ 0 │ 1 │
+ * │ 5 │ 0 │ 1 │ 0 │ 1 │ 0 │
+ * └───┴───┴───┴───┴───┴───┘
+ */
+function traverseGridDiagonally<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(
+    columnIndices: List<ColumnIndex>,
+    minShipSize: ShipSize,
+    // traversal starting coordinates: need to be one of the grid starting coordinate
+    potentialStartingCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+    startingCoordinate: Coordinate<ColumnIndex, RowIndex>,
+    findNextRowIndex: AdjacentIndexFinder<RowIndex>,
+): List<Coordinate<ColumnIndex, RowIndex>> {
+    /*
+    Implementation details.
+
+    Although the result is diagonals, the way we achieve this result is
+    differently.
+
+    We have a list of "potential starting coordinates" which defines the
+    exhaustive minimal list of points to start the traverse from to cover the
+    grid. From this list, we can get the row index of the starting point. We
+    then loop over the remaining rows by a step matching the min ship size for
+    the whole column.
+
+    Once the first column done, we start over with the next column, the initial
+    row index shifted by 1 (among the starting coordinates, if the last one is
+    reached we loop over to the beginning) and traverse the column in a similar
+    fashion.
+
+    Repeat the process for each column.
+     */
+    assert(potentialStartingCoordinates.contains(startingCoordinate));
+
+    const loopableStartingRows = new LoopableIndices(
+        potentialStartingCoordinates.map(({ rowIndex }) => rowIndex),
+        startingCoordinate.rowIndex,
+    );
+
+    const findNextRowByStep: AdjacentIndexFinder<RowIndex> = (initialValue) => findNextIndexByStep(
+        findNextRowIndex,
+        initialValue,
+        minShipSize,
+    );
+
+    const traverseStartingCoordinates = columnIndices
+        .map((startingColumnIndex) => new Coordinate(
+            startingColumnIndex,
+            loopableStartingRows.getNextIndex(),
+        ));
+
+    console.log({
+        loopableStartingRows,
+    });
+
+    return traverseStartingCoordinates
+        .flatMap((traverseFirstCoordinate) => {
+            const rowIndices = createIndices(
+                traverseFirstCoordinate.rowIndex,
+                findNextRowByStep,
+            );
+
+            console.log({rowIndices: rowIndices.toArray()});
+
+            return rowIndices.map((rowIndex) => new Coordinate(
+                traverseFirstCoordinate.columnIndex,
+                rowIndex,
+            ));
+        });
 }
