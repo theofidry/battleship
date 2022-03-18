@@ -34,6 +34,7 @@ export class AIHitStrategy<
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
         private readonly enableSmartTargeting: boolean,
+        private readonly enableSmartScreening: boolean,
     ) {
     }
 
@@ -111,6 +112,17 @@ export class AIHitStrategy<
             );
         }
 
+        if (this.enableSmartScreening) {
+            // TODO: adjust this number
+            const possibleTraverses = this.coordinateNavigator.traverseGrid(2);
+
+            strategies.push(
+                ...possibleTraverses.map(
+                    (possibleTraverse) => this.createGridScreeningFilterStrategy(possibleTraverse),
+                ),
+            );
+        }
+
         return strategies.filter(isNotUndefined);
     }
 
@@ -166,6 +178,21 @@ export class AIHitStrategy<
 
         return {
             strategy: `HitAlignedExtremumsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
+    }
+
+    private createGridScreeningFilterStrategy(
+        coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+    ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
+        const validCandidates = coordinates;
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        return {
+            strategy: 'GridScreening',
             filter: (candidate) => validCandidates.includes(candidate),
         };
     }

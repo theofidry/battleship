@@ -88,6 +88,7 @@ benchmark:	## Benchmarks the AIs
 benchmark: dist/src/main.js
 	node dist/src/main.js ai:benchmark --ai=v1
 	node dist/src/main.js ai:benchmark --ai=v2
+	node dist/src/main.js ai:benchmark --ai=v3
 
 
 #
