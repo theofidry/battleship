@@ -5,7 +5,6 @@ import heredoc from 'tsheredoc';
 import { Coordinate } from '../../src/grid/coordinate';
 import {
     CoordinateAlignment, createIndices, findNextIndexByStep, LoopableIndices, NonAlignedCoordinates,
-    VerticalTraverseDirection,
 } from '../../src/grid/coordinate-navigator';
 import { printGrid } from '../../src/grid/grid-printer';
 import { ShipDirection } from '../../src/ship/ship-direction';
@@ -524,21 +523,11 @@ describe('CoordinateNavigator::findNextExtremums()', () => {
     }
 });
 
-describe('CoordinateNavigator::findGridOrigin()', () => {
-    it('can find the grid origin for a traverse from top left to bottom right', () => {
-        const actual = testCoordinateNavigator
-            .findGridOrigin(VerticalTraverseDirection.TOP_TO_BOTTOM);
+describe('CoordinateNavigator::getGridOrigin()', () => {
+    it('can find the grid origin', () => {
+        const actual = testCoordinateNavigator.getGridOrigin();
 
-        expect(actual).to.not.equal(undefined);
         expect(actual.toString()).to.eqls('A1');
-    });
-
-    it('can find the grid origin for a traverse from bottom left to top right', () => {
-        const actual = testCoordinateNavigator
-            .findGridOrigin(VerticalTraverseDirection.BOTTOM_TO_TOP);
-
-        expect(actual).to.not.equal(undefined);
-        expect(actual.toString()).to.eqls('A5');
     });
 });
 
@@ -586,7 +575,6 @@ describe('CoordinateNavigator\'s createIndices()', () => {
 class FindStartingCoordinateSet {
     constructor(
         readonly title: string,
-        readonly direction: VerticalTraverseDirection,
         readonly minShipSize: ShipSize,
         readonly expected: Array<string>,
     ) {
@@ -596,54 +584,27 @@ class FindStartingCoordinateSet {
 function* provideFindStartingCoordinateSet(): Generator<FindStartingCoordinateSet> {
     yield new FindStartingCoordinateSet(
         'case 1',
-        VerticalTraverseDirection.TOP_TO_BOTTOM,
         2,
         ['A1', 'A2'],
     );
 
     yield new FindStartingCoordinateSet(
         'case 2',
-        VerticalTraverseDirection.TOP_TO_BOTTOM,
         3,
         ['A1', 'A2', 'A3'],
     );
 
     yield new FindStartingCoordinateSet(
         'case 3',
-        VerticalTraverseDirection.TOP_TO_BOTTOM,
         4,
         ['A1', 'A2', 'A3', 'A4'],
-    );
-
-    yield new FindStartingCoordinateSet(
-        'case 4',
-        VerticalTraverseDirection.BOTTOM_TO_TOP,
-        2,
-        ['A4', 'A5'],
-    );
-
-    yield new FindStartingCoordinateSet(
-        'case 5',
-        VerticalTraverseDirection.BOTTOM_TO_TOP,
-        3,
-        ['A3', 'A4', 'A5'],
-    );
-
-    yield new FindStartingCoordinateSet(
-        'case 6',
-        VerticalTraverseDirection.BOTTOM_TO_TOP,
-        4,
-        ['A2', 'A3', 'A4', 'A5'],
     );
 }
 
 describe('CoordinateNavigator::findStartingCoordinates()', () => {
-    for (const { title, direction, minShipSize, expected } of provideFindStartingCoordinateSet()) {
+    for (const { title, minShipSize, expected } of provideFindStartingCoordinateSet()) {
         it(`can get the starting coordinates ${title}`, () => {
-            const actual = testCoordinateNavigator.findStartingCoordinates(
-                    direction,
-                    minShipSize,
-                )
+            const actual = testCoordinateNavigator.findStartingCoordinates(minShipSize)
                 .map(toString)
                 .toArray();
 

@@ -9,24 +9,7 @@ import { Coordinate } from './coordinate';
 import assert = require('node:assert');
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
-export type DistantIndexFinder<Index extends PropertyKey> = (index: Index, step: number)=> Index | undefined;
 export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
-
-export type GridTraverser<
-    ColumnIndex extends PropertyKey,
-    RowIndex extends PropertyKey,
-> = (
-    minSize: number,
-    origin: Coordinate<ColumnIndex, RowIndex>,
-)=> List<Coordinate<ColumnIndex, RowIndex>>;
-
-export type StartingCoordinatesFinder<
-    ColumnIndex extends PropertyKey,
-    RowIndex extends PropertyKey,
-> = (
-    minSize: number,
-    origin: Coordinate<ColumnIndex, RowIndex>,
-)=> List<Coordinate<ColumnIndex, RowIndex>>;
 
 export type CoordinateAlignment<
     ColumnIndex extends PropertyKey,
@@ -42,19 +25,11 @@ export type CoordinateSorter<
 > = (left: Coordinate<ColumnIndex, RowIndex>, right: Coordinate<ColumnIndex, RowIndex>)=> number;
 
 /**
- * @internal
- */
-export enum VerticalTraverseDirection {
-    TOP_TO_BOTTOM,
-    BOTTOM_TO_TOP,
-}
-
-/**
  * The navigator provides an API to easily consume and navigates a grid-coordinate
  * system.
  */
 export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>{
-    private readonly cachedOrigins = new Map<VerticalTraverseDirection, Coordinate<ColumnIndex, RowIndex>>();
+    private cachedOrigin: Coordinate<ColumnIndex, RowIndex> | undefined;
 
     constructor(
         public readonly findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
@@ -395,10 +370,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     traverseGrid(minShipSize: ShipSize): List<List<Coordinate<ColumnIndex, RowIndex>>> {
-        const lists = this.traverseGridDiagonallyInDirection(
-            VerticalTraverseDirection.TOP_TO_BOTTOM,
-            minShipSize,
-        );
+        const lists = this.traverseGridDiagonallyInDirection(minShipSize);
 
         return lists
             .flatMap((list) => [list, this.mirror(list)])
@@ -406,7 +378,6 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     private traverseGridDiagonallyInDirection(
-        direction: VerticalTraverseDirection,
         minShipSize: ShipSize,
     ): List<List<Coordinate<ColumnIndex, RowIndex>>> {
         // TODO: something here can probably be cached
@@ -420,17 +391,14 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         It applies this transformation as many times as necessary to obtain the
         exhaustive list of results.
          */
-        const origin = this.findGridOrigin(direction);
+        const origin = this.getGridOrigin();
 
         const columnIndices = createIndices(
             origin.columnIndex,
             this.findNextColumnIndex,
         );
 
-        const startingCoordinates = this.findStartingCoordinates(
-            direction,
-            minShipSize,
-        );
+        const startingCoordinates = this.findStartingCoordinates(minShipSize);
 
         return startingCoordinates
             .map((startingCoordinate) => traverseGridDiagonally(
@@ -438,48 +406,38 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                 minShipSize,
                 startingCoordinates,
                 startingCoordinate,
-                this.getFindNextRowIndexForDirection(direction),
+                this.findNextRowIndex,
             ));
     }
 
     /**
-     * @internal
+     * Gets the grid origin, for example A1 in the standard grid.
      */
-    findGridOrigin(direction: VerticalTraverseDirection): Coordinate<ColumnIndex, RowIndex> {
-        const cachedOrigin = this.cachedOrigins.get(direction);
+    getGridOrigin(): Coordinate<ColumnIndex, RowIndex> {
+        const cachedOrigin = this.cachedOrigin;
 
         if (undefined !== cachedOrigin) {
             return cachedOrigin;
         }
 
-        const origin = findOrigin(
+        const origin = getOrigin(
             this.reference,
             this.findPreviousColumnIndex,
             this.findPreviousRowIndex,
-            this.findNextRowIndex,
-            direction,
         );
 
-        this.cachedOrigins.set(direction, origin);
+        this.cachedOrigin = origin;
 
         return origin;
     }
 
-    /**
-     * @internal
-     */
-    findStartingCoordinates(
-        direction: VerticalTraverseDirection,
-        minShipSize: ShipSize,
-    ): List<Coordinate<ColumnIndex, RowIndex>> {
-        // TODO: something here can probably be cached
-        const findNextRowIndex = this.getFindNextRowIndexForDirection(direction);
-        const origin = this.findGridOrigin(direction);
+    findStartingCoordinates(minShipSize: ShipSize): List<Coordinate<ColumnIndex, RowIndex>> {
+        const origin = this.getGridOrigin();
 
         return List(
             range(0, minShipSize)
                 .map((distanceToOrigin) => findNextIndexByStep(
-                    findNextRowIndex,
+                    this.findNextRowIndex,
                     origin.rowIndex,
                     distanceToOrigin,
                 ))
@@ -495,18 +453,6 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     mirror(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): List<Coordinate<ColumnIndex, RowIndex>> {
         // TODO
         return List();
-    }
-
-    private getFindNextRowIndexForDirection(direction: VerticalTraverseDirection): AdjacentIndexFinder<RowIndex> {
-        switch (direction) {
-            case VerticalTraverseDirection.TOP_TO_BOTTOM:
-                return this.findNextRowIndex;
-
-            case VerticalTraverseDirection.BOTTOM_TO_TOP:
-                return this.findPreviousRowIndex;
-        }
-
-        assertIsUnreachableCase(direction);
     }
 }
 
@@ -636,42 +582,23 @@ function findIndexExtremums<Index extends PropertyKey>(
     return List(missingIndices.filter(isNotUndefined));
 }
 
-function findOrigin<
+function getOrigin<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(
     reference: Coordinate<ColumnIndex, RowIndex>,
     findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
     findPreviousRowIndex: AdjacentIndexFinder<RowIndex>,
-    findNextRowIndex: AdjacentIndexFinder<RowIndex>,
-    direction: VerticalTraverseDirection,
 ): Coordinate<ColumnIndex, RowIndex> {
     const originColumnIndex = findFirstIndex(
         reference.columnIndex,
         findPreviousColumnIndex,
     );
 
-    let originRowIndex: RowIndex;
-
-    switch (direction) {
-        case VerticalTraverseDirection.TOP_TO_BOTTOM:
-            originRowIndex = findFirstIndex(
-                reference.rowIndex,
-                findPreviousRowIndex,
-            );
-            break;
-
-        case VerticalTraverseDirection.BOTTOM_TO_TOP:
-            originRowIndex = findFirstIndex(
-                reference.rowIndex,
-                findNextRowIndex,
-            );
-            break;
-
-        default:
-            assertIsUnreachableCase(direction);
-            throw new Error('Should not be reached.');
-    }
+    const originRowIndex = findFirstIndex(
+        reference.rowIndex,
+        findPreviousRowIndex,
+    );
 
     return new Coordinate(originColumnIndex, originRowIndex);
 }
@@ -839,18 +766,12 @@ function traverseGridDiagonally<
             loopableStartingRows.getNextIndex(),
         ));
 
-    console.log({
-        loopableStartingRows,
-    });
-
     return traverseStartingCoordinates
         .flatMap((traverseFirstCoordinate) => {
             const rowIndices = createIndices(
                 traverseFirstCoordinate.rowIndex,
                 findNextRowByStep,
             );
-
-            console.log({rowIndices: rowIndices.toArray()});
 
             return rowIndices.map((rowIndex) => new Coordinate(
                 traverseFirstCoordinate.columnIndex,
