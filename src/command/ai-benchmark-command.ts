@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { Command, InvalidOptionArgumentError } from 'commander';
 import { isNumber, mean, range } from 'lodash';
 import { combineLatest, filter, firstValueFrom, map, Observable, tap } from 'rxjs';
+import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { Logger } from '../logger/logger';
 import { Match } from '../match/match';
@@ -13,7 +14,6 @@ import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { formatTime } from '../utils/time-formatter';
 import { createAIVersionOption } from './ai-version-option';
-import assert = require('node:assert');
 
 export const AIBenchmarkCommand = new Command('ai:benchmark');
 

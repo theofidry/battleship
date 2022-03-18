@@ -1,4 +1,5 @@
 import { Map, OrderedSet } from 'immutable';
+import { assert } from '../assert/assert';
 import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { Grid, GridRows, Row } from '../grid/grid';
@@ -9,7 +10,6 @@ import { EnumHelper } from '../utils/enum-helper';
 import { STD_COLUMN_INDICES, StdColumnIndex } from './std-column-index';
 import { StdCoordinate } from './std-coordinate';
 import { STD_ROW_INDICES, StdRowIndex } from './std-row-index';
-import assert = require('node:assert');
 
 export type Cell = HitResponse.MISS | PositionedShip<StdColumnIndex, StdRowIndex> | undefined;
 
@@ -126,7 +126,7 @@ function getSubIndices<T extends PropertyKey>(start: T, source: ReadonlyArray<T>
 
     assert(
         subIndices.length === length,
-        new OutOfBoundPlacement(`Out of bond: last element found is "${subIndices[subIndices.length - 1]}".`),
+        () => new OutOfBoundPlacement(`Out of bond: last element found is "${subIndices[subIndices.length - 1]}".`),
     );
 
     return subIndices;

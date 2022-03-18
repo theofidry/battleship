@@ -1,8 +1,8 @@
 import { Map } from 'immutable';
 import * as _ from 'lodash';
+import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from './coordinate';
-import assert = require('node:assert');
 
 /**
  * Basic grid which offers an API to easily interact with its cells. The grid
@@ -119,7 +119,7 @@ function assertAllRowsHaveSameColumns<
 
         assert(
             _.isEqual(rowColumns, columns),
-            InvalidGrid.forColumns(rowColumns, columns),
+            () => InvalidGrid.forColumns(rowColumns, columns),
         );
     });
 }

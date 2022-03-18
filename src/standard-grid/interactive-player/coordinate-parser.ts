@@ -1,16 +1,16 @@
+import { assert } from '../../assert/assert';
 import { Coordinate } from '../../grid/coordinate';
 import { EnumHelper } from '../../utils/enum-helper';
 import { CoordinateParser } from '../hit-strategy/interactive-hit-strategy';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
-import assert = require('node:assert');
 
 export const parseCoordinate: CoordinateParser = (rawCoordinate) => {
     const result = rawCoordinate.match(/([A-Z]+)([0-9]+)/);
 
     assert(
         null !== result,
-        InvalidCoordinate.forValue(rawCoordinate),
+        () => InvalidCoordinate.forValue(rawCoordinate),
     );
 
     const columnIndex = result[1] || '';
@@ -18,11 +18,11 @@ export const parseCoordinate: CoordinateParser = (rawCoordinate) => {
 
     assert(
         EnumHelper.hasValue(StdColumnIndex, columnIndex),
-        InvalidCoordinate.forColumn(rawCoordinate, columnIndex),
+        () => InvalidCoordinate.forColumn(rawCoordinate, columnIndex),
     );
     assert(
         EnumHelper.hasValue(StdRowIndex, rowIndex),
-        InvalidCoordinate.forRow(rawCoordinate, rowIndex),
+        () => InvalidCoordinate.forRow(rawCoordinate, rowIndex),
     );
 
     return new Coordinate(columnIndex, rowIndex);

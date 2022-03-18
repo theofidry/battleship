@@ -2,12 +2,12 @@ import {
     concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
     Subject, takeUntil, tap,
 } from 'rxjs';
+import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { Player } from '../player/player';
 import { MatchLogger } from './match-logger';
-import assert = require('node:assert');
 
 export class Match<
     ColumnIndex extends PropertyKey,

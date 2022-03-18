@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import heredoc from 'tsheredoc';
@@ -14,7 +14,6 @@ import {
     createEmptyGrid, TEST_COLUMN_INDICES, TestCell, testCellPrinter, TestColumnIndex,
     TestCoordinate, testCoordinateNavigator, TestRowIndex,
 } from './test-coordinates';
-import assert = require('node:assert');
 
 class SortCoordinatesSet {
     constructor(
@@ -171,11 +170,10 @@ describe('CoordinateNavigator::calculateDistance()', () => {
                 .fold(
                     (error) => {
                         expect(expected).to.be.instanceof(NonAlignedCoordinates);
-                        assert(expected instanceof NonAlignedCoordinates);
 
                         expectError(
                             'NonAlignedCoordinates',
-                            expected.message,
+                            (expected as NonAlignedCoordinates).message,
                             () => {
                                 throw error;
                             },
