@@ -1,6 +1,6 @@
 import { Collection, List, Map as ImmutableMap, OrderedSet } from 'immutable';
-import { range } from 'lodash';
-import { isNotUndefined } from '../assert/assert-is-not-undefined';
+import { range, toString } from 'lodash';
+import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
@@ -450,9 +450,28 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         );
     }
 
-    mirror(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): List<Coordinate<ColumnIndex, RowIndex>> {
-        // TODO
-        return List();
+    private mirror(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const origin = this.getGridOrigin();
+
+        const rowIndices = createIndices(
+            origin.rowIndex,
+            this.findNextRowIndex,
+        );
+
+        const reversedRowIndices = rowIndices.reverse();
+
+        const getReversedRowIndex = (rowIndex: RowIndex): RowIndex => {
+            const index = rowIndices.keyOf(rowIndex);
+            assertIsNotUndefined(index);
+
+            return reversedRowIndices.get(index)!;
+        };
+
+        return coordinates
+            .map(({ columnIndex, rowIndex }) => new Coordinate(
+                columnIndex,
+                getReversedRowIndex(rowIndex),
+            ));
     }
 }
 
