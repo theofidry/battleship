@@ -1,13 +1,18 @@
 import { expect } from 'chai';
 import { List, Set } from 'immutable';
 import { toString } from 'lodash';
+import heredoc from 'tsheredoc';
 import { Coordinate } from '../../src/grid/coordinate';
-import { CoordinateAlignment, NonAlignedCoordinates } from '../../src/grid/coordinate-navigator';
+import {
+    CoordinateAlignment, createIndices, findNextIndexByStep, LoopableIndices, NonAlignedCoordinates,
+} from '../../src/grid/coordinate-navigator';
+import { printGrid } from '../../src/grid/grid-printer';
 import { ShipDirection } from '../../src/ship/ship-direction';
 import { ShipSize } from '../../src/ship/ship-size';
 import { expectError } from '../chai-assertions';
 import {
-    TestColumnIndex, TestCoordinate, testCoordinateNavigator, TestRowIndex,
+    createEmptyGrid, TEST_COLUMN_INDICES, TestCell, testCellPrinter, TestColumnIndex,
+    TestCoordinate, testCoordinateNavigator, TestRowIndex,
 } from './test-coordinates';
 import assert = require('node:assert');
 
@@ -516,4 +521,364 @@ describe('CoordinateNavigator::findNextExtremums()', () => {
             expect(actual).to.eqls(expectedExtremums);
         });
     }
+});
+
+describe('CoordinateNavigator::getGridOrigin()', () => {
+    it('can find the grid origin', () => {
+        const actual = testCoordinateNavigator.getGridOrigin();
+
+        expect(actual.toString()).to.eqls('A1');
+    });
+});
+
+describe('CoordinateNavigator\'s findNextIndexByStep()', () => {
+    it('can find the next index by a step', () => {
+        const actual = findNextIndexByStep(
+            testCoordinateNavigator.findNextColumnIndex,
+            'B',
+            2,
+        );
+
+        expect(actual).to.equal('D');
+    });
+
+    it('can find the next index by a step (out of bound)', () => {
+        const actual = findNextIndexByStep(
+            testCoordinateNavigator.findNextColumnIndex,
+            'E',
+            2,
+        );
+
+        expect(actual).to.equal(undefined);
+    });
+});
+
+describe('CoordinateNavigator\'s createIndices()', () => {
+    it('can create indices', () => {
+        const indices = createIndices(
+            'B',
+            testCoordinateNavigator.findNextColumnIndex,
+        );
+
+        const expected = [
+            // No 'A' since we start at 'B'
+            'B',
+            'C',
+            'D',
+            'E',
+        ];
+
+        expect(indices.toArray()).to.eqls(expected);
+    });
+});
+
+class FindStartingCoordinateSet {
+    constructor(
+        readonly title: string,
+        readonly minShipSize: ShipSize,
+        readonly expected: Array<string>,
+    ) {
+    }
+}
+
+function* provideFindStartingCoordinateSet(): Generator<FindStartingCoordinateSet> {
+    yield new FindStartingCoordinateSet(
+        'case 1',
+        2,
+        ['A1', 'A2'],
+    );
+
+    yield new FindStartingCoordinateSet(
+        'case 2',
+        3,
+        ['A1', 'A2', 'A3'],
+    );
+
+    yield new FindStartingCoordinateSet(
+        'case 3',
+        4,
+        ['A1', 'A2', 'A3', 'A4'],
+    );
+}
+
+describe('CoordinateNavigator::findStartingCoordinates()', () => {
+    for (const { title, minShipSize, expected } of provideFindStartingCoordinateSet()) {
+        it(`can get the starting coordinates ${title}`, () => {
+            const actual = testCoordinateNavigator.findStartingCoordinates(minShipSize)
+                .map(toString)
+                .toArray();
+
+            expect(actual).to.eqls(expected);
+        });
+    }
+});
+
+describe('CoordinateNavigator\'s LoopableIndices', () => {
+    it('has loopable indices', () => {
+        const loopableIndices = new LoopableIndices(
+            List(TEST_COLUMN_INDICES),
+            'B',
+        );
+
+        const expectedIndices = [
+            'B',
+            'C',
+            'D',
+            'E',
+            'A',
+            // Repeat loop!
+            'B',
+            'C',
+            'D',
+            'E',
+        ];
+
+        expectedIndices.forEach((expected) => {
+            const actual = loopableIndices.getNextIndex();
+
+            expect(actual).to.equal(expected);
+        });
+    });
+});
+
+const createMarkedGrid = (markedCoordinatesList: List<List<Coordinate<TestColumnIndex, TestRowIndex>>>): ReadonlyArray<string> => {
+    return markedCoordinatesList
+        .map((markedCoordinates) => {
+            const grid = createEmptyGrid().fillCells(
+                markedCoordinates.toArray(),
+                TestCell.FULL,
+                () => true,
+            );
+
+            return printGrid(grid.getRows(), testCellPrinter);
+        })
+        .sort()
+        .toArray();
+};
+
+describe('CoordinateNavigator::search()', () => {
+    it('can screen the grid for when the smallest ship searched is of size 2', () => {
+        const paths = createMarkedGrid(testCoordinateNavigator.traverseGrid(2));
+
+        const expected = [
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            │    2    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            │    3    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            │    4    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            │    5    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            │    2    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            │    3    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            │    4    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            │    5    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            // │    2    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            // │    3    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            // │    4    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            // │    5    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            // │    2    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            // │    3    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            // │    4    │ 1 │ 0 │ 1 │ 0 │ 1 │
+            // │    5    │ 0 │ 1 │ 0 │ 1 │ 0 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+        ];
+
+        expect(paths).to.eqls(expected.sort());
+    });
+
+    it('can screen the grid for when the smallest ship searched is of size 3', () => {
+        const paths = createMarkedGrid(testCoordinateNavigator.traverseGrid(3));
+
+        const expected = [
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            │    2    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            │    3    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    4    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            │    5    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    2    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            │    3    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            │    4    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    5    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            │    2    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    3    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            │    4    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            │    5    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            // │    2    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            // │    3    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    4    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            // │    5    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            // │    2    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    3    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            // │    4    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            // │    5    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    2    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            // │    3    │ 1 │ 0 │ 0 │ 1 │ 0 │
+            // │    4    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    5    │ 0 │ 1 │ 0 │ 0 │ 1 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+        ];
+
+        expect(paths).to.eqls(expected.sort());
+    });
+
+    it('can screen the grid for when the smallest ship searched is of size 4', () => {
+        const paths = createMarkedGrid(testCoordinateNavigator.traverseGrid(4));
+
+        const expected = [
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            │    2    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            │    3    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    4    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            │    5    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            │    2    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            │    3    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            │    4    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    5    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    2    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            │    3    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            │    4    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            │    5    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            heredoc(`
+            ┌─────────┬───┬───┬───┬───┬───┐
+            │ (index) │ A │ B │ C │ D │ E │
+            ├─────────┼───┼───┼───┼───┼───┤
+            │    1    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            │    2    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            │    3    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            │    4    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            │    5    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            └─────────┴───┴───┴───┴───┴───┘
+            `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            // │    2    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            // │    3    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    4    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            // │    5    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            // │    2    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    3    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            // │    4    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            // │    5    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    2    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            // │    3    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            // │    4    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            // │    5    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+            // heredoc(`
+            // ┌─────────┬───┬───┬───┬───┬───┐
+            // │ (index) │ A │ B │ C │ D │ E │
+            // ├─────────┼───┼───┼───┼───┼───┤
+            // │    1    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            // │    2    │ 1 │ 0 │ 0 │ 0 │ 1 │
+            // │    3    │ 0 │ 0 │ 0 │ 1 │ 0 │
+            // │    4    │ 0 │ 0 │ 1 │ 0 │ 0 │
+            // │    5    │ 0 │ 1 │ 0 │ 0 │ 0 │
+            // └─────────┴───┴───┴───┴───┴───┘
+            // `),
+        ];
+
+        expect(paths).to.eqls(expected.sort());
+    });
 });
