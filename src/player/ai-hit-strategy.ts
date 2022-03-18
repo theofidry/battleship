@@ -116,10 +116,6 @@ export class AIHitStrategy<
             // TODO: adjust this number
             const possibleTraverses = this.coordinateNavigator.traverseGrid(2);
 
-            console.log({
-                possibleTraverses: possibleTraverses.map(toString).toArray(),
-            });
-
             strategies.push(
                 ...possibleTraverses.map(
                     (possibleTraverse) => this.createGridScreeningFilterStrategy(possibleTraverse),
