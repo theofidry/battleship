@@ -116,6 +116,10 @@ export class AIHitStrategy<
             // TODO: adjust this number
             const possibleTraverses = this.coordinateNavigator.traverseGrid(2);
 
+            console.log({
+                possibleTraverses: possibleTraverses.map(toString).toArray(),
+            });
+
             strategies.push(
                 ...possibleTraverses.map(
                     (possibleTraverse) => this.createGridScreeningFilterStrategy(possibleTraverse),
@@ -237,7 +241,7 @@ export class AIHitStrategy<
         // before has been cleared with the previous sunk hence the algorithm
         // gets there and "forgot" G7 was a previous hit and hence that G6 is
         // a logical follow up.
-        const limitingStrategy = this.enableSmartTargeting;
+        const limitingStrategy = this.enableSmartTargeting && !this.enableSmartScreening;
         const foundEnoughChoices = limitingStrategy || choicesList.size > 1 || filters.size === 1;
 
         return foundEnoughChoices

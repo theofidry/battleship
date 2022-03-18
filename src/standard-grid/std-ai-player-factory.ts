@@ -1,15 +1,11 @@
 import { sample } from 'lodash';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
-import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { AdaptablePlayer } from '../player/adaptable-player';
-import { HitStrategy } from '../player/hit-strategy';
 import { Fleet } from '../ship/fleet';
 import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
-import { Cell, StandardOpponentGrid } from './standard-opponent-grid';
-import { createHitStrategy, createStdAIHitStrategy } from './std-ai-hit-strategy';
-import { StdColumnIndex } from './std-column-index';
+import { StandardOpponentGrid } from './standard-opponent-grid';
+import { createHitStrategy } from './std-ai-hit-strategy';
 import { StdPlayer } from './std-player';
-import { StdRowIndex } from './std-row-index';
 
 export enum AIVersion {
     V1 = 'v1',

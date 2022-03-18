@@ -56,6 +56,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V3]: true,
     };
 
+    const v2OnlySupport = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: true,
+        [AIVersion.V3]: false,
+    };
+
     const v3OnwardsSupport = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: false,
@@ -258,9 +264,35 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        v2OnwardsSupport,
+        v2OnlySupport,
         'NoFilter',
         getAllCellsExcept(['C3', 'B3']),
+    );
+
+    yield new HitChoicesSet(
+        'picks the most efficient screen strategy after sinking a ship',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row1),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.SUNK,
+            },
+        ],
+        v3OnwardsSupport,
+        'GridScreening',
+        [
+        ],
     );
 
     yield new HitChoicesSet(
@@ -344,7 +376,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        v2OnlySupport,
         'NoFilter',
         getAllCellsExcept([
             'E7',
@@ -418,12 +450,13 @@ describe('HitStrategy', () => {
     const versions = EnumHelper.getValues(AIVersion);
 
     for (const { title, moves, hitStrategySupport, expectedStrategy, sortedExpectedChoices } of provideHitChoices()) {
+
         for (const version of versions) {
             if (!hitStrategySupport[version]) {
-                return;
+                continue;
             }
 
-            it(`can decide on a strategy ${title} (AI ${version})`, (done) => {
+            it(`can decide on a strategy: ${title} (AI ${version})`, (done) => {
                 const opponentGrid = new StandardOpponentGrid();
                 const strategy = createHitStrategy(version);
 
