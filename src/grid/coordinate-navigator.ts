@@ -374,7 +374,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
 
         return lists
             .flatMap((list) => [list, this.mirror(list)])
-            .filter((list) => list.size > 0);
+            .filter((list) => list.size > 0)
+            .map((list) => list.sort(this.createCoordinatesSorter()))
+            .toMap()
+            .mapKeys((_key, list) => list.map(toString).join(';'))
+            .toList();
     }
 
     private traverseGridDiagonallyInDirection(
