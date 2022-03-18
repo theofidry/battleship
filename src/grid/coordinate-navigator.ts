@@ -1,11 +1,10 @@
 import { Collection, List, Map as ImmutableMap, OrderedSet } from 'immutable';
-import { range, toString } from 'lodash';
+import { range } from 'lodash';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
-import { EnumHelper } from '../utils/enum-helper';
 import { Coordinate } from './coordinate';
 import assert = require('node:assert');
 
@@ -401,7 +400,9 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             minShipSize,
         );
 
-        return lists.flatMap((list) => [list, this.mirror(list)]);
+        return lists
+            .flatMap((list) => [list, this.mirror(list)])
+            .filter((list) => list.size > 0);
     }
 
     private traverseGridDiagonallyInDirection(
@@ -492,20 +493,8 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     mirror(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): List<Coordinate<ColumnIndex, RowIndex>> {
-        const origin = this.findGridOrigin(VerticalTraverseDirection.TOP_TO_BOTTOM);
-
-        const columnIndices = createIndices(
-            origin.columnIndex,
-            this.findNextColumnIndex,
-        );
-        const inversedColumnIndices = createIndices(
-            origin.columnIndex,
-            this.findNextColumnIndex,
-        );
-        const rowIndices = createIndices(
-            origin.columnIndex,
-            this.findNextColumnIndex,
-        );
+        // TODO
+        return List();
     }
 
     private getFindNextRowIndexForDirection(direction: VerticalTraverseDirection): AdjacentIndexFinder<RowIndex> {
