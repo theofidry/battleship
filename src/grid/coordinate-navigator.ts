@@ -98,6 +98,12 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         ].sort(this.createCoordinatesSorter());
     }
 
+    /**
+     * Calculates the distance between two points. For example the distance
+     * between A1 and C1 is 2.
+     *
+     * If the points are not aligned an error is given.
+     */
     calculateDistance(
         first: Coordinate<ColumnIndex, RowIndex>,
         second: Coordinate<ColumnIndex, RowIndex>,
@@ -137,6 +143,18 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         return Either.left(error);
     }
 
+    /**
+     * Finds sets of coordinates that are aligned together within the max
+     * distance, i.e. if aligned but the distance between the two points
+     * exceeds the maximum distance given then they will not be recognised
+     * as aligned.
+     *
+     * For example given the points A1, A2, A3, A5 and E1, without considering the
+     * distance then the alignments found will be (A1, A2, A3, A5) and (A1, E1).
+     * If the max distance is less than 4 however, then the last alignment
+     * (A1, E1) will be discarded. A5 will be kept though since the distance
+     * between A3 and A5 is less than 4.
+     */
     findAlignments(
         coordinates: Collection<unknown, Coordinate<ColumnIndex, RowIndex>>,
         maxDistance: ShipSize,
@@ -267,6 +285,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             .filter(filterRedundantAlignments);
     }
 
+    /**
+     * Finds missing coordinates within an alignment. For example for the
+     * alignments (A1, A3) and (B2, E2), the coordinates found will be A2, C2,
+     * and D2.
+     */
     findAlignmentGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const direction = alignment.direction;
 
@@ -309,6 +332,12 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         throw new Error('Unreachable.');
     }
 
+    /**
+     * Finds the coordinates at the extremums of the given alignments.
+     *
+     * For example for the alignments (A1, A3) and (B2, E2), the coordinates
+     * found will be A4, A2 and F2.
+     */
     findNextExtremums(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const direction = alignment.direction;
 
