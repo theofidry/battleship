@@ -34,6 +34,7 @@ export class AIHitStrategy<
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
         private readonly enableSmartTargeting: boolean,
+        private readonly enableSmartScreening: boolean,
     ) {
     }
 
@@ -111,6 +112,17 @@ export class AIHitStrategy<
             );
         }
 
+        if (this.enableSmartScreening) {
+            // TODO: adjust this number
+            const possibleTraverses = this.coordinateNavigator.traverseGrid(2);
+
+            strategies.push(
+                ...possibleTraverses.map(
+                    (possibleTraverse) => this.createGridScreeningFilterStrategy(possibleTraverse),
+                ),
+            );
+        }
+
         return strategies.filter(isNotUndefined);
     }
 
@@ -170,6 +182,21 @@ export class AIHitStrategy<
         };
     }
 
+    private createGridScreeningFilterStrategy(
+        coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+    ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
+        const validCandidates = coordinates;
+
+        if (validCandidates.size === 0) {
+            return undefined;
+        }
+
+        return {
+            strategy: 'GridScreening',
+            filter: (candidate) => validCandidates.includes(candidate),
+        };
+    }
+
     private recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
         if (undefined === previousMove) {
             return;
@@ -210,7 +237,7 @@ export class AIHitStrategy<
         // before has been cleared with the previous sunk hence the algorithm
         // gets there and "forgot" G7 was a previous hit and hence that G6 is
         // a logical follow up.
-        const limitingStrategy = this.enableSmartTargeting;
+        const limitingStrategy = this.enableSmartTargeting && !this.enableSmartScreening;
         const foundEnoughChoices = limitingStrategy || choicesList.size > 1 || filters.size === 1;
 
         return foundEnoughChoices

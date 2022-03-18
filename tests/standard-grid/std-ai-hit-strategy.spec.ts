@@ -9,16 +9,13 @@ import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
 import { PreviousMove } from '../../src/player/hit-strategy';
 import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
-import {
-    createStdAIHitStrategy, StdAiHitStrategy,
-} from '../../src/standard-grid/std-ai-hit-strategy';
+import { createHitStrategy, StdAiHitStrategy } from '../../src/standard-grid/std-ai-hit-strategy';
+import { AIVersion } from '../../src/standard-grid/std-ai-player-factory';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../../src/standard-grid/std-column-index';
 import { StdCoordinate } from '../../src/standard-grid/std-coordinate';
 import { StdCoordinateNavigator } from '../../src/standard-grid/std-coordinate-navigator';
 import { STD_ROW_INDICES, StdRowIndex } from '../../src/standard-grid/std-row-index';
-
-const createMinimalHitStrategy = () => createStdAIHitStrategy(false);
-const createHitStrategyWithSmartTargeting = () => createStdAIHitStrategy(true);
+import { EnumHelper } from '../../src/utils/enum-helper';
 
 const allCells = List(STD_COLUMN_INDICES)
     .flatMap((columnIndex) => STD_ROW_INDICES
@@ -33,10 +30,13 @@ function getAllCellsExcept (excludedCoordinates: ReadonlyArray<string>): Readonl
         .toArray();
 }
 
+type HitStrategySupport = Record<AIVersion, boolean>;
+
 class HitChoicesSet {
     constructor(
         readonly title: string,
         readonly moves: ReadonlyArray<PreviousMove<StdColumnIndex, StdRowIndex>>,
+        readonly hitStrategySupport: HitStrategySupport,
         readonly expectedStrategy: string,
         readonly sortedExpectedChoices: ReadonlyArray<string>,
     ) {
@@ -44,6 +44,30 @@ class HitChoicesSet {
 }
 
 function* provideHitChoices(): Generator<HitChoicesSet> {
+    const v1OnwardsSupport = {
+        [AIVersion.V1]: true,
+        [AIVersion.V2]: true,
+        [AIVersion.V3]: true,
+    };
+
+    const v2OnwardsSupport = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: true,
+        [AIVersion.V3]: true,
+    };
+
+    const v2OnlySupport = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: true,
+        [AIVersion.V3]: false,
+    };
+
+    const v3OnwardsSupport = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: false,
+        [AIVersion.V3]: true,
+    };
+
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells after a hit',
         [
@@ -52,6 +76,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -73,6 +98,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'B3',
@@ -97,6 +123,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'B3',
@@ -124,6 +151,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'C4',
@@ -142,6 +170,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        v2OnwardsSupport,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
@@ -165,6 +194,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        v2OnwardsSupport,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C5',
@@ -187,6 +217,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -214,6 +245,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -232,8 +264,82 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
+        v2OnlySupport,
         'NoFilter',
         getAllCellsExcept(['C3', 'B3']),
+    );
+
+    yield new HitChoicesSet(
+        'picks the most efficient screen strategy after sinking a ship',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row1),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.SUNK,
+            },
+        ],
+        v3OnwardsSupport,
+        'GridScreening',
+        [
+            'D1',
+            'F1',
+            'H1',
+            'J1',
+            'A2',
+            'E2',
+            'G2',
+            'I2',
+            'D3',
+            'F3',
+            'H3',
+            'J3',
+            'A4',
+            'C4',
+            'E4',
+            'G4',
+            'I4',
+            'B5',
+            'D5',
+            'F5',
+            'H5',
+            'J5',
+            'A6',
+            'C6',
+            'E6',
+            'G6',
+            'I6',
+            'B7',
+            'D7',
+            'F7',
+            'H7',
+            'J7',
+            'A8',
+            'C8',
+            'E8',
+            'G8',
+            'I8',
+            'B9',
+            'D9',
+            'F9',
+            'H9',
+            'J9',
+            'A10',
+            'C10',
+            'E10',
+            'G10',
+            'I10',
+        ],
     );
 
     yield new HitChoicesSet(
@@ -256,6 +362,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
+        v2OnwardsSupport,
         'HitTargetSurroundings<B3>',
         [
             'B2',
@@ -316,6 +423,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
+        v2OnlySupport,
         'NoFilter',
         getAllCellsExcept([
             'E7',
@@ -334,10 +442,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 }
 
-describe('minimal HitStrategy', () => {
+describe('HitStrategy V1 (minimal)', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
-        const strategy = createMinimalHitStrategy();
+        const strategy = createHitStrategy(AIVersion.V1);
 
         strategy.decide(opponentGrid, undefined)
             .subscribe({
@@ -349,7 +457,7 @@ describe('minimal HitStrategy', () => {
     it('provides a random coordinate for which no hit has been recorded yet', (done) => {
         const opponentGrid = new StandardOpponentGrid();
         const expectedCoordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
-        const strategy = createMinimalHitStrategy();
+        const strategy = createHitStrategy(AIVersion.V1);
 
         // Fill all cells except one which is the one we expect to find afterwards.
         let i = 0;
@@ -385,21 +493,30 @@ describe('minimal HitStrategy', () => {
     });
 });
 
-describe('HitStrategy with smart targeting', () => {
-    for (const { title, moves, expectedStrategy, sortedExpectedChoices } of provideHitChoices()) {
-        it(title, (done) => {
-            const opponentGrid = new StandardOpponentGrid();
-            const strategy = createHitStrategyWithSmartTargeting();
+describe('HitStrategy', () => {
+    const versions = EnumHelper.getValues(AIVersion);
 
-            expectNextChoices(
-                strategy,
-                opponentGrid,
-                moves.map((value) => value),
-                expectedStrategy,
-                sortedExpectedChoices,
-                done,
-            );
-        });
+    for (const { title, moves, hitStrategySupport, expectedStrategy, sortedExpectedChoices } of provideHitChoices()) {
+
+        for (const version of versions) {
+            if (!hitStrategySupport[version]) {
+                continue;
+            }
+
+            it(`can decide on a strategy: ${title} (AI ${version})`, (done) => {
+                const opponentGrid = new StandardOpponentGrid();
+                const strategy = createHitStrategy(version);
+
+                expectNextChoices(
+                    strategy,
+                    opponentGrid,
+                    moves.map((value) => value),
+                    expectedStrategy,
+                    sortedExpectedChoices,
+                    done,
+                );
+            });
+        }
     }
 });
 

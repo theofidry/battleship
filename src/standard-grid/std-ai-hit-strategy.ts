@@ -1,5 +1,6 @@
 import { Map } from 'immutable';
 import { toString } from 'lodash';
+import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { Coordinate } from '../grid/coordinate';
 import {
     AIErrorHandler, AIHitStrategy, UntouchedCoordinatesFinder,
@@ -7,6 +8,7 @@ import {
 import { printTable } from '../utils/table-printer';
 import { createOpponentTable } from './interactive-player/grid-printer';
 import { Cell as OpponentCell } from './standard-opponent-grid';
+import { AIVersion } from './std-ai-player-factory';
 import { StdColumnIndex } from './std-column-index';
 import { StdCoordinateNavigator } from './std-coordinate-navigator';
 import { StdRowIndex } from './std-row-index';
@@ -69,11 +71,37 @@ export type StdAiHitStrategy = AIHitStrategy<StdColumnIndex, StdRowIndex, Oppone
 
 export function createStdAIHitStrategy(
     enableSmartTargeting: boolean,
+    enableSmartScreening: boolean,
 ): AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell> {
     return new AIHitStrategy(
         StdCoordinateNavigator,
         findUntouchedCoordinates,
         errorHandler,
         enableSmartTargeting,
+        enableSmartScreening,
     );
+}
+
+export function createHitStrategy(version: AIVersion): StdAiHitStrategy {
+    switch (version) {
+        case AIVersion.V1:
+            return createStdAIHitStrategy(
+                false,
+                false,
+            );
+
+        case AIVersion.V2:
+            return createStdAIHitStrategy(
+                true,
+                false,
+            );
+
+        case AIVersion.V3:
+            return createStdAIHitStrategy(
+                true,
+                true,
+            );
+    }
+
+    assertIsUnreachableCase(version);
 }
