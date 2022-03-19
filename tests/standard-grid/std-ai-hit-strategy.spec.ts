@@ -8,6 +8,7 @@ import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
 import { PreviousMove } from '../../src/player/hit-strategy';
+import { createFleet } from '../../src/ship/fleet';
 import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
 import { createHitStrategy, StdAiHitStrategy } from '../../src/standard-grid/std-ai-hit-strategy';
 import { AIVersion } from '../../src/standard-grid/std-ai-player-factory';
@@ -48,24 +49,28 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V1]: true,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
     };
 
     const v2OnwardsSupport = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
     };
 
     const v2OnlySupport = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: false,
+        [AIVersion.V4]: false,
     };
 
     const v3OnwardsSupport = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: false,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
     };
 
     yield new HitChoicesSet(
@@ -445,7 +450,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 describe('HitStrategy V1 (minimal)', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
-        const strategy = createHitStrategy(AIVersion.V1);
+        const strategy = createHitStrategy(createFleet(), AIVersion.V1);
 
         strategy.decide(opponentGrid, undefined)
             .subscribe({
@@ -457,7 +462,7 @@ describe('HitStrategy V1 (minimal)', () => {
     it('provides a random coordinate for which no hit has been recorded yet', (done) => {
         const opponentGrid = new StandardOpponentGrid();
         const expectedCoordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
-        const strategy = createHitStrategy(AIVersion.V1);
+        const strategy = createHitStrategy(createFleet(), AIVersion.V1);
 
         // Fill all cells except one which is the one we expect to find afterwards.
         let i = 0;
@@ -505,7 +510,7 @@ describe('HitStrategy', () => {
 
             it(`can decide on a strategy: ${title} (AI ${version})`, (done) => {
                 const opponentGrid = new StandardOpponentGrid();
-                const strategy = createHitStrategy(version);
+                const strategy = createHitStrategy(createFleet(), version);
 
                 expectNextChoices(
                     strategy,

@@ -2,12 +2,13 @@ import { List, Map, Set } from 'immutable';
 import { sample, toString } from 'lodash';
 import { Observable, of } from 'rxjs';
 import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
-import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { Either } from '../utils/either';
 import { HitStrategy, PreviousMove } from './hit-strategy';
+import { MoveAnalyzer } from './move-analyzer';
+import { Fleet } from '../ship/fleet';
 
 export type UntouchedCoordinatesFinder<
     ColumnIndex extends PropertyKey,
@@ -26,16 +27,18 @@ export class AIHitStrategy<
     RowIndex extends PropertyKey,
     OpponentCell,
 > implements HitStrategy<ColumnIndex, RowIndex, OpponentCell> {
-    private previousMoves: List<PreviousMove<ColumnIndex, RowIndex>> = List();
-    private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
+    private movesAnalyzer: MoveAnalyzer<ColumnIndex, RowIndex, OpponentCell>;
 
     constructor(
+        private readonly fleet: Fleet,
         private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
         private readonly enableSmartTargeting: boolean,
         private readonly enableSmartScreening: boolean,
+        private readonly enableShipSizeTracking: boolean,
     ) {
+        this.movesAnalyzer = new MoveAnalyzer(fleet, enableShipSizeTracking);
     }
 
     decide(
@@ -57,16 +60,18 @@ export class AIHitStrategy<
         grid: OpponentGrid<ColumnIndex, RowIndex, OpponentCell>,
         previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined,
     ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, AppliedChoiceStrategy<ColumnIndex, RowIndex>> {
-        this.recordPreviousMove(previousMove);
+        this.movesAnalyzer.recordPreviousMove(previousMove);
 
-        const { previousHits } = this;
+        const previousHits = this.movesAnalyzer.getPreviousHits();
 
         const untouchedCoordinates = this.findUntouchedCoordinates(grid);
 
         const alignedHitCoordinatesList = this.coordinateNavigator.findAlignments(
             previousHits,
-            5,  // TODO: double check this number
+            this.movesAnalyzer.getMaxShipSize(),
         );
+
+        this.movesAnalyzer.recordPreviousHitAlignments(alignedHitCoordinatesList);
 
         const filters: List<ChoiceStrategy<ColumnIndex, RowIndex>> = List([
                 ...this.createChoiceStrategies(
@@ -76,7 +81,7 @@ export class AIHitStrategy<
                 // Always keep this one as a fallback as any previous strategy may
                 // result in an empty choice
                 createNoFilterFilterStrategy(),
-            ].filter(isNotUndefined)
+            ].filter(isNotUndefined),
         );
 
         const choicesList = filters
@@ -113,8 +118,7 @@ export class AIHitStrategy<
         }
 
         if (this.enableSmartScreening) {
-            // TODO: adjust this number
-            const possibleTraverses = this.coordinateNavigator.traverseGrid(2);
+            const possibleTraverses = this.coordinateNavigator.traverseGrid(this.movesAnalyzer.getMinShipSize());
 
             strategies.push(
                 ...possibleTraverses.map(
@@ -197,22 +201,6 @@ export class AIHitStrategy<
         };
     }
 
-    private recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
-        if (undefined === previousMove) {
-            return;
-        }
-
-        this.previousMoves = this.previousMoves.push(previousMove);
-
-        if (previousMove.response === HitResponse.HIT) {
-            this.previousHits = this.previousHits.push(previousMove.target);
-        }
-
-        if (previousMove.response === HitResponse.SUNK) {
-            this.previousHits = List();
-        }
-    }
-
     private checkChoicesFound(
         grid: OpponentGrid<ColumnIndex, RowIndex, OpponentCell>,
         untouchedCoordinates: Map<string, Coordinate<ColumnIndex, RowIndex>>,
@@ -246,8 +234,8 @@ export class AIHitStrategy<
                 new InvalidAIStrategy(
                     grid,
                     untouchedCoordinates,
-                    this.previousMoves,
-                    this.previousHits,
+                    this.movesAnalyzer.getPreviousMoves(),
+                    this.movesAnalyzer.getPreviousHits(),
                     choicesList,
                 ),
             );

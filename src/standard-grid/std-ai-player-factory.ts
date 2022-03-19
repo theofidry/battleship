@@ -47,7 +47,7 @@ export function createAIPlayer(fleet: Fleet, version: AIVersion, name = ''): Std
         `${AIVersionNames[version]} ${resolvedName}`.trim(),
         fleet,
         RandomPlacementStrategy,
-        createHitStrategy(version),
+        createHitStrategy(fleet, version),
         () => new StandardOpponentGrid(),
     );
 }

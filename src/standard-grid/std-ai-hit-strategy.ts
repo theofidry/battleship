@@ -12,6 +12,7 @@ import { AIVersion } from './std-ai-player-factory';
 import { StdColumnIndex } from './std-column-index';
 import { StdCoordinateNavigator } from './std-coordinate-navigator';
 import { StdRowIndex } from './std-row-index';
+import { Fleet } from '../ship/fleet';
 
 const findUntouchedCoordinates: UntouchedCoordinatesFinder<StdColumnIndex, StdRowIndex, OpponentCell> = (grid) => {
     return Map(
@@ -70,40 +71,52 @@ const errorHandler: AIErrorHandler<StdColumnIndex, StdRowIndex, OpponentCell> = 
 export type StdAiHitStrategy = AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell>;
 
 export function createStdAIHitStrategy(
+    fleet: Fleet,
     enableSmartTargeting: boolean,
     enableSmartScreening: boolean,
+    enableShipSizeTracking: boolean,
 ): AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell> {
     return new AIHitStrategy(
+        fleet,
         StdCoordinateNavigator,
         findUntouchedCoordinates,
         errorHandler,
         enableSmartTargeting,
         enableSmartScreening,
+        enableShipSizeTracking,
     );
 }
 
-export function createHitStrategy(version: AIVersion): StdAiHitStrategy {
+export function createHitStrategy(fleet: Fleet, version: AIVersion): StdAiHitStrategy {
     switch (version) {
         case AIVersion.V1:
             return createStdAIHitStrategy(
+                fleet,
+                false,
                 false,
                 false,
             );
 
         case AIVersion.V2:
             return createStdAIHitStrategy(
+                fleet,
                 true,
+                false,
                 false,
             );
 
         case AIVersion.V3:
             return createStdAIHitStrategy(
+                fleet,
                 true,
                 true,
+                false,
             );
 
         case AIVersion.V4:
             return createStdAIHitStrategy(
+                fleet,
+                true,
                 true,
                 true,
             );
