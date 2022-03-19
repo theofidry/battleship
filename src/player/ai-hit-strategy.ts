@@ -38,7 +38,11 @@ export class AIHitStrategy<
         private readonly enableSmartScreening: boolean,
         private readonly enableShipSizeTracking: boolean,
     ) {
-        this.movesAnalyzer = new MoveAnalyzer(fleet, enableShipSizeTracking);
+        this.movesAnalyzer = new MoveAnalyzer(
+            coordinateNavigator,
+            fleet,
+            enableShipSizeTracking,
+        );
     }
 
     decide(
@@ -63,15 +67,8 @@ export class AIHitStrategy<
         this.movesAnalyzer.recordPreviousMove(previousMove);
 
         const previousHits = this.movesAnalyzer.getPreviousHits();
-
+        const alignedHitCoordinatesList = this.movesAnalyzer.getHitAlignments();
         const untouchedCoordinates = this.findUntouchedCoordinates(grid);
-
-        const alignedHitCoordinatesList = this.coordinateNavigator.findAlignments(
-            previousHits,
-            this.movesAnalyzer.getMaxShipSize(),
-        );
-
-        this.movesAnalyzer.recordPreviousHitAlignments(alignedHitCoordinatesList);
 
         const filters: List<ChoiceStrategy<ColumnIndex, RowIndex>> = List([
                 ...this.createChoiceStrategies(
