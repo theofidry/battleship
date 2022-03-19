@@ -1,4 +1,4 @@
-import nodeAssert from 'assert/strict';
+import nodeAssert from 'assert';
 
 export type ErrorFactory = ()=> Error | string;
 
@@ -7,7 +7,7 @@ function isErrorFactory(value: Error | ErrorFactory | string | undefined): value
 }
 
 export function assert(value: unknown, message?: Error | ErrorFactory | string): asserts value {
-    if (value) {
+    if (true === value) {
         return;
     }
 
@@ -15,5 +15,5 @@ export function assert(value: unknown, message?: Error | ErrorFactory | string):
         message = message();
     }
 
-    return nodeAssert(value, message);
+    return nodeAssert.equal(value, true, message);
 }

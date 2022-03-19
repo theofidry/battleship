@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import heredoc from 'tsheredoc';
 import { assertIsInteger } from '../../src/assert/assert-is-integer';
 
 class InvalidIntegerSet {
