@@ -14,6 +14,7 @@ export class MoveAnalyzer<
     private previousMoves: List<PreviousMove<ColumnIndex, RowIndex>> = List();
     private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
     private previousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
+    private opponentFleet: ReadonlyArray<OpponentShip<ColumnIndex, RowIndex>>;
     private minShipSize: ShipSize = 2;
     private maxShipSize: ShipSize = 5;
 
@@ -22,16 +23,11 @@ export class MoveAnalyzer<
         private readonly fleet: Fleet,
         private readonly enableShipSizeTracking: boolean,
     ) {
-        const shipSizes = fleet.map((ship) => ship.size);
+        const opponentFleet = fleet.map((ship) => new OpponentShip<ColumnIndex, RowIndex>(ship.size));
 
-        const minShipSize = Math.min(...shipSizes);
-        assertIsShipSize(minShipSize);
-
-        const maxShipSize = Math.max(...shipSizes);
-        assertIsShipSize(maxShipSize);
-
-        this.minShipSize = minShipSize;
-        this.maxShipSize = maxShipSize;
+        this.opponentFleet = opponentFleet;
+        this.minShipSize = calculateMinShipSize(opponentFleet);
+        this.minShipSize = calculateMaxShipSize(opponentFleet);
     }
 
     recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
@@ -50,46 +46,45 @@ export class MoveAnalyzer<
             this.getMaxShipSize(),
         );
 
-        this.analyze();
-
-        // TODO
-        if (previousMove.response === HitResponse.SUNK) {
-            if (this.previousHits.size === 2) {
-                this.minShipSize = 3;
-            }
-
-            this.previousHits = List();
-        }
+        this.recalculateState();
     }
 
-    private analyze(): void {
+    private recalculateState(): void {
         if (!this.enableShipSizeTracking) {
             return this.clearHitsIfSunk();
         }
 
-        if (undefined === previousMove) {
+        const previousMove = this.previousMoves.last();
+
+        if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
             return;
         }
 
-        this.previousMoves = this.previousMoves.push(previousMove);
-
-        if (previousMove.response === HitResponse.HIT) {
-            this.previousHits = this.previousHits.push(previousMove.target);
-        }
-
-        this.previousAlignments = this.coordinateNavigator.findAlignments(
-            this.previousHits,
-            this.getMaxShipSize(),
-        );
-
-        // TODO
-        if (previousMove.response === HitResponse.SUNK) {
-            if (this.previousHits.size === 2) {
-                this.minShipSize = 3;
-            }
-
-            this.previousHits = List();
-        }
+        return this.clearHitsIfSunk();
+        //
+        // if (undefined === previousMove) {
+        //     return;
+        // }
+        //
+        // this.previousMoves = this.previousMoves.push(previousMove);
+        //
+        // if (previousMove.response === HitResponse.HIT) {
+        //     this.previousHits = this.previousHits.push(previousMove.target);
+        // }
+        //
+        // this.previousAlignments = this.coordinateNavigator.findAlignments(
+        //     this.previousHits,
+        //     this.getMaxShipSize(),
+        // );
+        //
+        // // TODO
+        // if (previousMove.response === HitResponse.SUNK) {
+        //     if (this.previousHits.size === 2) {
+        //         this.minShipSize = 3;
+        //     }
+        //
+        //     this.previousHits = List();
+        // }
     }
 
     private clearHitsIfSunk(): void {
@@ -144,4 +139,38 @@ class OpponentShip<
     getStatus(): OpponentShipStatus {
         return this.status;
     }
+}
+
+function calculateMinShipSize<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(fleet: ReadonlyArray<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
+    const validStates = [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT];
+
+    const min = Math.min(
+        ...fleet
+            .filter((ship) => validStates.includes(ship.getStatus()))
+            .map((ship) => ship.size),
+    );
+
+    assertIsShipSize(min);
+
+    return min;
+}
+
+function calculateMaxShipSize<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(fleet: ReadonlyArray<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
+    const validStates = [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT];
+
+    const min = Math.max(
+        ...fleet
+            .filter((ship) => validStates.includes(ship.getStatus()))
+            .map((ship) => ship.size),
+    );
+
+    assertIsShipSize(min);
+
+    return min;
 }
