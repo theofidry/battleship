@@ -101,6 +101,12 @@ export function createHitStrategy(version: AIVersion): StdAiHitStrategy {
                 true,
                 true,
             );
+
+        case AIVersion.V4:
+            return createStdAIHitStrategy(
+                true,
+                true,
+            );
     }
 
     assertIsUnreachableCase(version);
