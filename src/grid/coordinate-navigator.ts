@@ -1,12 +1,12 @@
 import { Collection, List, Map as ImmutableMap, OrderedSet } from 'immutable';
 import { range, toString } from 'lodash';
+import { assert } from '../assert/assert';
 import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { Coordinate } from './coordinate';
-import assert = require('node:assert');
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
@@ -30,6 +30,9 @@ export type CoordinateSorter<
  */
 export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex extends PropertyKey>{
     private cachedOrigin: Coordinate<ColumnIndex, RowIndex> | undefined;
+    private cachedColumnIndices: List<ColumnIndex> | undefined;
+    private cachedRowIndices: List<RowIndex> | undefined;
+    private cachedGridTraverseResults: Map<ShipSize, List<List<Coordinate<ColumnIndex, RowIndex>>>> = new Map();
 
     constructor(
         public readonly findPreviousColumnIndex: AdjacentIndexFinder<ColumnIndex>,
@@ -370,21 +373,30 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     traverseGrid(minShipSize: ShipSize): List<List<Coordinate<ColumnIndex, RowIndex>>> {
-        const lists = this.traverseGridDiagonallyInDirection(minShipSize);
+        let traverseResults = this.cachedGridTraverseResults.get(minShipSize);
 
-        return lists
+        if (undefined !== traverseResults) {
+            return traverseResults;
+        }
+
+        const lists = this.traverseGridDiagonally(minShipSize);
+
+        traverseResults = lists
             .flatMap((list) => [list, this.mirror(list)])
             .filter((list) => list.size > 0)
             .map((list) => list.sort(this.createCoordinatesSorter()))
             .toMap()
             .mapKeys((_key, list) => list.map(toString).join(';'))
             .toList();
+
+        this.cachedGridTraverseResults.set(minShipSize, traverseResults);
+
+        return traverseResults;
     }
 
-    private traverseGridDiagonallyInDirection(
+    private traverseGridDiagonally(
         minShipSize: ShipSize,
     ): List<List<Coordinate<ColumnIndex, RowIndex>>> {
-        // TODO: something here can probably be cached
         /*
         Implementation details.
 
@@ -395,12 +407,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         It applies this transformation as many times as necessary to obtain the
         exhaustive list of results.
          */
-        const origin = this.getGridOrigin();
-
-        const columnIndices = createIndices(
-            origin.columnIndex,
-            this.findNextColumnIndex,
-        );
+        const columnIndices = this.getColumnIndices();
 
         const startingCoordinates = this.findStartingCoordinates(minShipSize);
 
@@ -418,7 +425,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
      * Gets the grid origin, for example A1 in the standard grid.
      */
     getGridOrigin(): Coordinate<ColumnIndex, RowIndex> {
-        const cachedOrigin = this.cachedOrigin;
+        const { cachedOrigin } = this;
 
         if (undefined !== cachedOrigin) {
             return cachedOrigin;
@@ -433,6 +440,50 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         this.cachedOrigin = origin;
 
         return origin;
+    }
+
+    /**
+     * Gets list of the grid column indices.
+     */
+    getColumnIndices(): List<ColumnIndex> {
+        const { cachedColumnIndices } = this;
+
+        if (undefined !== cachedColumnIndices) {
+            return cachedColumnIndices;
+        }
+
+        const origin = this.getGridOrigin();
+
+        const columnIndices = createIndices(
+            origin.columnIndex,
+            this.findNextColumnIndex,
+        );
+
+        this.cachedColumnIndices = columnIndices;
+
+        return columnIndices;
+    }
+
+    /**
+     * Gets list of the grid row indices.
+     */
+    getRowIndices(): List<RowIndex> {
+        const { cachedRowIndices } = this;
+
+        if (undefined !== cachedRowIndices) {
+            return cachedRowIndices;
+        }
+
+        const origin = this.getGridOrigin();
+
+        const rowIndices = createIndices(
+            origin.rowIndex,
+            this.findNextRowIndex,
+        );
+
+        this.cachedRowIndices = rowIndices;
+
+        return rowIndices;
     }
 
     findStartingCoordinates(minShipSize: ShipSize): List<Coordinate<ColumnIndex, RowIndex>> {
@@ -450,18 +501,12 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                     origin.columnIndex,
                     newRowIndex,
                 ))
-                .sort(this.createCoordinatesSorter()),
+                .sort(this.createCoordinatesSorter())
         );
     }
 
     private mirror(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): List<Coordinate<ColumnIndex, RowIndex>> {
-        const origin = this.getGridOrigin();
-
-        const rowIndices = createIndices(
-            origin.rowIndex,
-            this.findNextRowIndex,
-        );
-
+        const rowIndices = this.getRowIndices();
         const reversedRowIndices = rowIndices.reverse();
 
         const getReversedRowIndex = (rowIndex: RowIndex): RowIndex => {

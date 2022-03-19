@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { HitResponse } from '../communication/hit-response';
@@ -8,7 +9,6 @@ import { LOGO } from '../logo';
 import { printPlayerGrid } from '../standard-grid/interactive-player/grid-printer';
 import { InteractivePlayer } from '../standard-grid/interactive-player/interactive-player';
 import { AnyCoordinate, AnyPlayer, MatchLogger } from './match-logger';
-import assert = require('node:assert');
 
 type TurnRecord = {
     turn: number,

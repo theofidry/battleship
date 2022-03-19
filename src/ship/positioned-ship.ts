@@ -1,8 +1,8 @@
 import { List, OrderedSet } from 'immutable';
+import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from '../grid/coordinate';
 import { Ship } from './ship';
-import assert = require('node:assert');
 
 export class PositionedShip<
     ColumnIndex extends PropertyKey,

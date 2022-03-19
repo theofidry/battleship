@@ -1,5 +1,6 @@
 import { List } from 'immutable';
 import * as _ from 'lodash';
+import { assert } from '../../assert/assert';
 import { Coordinate } from '../../grid/coordinate';
 import { ShipPlacement } from '../../grid/player-grid';
 import { PlacementStrategy } from '../../player/placement-strategy';
@@ -12,7 +13,6 @@ import { Cell, StandardPlayerGrid } from '../standard-player-grid';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { StdCoordinate } from '../std-coordinate';
 import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
-import assert = require('node:assert');
 
 export const RandomPlacementStrategy: PlacementStrategy<StdColumnIndex, StdRowIndex, Cell> = {
     place: (fleet: Fleet): StandardPlayerGrid => {

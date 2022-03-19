@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { firstValueFrom, map } from 'rxjs';
+import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { BasicMatchLogger } from '../match/basic-match-logger';
 import { Match } from '../match/match';
@@ -9,7 +10,6 @@ import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { createAIVersionOption } from './ai-version-option';
-import assert = require('node:assert');
 
 export const AIMatchCommand = new Command('ai:test-match');
 

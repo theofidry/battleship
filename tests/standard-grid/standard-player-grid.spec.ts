@@ -1,3 +1,4 @@
+import { assert } from '../../src/assert/assert';
 import { expect } from 'chai';
 import { OrderedSet } from 'immutable';
 import heredoc from 'tsheredoc';
@@ -17,7 +18,6 @@ import { StdColumnIndex } from '../../src/standard-grid/std-column-index';
 import { StdCoordinate } from '../../src/standard-grid/std-coordinate';
 import { StdRowIndex } from '../../src/standard-grid/std-row-index';
 import { expectError } from '../chai-assertions';
-import assert = require('node:assert');
 
 function normalizeCoordinates(values: OrderedSet<StdCoordinate>): ReadonlyArray<string> {
     return values

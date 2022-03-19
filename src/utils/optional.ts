@@ -1,6 +1,6 @@
+import { assert, ErrorFactory } from '../assert/assert';
 import { isNonNullObject } from '../assert/assert-is-non-null-object';
 import { hasOwnProperty } from './has-own-property';
-import assert = require('node:assert');
 
 // In order to get all the nice type safety of type guards when switching on a
 // union type, that union type needs to have a "discriminant property", which
@@ -19,7 +19,7 @@ function isJust<T>(value: unknown): value is Just<T> {
         && JustTypeDiscriminant === value['type'];
 }
 
-function assertIsJust<T>(value: unknown, message?: string): asserts value is Just<T> {
+function assertIsJust<T>(value: unknown, message?: ErrorFactory | string): asserts value is Just<T> {
     assert(isJust(value), message);
 }
 

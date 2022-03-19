@@ -1,3 +1,4 @@
+import { assert } from '../../src/assert/assert';
 import { List, Map } from 'immutable';
 import * as _ from 'lodash';
 import { Observable, of } from 'rxjs';
@@ -11,7 +12,6 @@ import { Player } from '../../src/player/player';
 import { PositionedShip } from '../../src/ship/positioned-ship';
 import { hasOwnProperty } from '../../src/utils/has-own-property';
 import { nothingIfUndefined, Optional } from '../../src/utils/optional';
-import assert = require('node:assert');
 
 type MoveAction<
     ColumnIndex extends PropertyKey,
