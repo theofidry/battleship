@@ -45,31 +45,31 @@ class HitChoicesSet {
 }
 
 function* provideHitChoices(): Generator<HitChoicesSet> {
-    const v1OnwardsSupport = {
-        [AIVersion.V1]: true,
-        [AIVersion.V2]: true,
-        [AIVersion.V3]: true,
-        [AIVersion.V4]: true,
-    };
-
-    const v2OnwardsSupport = {
+    const fromV2Support = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
         [AIVersion.V4]: true,
     };
 
-    const v2OnlySupport = {
+    const onlyV2Support = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: false,
-        [AIVersion.V4]: false,
+        [AIVersion.V4]: true,
     };
 
-    const v3OnwardsSupport = {
+    const fromV3Support = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: false,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
+    };
+
+    const fromV4Support = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: false,
+        [AIVersion.V3]: false,
         [AIVersion.V4]: true,
     };
 
@@ -81,7 +81,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -103,7 +103,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'B3',
@@ -128,7 +128,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'B3',
@@ -156,7 +156,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'C4',
@@ -175,7 +175,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
@@ -199,7 +199,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C5',
@@ -222,7 +222,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -250,7 +250,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -269,7 +269,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        v2OnlySupport,
+        onlyV2Support,
         'NoFilter',
         getAllCellsExcept(['C3', 'B3']),
     );
@@ -294,7 +294,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        v3OnwardsSupport,
+        fromV3Support,
         'GridScreening',
         [
             'D1',
@@ -367,7 +367,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitTargetSurroundings<B3>',
         [
             'B2',
@@ -428,7 +428,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnlySupport,
+        onlyV2Support,
         'NoFilter',
         getAllCellsExcept([
             'E7',
@@ -444,6 +444,68 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'G10',
             'H10',
         ]),
+    );
+
+    yield new HitChoicesSet(
+        'anti-regression case (1)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+        ],
+        fromV2Support,
+        'HitTargetSurroundings<I4>',
+        [
+            'I3',
+            'H4',
+            'J4',
+            'I5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'does not forget another potential target',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row8),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row9),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row10),
+                response: HitResponse.SUNK,
+            },
+        ],
+        fromV4Support,
+        'HitTargetSurroundings<G7>',
+        [
+            'G6',
+            'G8',
+        ],
     );
 }
 
