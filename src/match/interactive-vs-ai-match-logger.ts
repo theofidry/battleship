@@ -29,6 +29,7 @@ const HISTORY_SIZE = 5;
 export class InteractiveVsAiMatchLogger implements MatchLogger {
     private turnRecord: Partial<TurnRecord> = {};
     private interactivePlayerHistory: TurnRecord[] = [];
+    private aiPlayerHistory: TurnRecord[] = [];
     private playerColorizer: PlayerColorizer | undefined;
 
     constructor(private readonly logger: Logger) {
@@ -61,16 +62,8 @@ export class InteractiveVsAiMatchLogger implements MatchLogger {
         printPlayerGrid(player, this.logger);
         this.newLine();
 
-        const interactivePlayerHistory = this.interactivePlayerHistory
-            .slice(0, HISTORY_SIZE)
-            .map(({ targetCoordinate, hitResponse }) => `${colorizeCoordinate(targetCoordinate)}: ${colorizeHitResponse(hitResponse)}`)
-            .join(', ');
-
-        if (interactivePlayerHistory.length > 0) {
-            this.newLine();
-            this.logger.log(`History: ${interactivePlayerHistory}`);
-            this.newLine();
-        }
+        this.showHistory('Opponent History', this.aiPlayerHistory);
+        this.showHistory('History', this.interactivePlayerHistory);
     }
 
     recordPlayerMove(_player: AnyPlayer, targetCoordinate: AnyCoordinate): void {
@@ -90,6 +83,7 @@ export class InteractiveVsAiMatchLogger implements MatchLogger {
         if (isInteractivePlayer(player)) {
             this.interactivePlayerHistory.unshift(record);
         } else {
+            this.aiPlayerHistory.unshift(record);
             this.newLine(2);
             this.logger.log(LOGO);
             this.newLine(2);
@@ -123,6 +117,15 @@ export class InteractiveVsAiMatchLogger implements MatchLogger {
         assert(isCompleteTurnRecord(record));
 
         return record;
+    }
+
+    private showHistory(label: string, playerHistory: TurnRecord[]): void {
+        const playerHistoryExcerpt = selectHistory(playerHistory);
+
+        if (playerHistoryExcerpt.length > 0) {
+            this.logger.log(`${label}: ${playerHistoryExcerpt}`);
+            this.newLine();
+        }
     }
 }
 
@@ -163,4 +166,11 @@ function colorizeHitResponse(hitResponse: HitResponse): string {
 
 function isInteractivePlayer(player: AnyPlayer): player is InteractivePlayer {
     return player instanceof InteractivePlayer;
+}
+
+function selectHistory(playerHistory: TurnRecord[]): string {
+    return playerHistory
+        .slice(0, HISTORY_SIZE)
+        .map(({ targetCoordinate, hitResponse }) => `${colorizeCoordinate(targetCoordinate)}: ${colorizeHitResponse(hitResponse)}`)
+        .join(', ');
 }
