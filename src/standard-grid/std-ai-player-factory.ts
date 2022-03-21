@@ -1,5 +1,6 @@
 import { sample } from 'lodash';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { Logger } from '../logger/logger';
 import { AdaptablePlayer } from '../player/adaptable-player';
 import { Fleet } from '../ship/fleet';
 import { RandomPlacementStrategy } from './placement-strategy/random-placement-strategy';
@@ -37,7 +38,13 @@ function pickRandomName(): string {
     return name;
 }
 
-export function createAIPlayer(fleet: Fleet, version: AIVersion, name = ''): StdPlayer {
+export function createAIPlayer(
+    fleet: Fleet,
+    version: AIVersion,
+    debug: boolean,
+    logger: Logger,
+    name = ''
+): StdPlayer {
     const trimmedName = name.trim();
     const resolvedName = trimmedName || pickRandomName();
 
@@ -45,7 +52,7 @@ export function createAIPlayer(fleet: Fleet, version: AIVersion, name = ''): Std
         `${AIVersionNames[version]} ${resolvedName}`.trim(),
         fleet,
         RandomPlacementStrategy,
-        createHitStrategy(version),
+        createHitStrategy(version, debug, logger),
         () => new StandardOpponentGrid(),
     );
 }

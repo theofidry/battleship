@@ -6,6 +6,7 @@ import { Observable, of, switchMap } from 'rxjs';
 import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
+import { NullLogger } from '../../src/logger/null-logger';
 import { PreviousMove } from '../../src/player/hit-strategy';
 import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
 import { createHitStrategy, StdAiHitStrategy } from '../../src/standard-grid/std-ai-hit-strategy';
@@ -445,7 +446,11 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 describe('HitStrategy V1 (minimal)', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
-        const strategy = createHitStrategy(AIVersion.V1);
+        const strategy = createHitStrategy(
+            AIVersion.V1,
+            false,
+            new NullLogger(),
+        );
 
         strategy.decide(opponentGrid, undefined)
             .subscribe({
@@ -457,7 +462,11 @@ describe('HitStrategy V1 (minimal)', () => {
     it('provides a random coordinate for which no hit has been recorded yet', (done) => {
         const opponentGrid = new StandardOpponentGrid();
         const expectedCoordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
-        const strategy = createHitStrategy(AIVersion.V1);
+        const strategy = createHitStrategy(
+            AIVersion.V1,
+            false,
+            new NullLogger(),
+        );
 
         // Fill all cells except one which is the one we expect to find afterwards.
         let i = 0;
@@ -505,7 +514,11 @@ describe('HitStrategy', () => {
 
             it(`can decide on a strategy: ${title} (AI ${version})`, (done) => {
                 const opponentGrid = new StandardOpponentGrid();
-                const strategy = createHitStrategy(version);
+                const strategy = createHitStrategy(
+                    version,
+                    false,
+                    new NullLogger(),
+                );
 
                 expectNextChoices(
                     strategy,

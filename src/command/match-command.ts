@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { firstValueFrom, map } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
@@ -19,17 +19,29 @@ export const matchCommand = new Command('match');
 matchCommand
     .description('Starts a match against the AI')
     .addOption(createAIVersionOption())
+    .addOption(
+        (
+            new Option(
+                '--debug',
+                'Enables debug mode.',
+            )
+        ).default(false),
+    )
     .action(() => {
-        const { ai } = matchCommand.opts();
+        const { ai, debug } = matchCommand.opts();
+
         assert(EnumHelper.hasValue(AIVersion, ai));
+        assert('boolean' === typeof debug);
 
         const logger = new ConsoleLogger();
-        const match = new Match(new InteractiveVsAiMatchLogger(logger));
+        const match = new Match(
+            new InteractiveVsAiMatchLogger(logger),
+        );
         const fleet = createFleet();
 
         const play$ = match
             .play(
-                createAIPlayer(fleet, ai),
+                createAIPlayer(fleet, ai, debug, logger),
                 createInteractivePlayer(fleet, logger),
                 STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
             )
