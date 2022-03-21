@@ -68,21 +68,6 @@ it should. This is a limitation of the file system and OSes. In such an event,
 if you want to force a command with make, you can always use the option `-B|--always-make`.
 
 
-## Benchmark
-
-```
-$ npx ts-node --project=tsconfig.src.json src/main.ts ai:benchmark --samples=1000
-Starting benchmark between AI.I for 1000 matches.
-Matches finished in 185.366 turns on average (efficiency: 8%).
-Took 30 secs.
-
-$ npx ts-node --project=tsconfig.src.json src/main.ts ai:benchmark --samples=1000
-Starting benchmark between AI.II for 1000 matches.
-Matches finished in 116.066 turns on average (efficiency: 49%).
-Took 28 secs.
-```
-
-
 [afup-battleship]: https://github.com/AFUP-rennes/challenge-2022-01
 [make]: https://www.gnu.org/software/make/
 [npm]: https://www.npmjs.com/

@@ -1,6 +1,7 @@
 import {
+    catchError,
     concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
-    Subject, takeUntil, tap,
+    Subject, takeUntil, tap, throwError,
 } from 'rxjs';
 import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
@@ -160,6 +161,11 @@ class PlayerTurn<
             .askMove()
             .pipe(
                 map((targetCoordinate) => this.getResult(targetCoordinate)),
+                catchError((error) => {
+                    this.logger.stopGame(this.opponent);
+
+                    throw error;
+                })
             );
     }
 

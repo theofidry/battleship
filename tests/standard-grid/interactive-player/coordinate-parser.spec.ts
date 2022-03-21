@@ -4,7 +4,7 @@ import { parseCoordinate } from '../../../src/standard-grid/interactive-player/c
 import { StdColumnIndex } from '../../../src/standard-grid/std-column-index';
 import { StdCoordinate } from '../../../src/standard-grid/std-coordinate';
 import { StdRowIndex } from '../../../src/standard-grid/std-row-index';
-import { expectError } from '../../chai-assertions';
+import { expectLeftValueError, rightValue } from '../../utils/either-expectations';
 
 class ValidCoordinateSet {
     constructor(
@@ -72,18 +72,23 @@ function* provideInvalidCoordinates(): Generator<InvalidCoordinateSet> {
 describe('coordinateParser', () => {
     for (const { title, rawCoordinate, expected } of provideValidCoordinates()) {
         it(`can parse coordinates: ${title}`, () => {
-            expect(parseCoordinate(rawCoordinate)).to.eqls(expected);
+            const actual = parseCoordinate(rawCoordinate);
+
+            rightValue(
+                actual,
+                (coordinate) => expect(coordinate).to.eqls(expected),
+            );
         });
     }
 
     for (const { title, rawCoordinate, expectedErrorMessage } of provideInvalidCoordinates()) {
         it(`can parse coordinates: ${title}`, () => {
-            const parse = () => parseCoordinate(rawCoordinate);
+            const actual = parseCoordinate(rawCoordinate);
 
-            expectError(
+            expectLeftValueError(
                 'InvalidCoordinate',
                 expectedErrorMessage,
-                parse,
+                actual,
             );
         });
     }

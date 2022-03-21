@@ -1,4 +1,3 @@
-import { fail } from 'assert';
 import { expect } from 'chai';
 import { List } from 'immutable';
 import { toString } from 'lodash';
@@ -7,6 +6,7 @@ import { Observable, of, switchMap } from 'rxjs';
 import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
 import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
+import { NullLogger } from '../../src/logger/null-logger';
 import { PreviousMove } from '../../src/player/hit-strategy';
 import { createFleet } from '../../src/ship/fleet';
 import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
@@ -17,6 +17,7 @@ import { StdCoordinate } from '../../src/standard-grid/std-coordinate';
 import { StdCoordinateNavigator } from '../../src/standard-grid/std-coordinate-navigator';
 import { STD_ROW_INDICES, StdRowIndex } from '../../src/standard-grid/std-row-index';
 import { EnumHelper } from '../../src/utils/enum-helper';
+import { rightValue } from '../utils/either-expectations';
 
 const allCells = List(STD_COLUMN_INDICES)
     .flatMap((columnIndex) => STD_ROW_INDICES
@@ -164,7 +165,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'restrict the choice to the surrounding cells following the direction after a hit (second hit)',
+        'restrict the choice to the aligned cells following the direction after a hit (second hit)',
         [
             {
                 target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
@@ -207,7 +208,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'restrict the choice to the surrounding cells following the direction after a hit (second hit after a miss)',
+        'restrict the choice to the aligned cells following the direction after a hit (second hit after a miss)',
         [
             {
                 target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
@@ -223,10 +224,33 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         fromV2Support,
-        'HitTargetSurroundings<C3>',
+        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
-            'D3',
+            'C5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the aligned cells in-between alignments',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+        ],
+        v2OnwardsSupport,
+        'HitAlignedGapsHitTargets<VERTICAL,List [ "C3", "C5" ]>',
+        [
+            'C4',
         ],
     );
 
@@ -238,22 +262,23 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
             {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
                 target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
                 response: HitResponse.MISS,
             },
             {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.HIT,
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
             },
         ],
         fromV2Support,
         'HitTargetSurroundings<C3>',
         [
             'C2',
+            'C4',
         ],
     );
 
@@ -512,19 +537,29 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 describe('HitStrategy V1 (minimal)', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
-        const strategy = createHitStrategy(createFleet(), AIVersion.V1);
+        const strategy = createHitStrategy(
+            createFleet(),
+            AIVersion.V1,
+            false,
+            new NullLogger(),
+        );
 
         strategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: () => done(),
-                error: () => fail('Did not expect to have an error.'),
+                error: (error) => expect.fail(error, 'Did not expect to have an error.'),
             });
     });
 
     it('provides a random coordinate for which no hit has been recorded yet', (done) => {
         const opponentGrid = new StandardOpponentGrid();
         const expectedCoordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
-        const strategy = createHitStrategy(createFleet(), AIVersion.V1);
+        const strategy = createHitStrategy(
+            createFleet(),
+            AIVersion.V1,
+            false,
+            new NullLogger(),
+        );
 
         // Fill all cells except one which is the one we expect to find afterwards.
         let i = 0;
@@ -555,7 +590,7 @@ describe('HitStrategy V1 (minimal)', () => {
 
                     done();
                 },
-                error: () => fail('Did not expect to have an error.'),
+                error: (error) => expect.fail(error, 'Did not expect to have an error.'),
             });
     });
 });
@@ -572,7 +607,12 @@ describe('HitStrategy', () => {
 
             it(`can decide on a strategy: ${title} (AI ${version})`, (done) => {
                 const opponentGrid = new StandardOpponentGrid();
-                const strategy = createHitStrategy(createFleet(), version);
+                const strategy = createHitStrategy(
+                    createFleet(),
+                    version,
+                    false,
+                    new NullLogger(),
+                );
 
                 expectNextChoices(
                     strategy,
@@ -622,8 +662,8 @@ function expectNextChoices(
                         lastPreviousMove,
                     );
 
-                actual.fold(
-                    (error) => fail(error),
+                rightValue(
+                    actual,
                     ({ strategy, coordinates }) => {
                         const normalizedChoices = {
                             strategy,
@@ -631,12 +671,12 @@ function expectNextChoices(
                         };
 
                         expect(normalizedChoices).to.eqls(expected);
-                    }
-                );
 
-                done();
+                        done();
+                    },
+                );
             },
-            error: () => fail('Did not expect to have an error.'),
+            error: (error) => expect.fail(error, 'Did not expect to have an error.'),
         });
 }
 

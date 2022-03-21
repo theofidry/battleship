@@ -2,12 +2,16 @@ import { Map } from 'immutable';
 import { toString } from 'lodash';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { Coordinate } from '../grid/coordinate';
+import { Logger } from '../logger/logger';
 import {
     AIErrorHandler, AIHitStrategy, UntouchedCoordinatesFinder,
 } from '../player/ai-hit-strategy';
+import { AiHitStrategyStateRecorder } from '../player/ai-hit-strategy-state-recorder';
+import { NullAIHitStrategyStateRecorder } from '../player/null-ai-hit-strategy-state-recorder';
 import { printTable } from '../utils/table-printer';
 import { createOpponentTable } from './interactive-player/grid-printer';
 import { Cell as OpponentCell } from './standard-opponent-grid';
+import { StdAiHitStrategyStateRecorderLogger } from './std-ai-hit-strategy-state-recorder-logger';
 import { AIVersion } from './std-ai-player-factory';
 import { StdColumnIndex } from './std-column-index';
 import { StdCoordinateNavigator } from './std-coordinate-navigator';
@@ -32,8 +36,8 @@ const findUntouchedCoordinates: UntouchedCoordinatesFinder<StdColumnIndex, StdRo
 const errorHandler: AIErrorHandler<StdColumnIndex, StdRowIndex, OpponentCell> = (error) => {
     console.log(error.message);
 
+    console.log('The opponent grid state:');
     console.log(
-        'The opponent grid state:',
         printTable(
             createOpponentTable(error.grid.getRows()),
         ),
@@ -72,6 +76,8 @@ export type StdAiHitStrategy = AIHitStrategy<StdColumnIndex, StdRowIndex, Oppone
 
 export function createStdAIHitStrategy(
     fleet: Fleet,
+    logger: Logger,
+    debug: boolean,
     enableSmartTargeting: boolean,
     enableSmartScreening: boolean,
     enableShipSizeTracking: boolean,
@@ -81,17 +87,33 @@ export function createStdAIHitStrategy(
         StdCoordinateNavigator,
         findUntouchedCoordinates,
         errorHandler,
+        createStateRecorder(debug, logger),
         enableSmartTargeting,
         enableSmartScreening,
         enableShipSizeTracking,
     );
 }
 
-export function createHitStrategy(fleet: Fleet, version: AIVersion): StdAiHitStrategy {
+function createStateRecorder(
+    debug: boolean,
+    logger: Logger,
+): AiHitStrategyStateRecorder<StdColumnIndex, StdRowIndex, OpponentCell> {
+    return debug
+        ? new StdAiHitStrategyStateRecorderLogger(logger)
+        : new NullAIHitStrategyStateRecorder();
+}
+
+export function createHitStrategy(
+    fleet: Fleet, version: AIVersion,
+    debug: boolean,
+    logger: Logger,
+): StdAiHitStrategy {
     switch (version) {
         case AIVersion.V1:
             return createStdAIHitStrategy(
                 fleet,
+                logger,
+                debug,
                 false,
                 false,
                 false,
@@ -100,6 +122,8 @@ export function createHitStrategy(fleet: Fleet, version: AIVersion): StdAiHitStr
         case AIVersion.V2:
             return createStdAIHitStrategy(
                 fleet,
+                logger,
+                debug,
                 true,
                 false,
                 false,
@@ -108,6 +132,8 @@ export function createHitStrategy(fleet: Fleet, version: AIVersion): StdAiHitStr
         case AIVersion.V3:
             return createStdAIHitStrategy(
                 fleet,
+                logger,
+                debug,
                 true,
                 true,
                 false,
@@ -116,6 +142,8 @@ export function createHitStrategy(fleet: Fleet, version: AIVersion): StdAiHitStr
         case AIVersion.V4:
             return createStdAIHitStrategy(
                 fleet,
+                logger,
+                debug,
                 true,
                 true,
                 true,

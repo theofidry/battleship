@@ -1,31 +1,35 @@
-import { assert } from '../../assert/assert';
 import { Coordinate } from '../../grid/coordinate';
+import { Either } from '../../utils/either';
 import { EnumHelper } from '../../utils/enum-helper';
-import { CoordinateParser } from '../hit-strategy/interactive-hit-strategy';
+import { CoordinateParser } from './interactive-hit-strategy';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
 
 export const parseCoordinate: CoordinateParser = (rawCoordinate) => {
     const result = rawCoordinate.match(/([A-Z]+)([0-9]+)/);
 
-    assert(
-        null !== result,
-        () => InvalidCoordinate.forValue(rawCoordinate),
-    );
+    if (null === result) {
+        return Either.left(
+            InvalidCoordinate.forValue(rawCoordinate),
+        );
+    }
 
     const columnIndex = result[1] || '';
     const rowIndex = Number(result[2]);
 
-    assert(
-        EnumHelper.hasValue(StdColumnIndex, columnIndex),
-        () => InvalidCoordinate.forColumn(rawCoordinate, columnIndex),
-    );
-    assert(
-        EnumHelper.hasValue(StdRowIndex, rowIndex),
-        () => InvalidCoordinate.forRow(rawCoordinate, rowIndex),
-    );
+    if (!EnumHelper.hasValue(StdColumnIndex, columnIndex)) {
+        return Either.left(
+            InvalidCoordinate.forColumn(rawCoordinate, columnIndex),
+        );
+    }
 
-    return new Coordinate(columnIndex, rowIndex);
+    if (!EnumHelper.hasValue(StdRowIndex, rowIndex)) {
+        return Either.left(
+            InvalidCoordinate.forRow(rawCoordinate, rowIndex),
+        );
+    }
+
+    return Either.right(new Coordinate(columnIndex, rowIndex));
 };
 
 class InvalidCoordinate extends Error {

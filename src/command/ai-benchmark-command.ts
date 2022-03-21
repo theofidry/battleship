@@ -34,7 +34,7 @@ AIBenchmarkCommand
 
         console.log(`Starting benchmark between ${AIVersionNames[ai]} for ${chalk.yellowBright(samples)} matches.`);
 
-        const play$ = playMatches(fleet, samples, ai)
+        const play$ = playMatches(fleet, samples, ai, false)
             .pipe(
                 tap((averageEndTurn) => {
                     const endTimeInSeconds = process.hrtime()[0];
@@ -64,10 +64,15 @@ function parseSampleOption(value: string): number {
     return parsedValue;
 }
 
-function playMatches(fleet: Fleet, nbrOfMatches: number, version: AIVersion): Observable<number> {
+function playMatches(
+    fleet: Fleet,
+    nbrOfMatches: number,
+    version: AIVersion,
+    debug: boolean,
+): Observable<number> {
     const logger = new ConsoleLogger();
 
-    const matches = range(0, nbrOfMatches).map(() => startMatch(logger, fleet, version));
+    const matches = range(0, nbrOfMatches).map(() => startMatch(logger, fleet, version, debug));
 
     return combineLatest(matches)
         .pipe(
@@ -75,13 +80,18 @@ function playMatches(fleet: Fleet, nbrOfMatches: number, version: AIVersion): Ob
         );
 }
 
-function startMatch(logger: Logger, fleet: Fleet, version: AIVersion): Observable<number> {
+function startMatch(
+    logger: Logger,
+    fleet: Fleet,
+    version: AIVersion,
+    debug: boolean,
+): Observable<number> {
     const match = new Match(new NullMatchLogger());
 
     return match
         .play(
-            createAIPlayer(fleet, version),
-            createAIPlayer(fleet, version),
+            createAIPlayer(fleet, version, debug, logger),
+            createAIPlayer(fleet, version, debug, logger),
             STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
         )
         .pipe(

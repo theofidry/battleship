@@ -29,4 +29,8 @@ export class NullMatchLogger implements MatchLogger {
     recordWinner(winner: AnyPlayer, turn: number): void {
         // Do nothing
     }
+
+    stopGame(player: AnyPlayer): void {
+        // Do nothing
+    }
 }
