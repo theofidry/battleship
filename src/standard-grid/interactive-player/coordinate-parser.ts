@@ -1,7 +1,7 @@
 import { Coordinate } from '../../grid/coordinate';
 import { Either } from '../../utils/either';
 import { EnumHelper } from '../../utils/enum-helper';
-import { CoordinateParser } from '../hit-strategy/interactive-hit-strategy';
+import { CoordinateParser } from './interactive-hit-strategy';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
 

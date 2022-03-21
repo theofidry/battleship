@@ -26,8 +26,8 @@ AIMatchCommand
 
         const play$ = match
             .play(
-                createAIPlayer(fleet, ai),
-                createAIPlayer(fleet, ai),
+                createAIPlayer(fleet, ai, false, logger),
+                createAIPlayer(fleet, ai, false, logger),
                 STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
             )
             // eslint-disable-next-line no-void

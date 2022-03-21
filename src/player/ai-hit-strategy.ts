@@ -7,6 +7,7 @@ import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { Either } from '../utils/either';
+import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
 import { HitStrategy, PreviousMove } from './hit-strategy';
 
 export type UntouchedCoordinatesFinder<
@@ -33,6 +34,7 @@ export class AIHitStrategy<
         private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
+        private readonly stateRecorder: AiHitStrategyStateRecorder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly enableSmartTargeting: boolean,
         private readonly enableSmartScreening: boolean,
     ) {
@@ -83,6 +85,15 @@ export class AIHitStrategy<
             .map(createApplyStrategyMapper(untouchedCoordinates))
             .filter(({ coordinates }) => coordinates.size > 0)
             .sort(sortByAscendingSize);
+
+        this.stateRecorder.recordChoices(
+            grid,
+            untouchedCoordinates,
+            previousHits,
+            alignedHitCoordinatesList,
+            filters,
+            choicesList,
+        );
 
         return this.checkChoicesFound(
             grid,
@@ -254,7 +265,7 @@ export class AIHitStrategy<
     }
 }
 
-type ChoiceStrategy<
+export type ChoiceStrategy<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
     > = {
@@ -262,7 +273,7 @@ type ChoiceStrategy<
     readonly filter: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean,
 };
 
-type AppliedChoiceStrategy<
+export type AppliedChoiceStrategy<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
     > = {

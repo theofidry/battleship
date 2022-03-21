@@ -1,6 +1,6 @@
 import {
     CoordinateParser, interruptDiscriminant, InterruptError,
-} from '../hit-strategy/interactive-hit-strategy';
+} from './interactive-hit-strategy';
 
 export const parseGiveUpCommand: (innerParser: CoordinateParser)=> CoordinateParser = (innerParse) => {
     return (rawCoordinate) => {

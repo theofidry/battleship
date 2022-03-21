@@ -1,6 +1,6 @@
 import { Logger } from '../../logger/logger';
 import { Fleet } from '../../ship/fleet';
-import { InteractiveHitStrategy } from '../hit-strategy/interactive-hit-strategy';
+import { InteractiveHitStrategy } from './interactive-hit-strategy';
 import { RandomPlacementStrategy } from '../placement-strategy/random-placement-strategy';
 import { StandardOpponentGrid } from '../standard-opponent-grid';
 import { StdPlayer } from '../std-player';
