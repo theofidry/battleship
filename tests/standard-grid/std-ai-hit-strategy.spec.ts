@@ -1,4 +1,3 @@
-import { fail } from 'assert';
 import { expect } from 'chai';
 import { List } from 'immutable';
 import { toString } from 'lodash';
@@ -16,6 +15,7 @@ import { StdCoordinate } from '../../src/standard-grid/std-coordinate';
 import { StdCoordinateNavigator } from '../../src/standard-grid/std-coordinate-navigator';
 import { STD_ROW_INDICES, StdRowIndex } from '../../src/standard-grid/std-row-index';
 import { EnumHelper } from '../../src/utils/enum-helper';
+import { rightValue } from '../utils/either-expectations';
 
 const allCells = List(STD_COLUMN_INDICES)
     .flatMap((columnIndex) => STD_ROW_INDICES
@@ -450,7 +450,7 @@ describe('HitStrategy V1 (minimal)', () => {
         strategy.decide(opponentGrid, undefined)
             .subscribe({
                 next: () => done(),
-                error: () => fail('Did not expect to have an error.'),
+                error: (error) => expect.fail(error, 'Did not expect to have an error.'),
             });
     });
 
@@ -488,7 +488,7 @@ describe('HitStrategy V1 (minimal)', () => {
 
                     done();
                 },
-                error: () => fail('Did not expect to have an error.'),
+                error: (error) => expect.fail(error, 'Did not expect to have an error.'),
             });
     });
 });
@@ -555,8 +555,8 @@ function expectNextChoices(
                         lastPreviousMove,
                     );
 
-                actual.fold(
-                    (error) => fail(error),
+                rightValue(
+                    actual,
                     ({ strategy, coordinates }) => {
                         const normalizedChoices = {
                             strategy,
@@ -564,12 +564,12 @@ function expectNextChoices(
                         };
 
                         expect(normalizedChoices).to.eqls(expected);
-                    }
-                );
 
-                done();
+                        done();
+                    },
+                );
             },
-            error: () => fail('Did not expect to have an error.'),
+            error: (error) => expect.fail(error, 'Did not expect to have an error.'),
         });
 }
 
