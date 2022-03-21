@@ -312,12 +312,15 @@ function sortStrategies<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(a: AppliedChoiceStrategy<ColumnIndex, RowIndex>, b: AppliedChoiceStrategy<ColumnIndex, RowIndex>): number {
+    // The bigger the weight be better
     const weightDiff = b.weight - a.weight;
+    const weightAreIdentical = Math.abs(weightDiff) < 0.001;
 
-    if (Math.abs(weightDiff) > 0.001) {
+    if (!weightAreIdentical) {
         return weightDiff;
     }
 
+    // The lower the size the better
     return a.coordinates.size - b.coordinates.size;
 }
 
