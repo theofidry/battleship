@@ -19,4 +19,6 @@ export interface MatchLogger {
     endTurn(): void;
 
     recordWinner(winner: AnyPlayer, turn: number): void;
+
+    stopGame(opponent: AnyPlayer): void;
 }

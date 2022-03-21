@@ -1,10 +1,13 @@
+import { isObjectLike } from 'lodash';
 import readlineSync from 'readline-sync';
-import { map, Observable, of, retry } from 'rxjs';
+import { map, Observable, of, retry, retryWhen, takeWhile } from 'rxjs';
+import { isNonNullObject } from '../../assert/assert-is-non-null-object';
 import { Coordinate } from '../../grid/coordinate';
 import { OpponentGrid } from '../../grid/opponent-grid';
 import { Logger } from '../../logger/logger';
 import { HitStrategy } from '../../player/hit-strategy';
 import { Either } from '../../utils/either';
+import { hasOwnProperty } from '../../utils/has-own-property';
 import { Cell } from '../standard-opponent-grid';
 import { StdColumnIndex } from '../std-column-index';
 import { StdRowIndex } from '../std-row-index';
@@ -16,7 +19,7 @@ export class InteractiveHitStrategy implements HitStrategy<StdColumnIndex, StdRo
     ) {
     }
 
-    decide (_grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<Coordinate<StdColumnIndex, StdRowIndex>> {
+    decide(_grid: OpponentGrid<StdColumnIndex, StdRowIndex, Cell>): Observable<Coordinate<StdColumnIndex, StdRowIndex>> {
         return of(undefined)
             .pipe(
                 map(() => readlineSync.question('Target: ')),
@@ -27,7 +30,15 @@ export class InteractiveHitStrategy implements HitStrategy<StdColumnIndex, StdRo
                         (coordinate) => coordinate,
                     )
                 ),
-                retry(1000),
+                retryWhen((errors) => errors.pipe(
+                    takeWhile((error) => {
+                        if (isInterruptError(error)) {
+                            throw error;
+                        }
+
+                        return true;
+                    })
+                )),
             );
     }
 
@@ -39,3 +50,15 @@ export class InteractiveHitStrategy implements HitStrategy<StdColumnIndex, StdRo
 }
 
 export type CoordinateParser = (value: string)=> Either<Error, Coordinate<StdColumnIndex, StdRowIndex>>;
+
+export const interruptDiscriminant = 'InterruptError';
+
+export interface InterruptError extends Error {
+    readonly discriminant: 'InterruptError';
+}
+
+function isInterruptError(error: unknown): error is InterruptError {
+    return isNonNullObject(error)
+        && hasOwnProperty(error, 'discriminant')
+        && error['discriminant'] === 'InterruptError';
+}
