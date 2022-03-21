@@ -70,15 +70,23 @@ function* provideInvalidCoordinates(): Generator<InvalidCoordinateSet> {
 }
 
 describe('coordinateParser', () => {
+    const unexpectedError = new Error('unexpected error');
+
     for (const { title, rawCoordinate, expected } of provideValidCoordinates()) {
         it(`can parse coordinates: ${title}`, () => {
-            expect(parseCoordinate(rawCoordinate)).to.eqls(expected);
+            const actual = parseCoordinate(rawCoordinate).getOrThrow(unexpectedError);
+
+            expect(actual).to.eqls(expected);
         });
     }
 
     for (const { title, rawCoordinate, expectedErrorMessage } of provideInvalidCoordinates()) {
         it(`can parse coordinates: ${title}`, () => {
-            const parse = () => parseCoordinate(rawCoordinate);
+            const parse = () => {
+                const error = parseCoordinate(rawCoordinate).swap().getOrThrow(unexpectedError);
+
+                throw error;
+            };
 
             expectError(
                 'InvalidCoordinate',
