@@ -84,7 +84,7 @@ export class AIHitStrategy<
         const choicesList = filters
             .map(createApplyStrategyMapper(untouchedCoordinates))
             .filter(({ coordinates }) => coordinates.size > 0)
-            .sort(sortByAscendingSize);
+            .sort(sortStrategies);
 
         this.stateRecorder.recordChoices(
             grid,
@@ -151,6 +151,7 @@ export class AIHitStrategy<
 
         return {
             strategy: `HitTargetSurroundings<${hitTarget.toString()}>`,
+            weight: StrategyWeight.SURROUNDING,
             filter: (candidate) => validCandidates.includes(candidate),
         };
     }
@@ -170,6 +171,7 @@ export class AIHitStrategy<
 
         return {
             strategy: `HitAlignedGapsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            weight: StrategyWeight.ALIGNMENT_GAPS,
             filter: (candidate) => validCandidates.includes(candidate),
         };
     }
@@ -189,6 +191,7 @@ export class AIHitStrategy<
 
         return {
             strategy: `HitAlignedExtremumsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            weight: StrategyWeight.ALIGNMENT,
             filter: (candidate) => validCandidates.includes(candidate),
         };
     }
@@ -204,6 +207,7 @@ export class AIHitStrategy<
 
         return {
             strategy: 'GridScreening',
+            weight: StrategyWeight.SCREENING,
             filter: (candidate) => validCandidates.includes(candidate),
         };
     }
@@ -265,38 +269,58 @@ export class AIHitStrategy<
     }
 }
 
+enum StrategyWeight {
+    NO_FILTER = 0,
+    SCREENING = 5,
+    SURROUNDING = 10,
+    ALIGNMENT = 20,
+    ALIGNMENT_GAPS = 30,
+}
+
 export type ChoiceStrategy<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-    > = {
+> = {
     readonly strategy: string,
+    readonly weight: StrategyWeight,
     readonly filter: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean,
 };
 
 export type AppliedChoiceStrategy<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-    > = {
+> = {
     readonly strategy: string,
+    readonly weight: StrategyWeight,
     readonly coordinates: Map<string, Coordinate<ColumnIndex, RowIndex>>,
 };
 
 function createApplyStrategyMapper<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-    >(
+>(
     source: Map<string, Coordinate<ColumnIndex, RowIndex>>,
 ): (choiceStrategy: ChoiceStrategy<ColumnIndex, RowIndex>)=> AppliedChoiceStrategy<ColumnIndex, RowIndex> {
-    return ({ strategy, filter }) => ({
+    return ({ strategy, weight, filter }) => ({
         strategy,
+        weight,
         coordinates: source.filter(filter),
     });
 }
 
-function sortByAscendingSize<
+function sortStrategies<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(a: AppliedChoiceStrategy<ColumnIndex, RowIndex>, b: AppliedChoiceStrategy<ColumnIndex, RowIndex>): number {
+    // The bigger the weight be better
+    const weightDiff = b.weight - a.weight;
+    const weightAreIdentical = Math.abs(weightDiff) < 0.001;
+
+    if (!weightAreIdentical) {
+        return weightDiff;
+    }
+
+    // The lower the size the better
     return a.coordinates.size - b.coordinates.size;
 }
 
@@ -306,6 +330,7 @@ function createNoFilterFilterStrategy<
 >(): ChoiceStrategy<ColumnIndex, RowIndex> {
     return {
         strategy: 'NoFilter',
+        weight: StrategyWeight.NO_FILTER,
         filter: () => true,
     };
 }

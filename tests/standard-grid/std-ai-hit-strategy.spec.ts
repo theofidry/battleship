@@ -160,7 +160,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'restrict the choice to the surrounding cells following the direction after a hit (second hit)',
+        'restrict the choice to the aligned cells following the direction after a hit (second hit)',
         [
             {
                 target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
@@ -203,7 +203,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'restrict the choice to the surrounding cells following the direction after a hit (second hit after a miss)',
+        'restrict the choice to the aligned cells following the direction after a hit (second hit after a miss)',
         [
             {
                 target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
@@ -219,10 +219,33 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         v2OnwardsSupport,
-        'HitTargetSurroundings<C3>',
+        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
-            'D3',
+            'C5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'restrict the choice to the aligned cells in-between alignments',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+        ],
+        v2OnwardsSupport,
+        'HitAlignedGapsHitTargets<VERTICAL,List [ "C3", "C5" ]>',
+        [
+            'C4',
         ],
     );
 
@@ -234,22 +257,23 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
             {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
                 target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
                 response: HitResponse.MISS,
             },
             {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.HIT,
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
             },
         ],
         v2OnwardsSupport,
         'HitTargetSurroundings<C3>',
         [
             'C2',
+            'C4',
         ],
     );
 
