@@ -59,7 +59,7 @@ export class MoveAnalyzer<
 
         console.log({
             previousMove,
-            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray()
+            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
         });
 
         const sunkAlignment = this.previousAlignments

@@ -247,7 +247,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        fromV2Support,
         'HitAlignedGapsHitTargets<VERTICAL,List [ "C3", "C5" ]>',
         [
             'C4',
