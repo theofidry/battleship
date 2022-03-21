@@ -6,7 +6,9 @@ import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { Logger } from '../logger/logger';
 import { LOGO } from '../logo';
-import { printPlayerGrid } from '../standard-grid/interactive-player/grid-printer';
+import {
+    printOpponentGrid, printPlayerGrid,
+} from '../standard-grid/interactive-player/grid-printer';
 import { InteractivePlayer } from '../standard-grid/interactive-player/interactive-player';
 import { AnyCoordinate, AnyPlayer, MatchLogger } from './match-logger';
 
@@ -97,6 +99,14 @@ export class InteractiveVsAiMatchLogger implements MatchLogger {
         this.newLine(2);
         this.logger.log(`${this.colorizePlayer(winner)} ${chalk.bold('WON')} the match in ${chalk.yellowBright(turn)} turns! 🎉`);
         this.newLine(2);
+    }
+
+    stopGame(player: AnyPlayer): void {
+        this.newLine();
+        this.logger.log('🛑 Stopped the game.');
+        this.newLine();
+
+        printOpponentGrid(player, this.logger);
     }
 
     private newLine(times = 1): void {

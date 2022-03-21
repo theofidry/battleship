@@ -28,7 +28,16 @@ export function printPlayerGrid(player: StdPlayer, logger: Logger): void {
     logger.log(combineTables(targetGrid, playerGrid));
 }
 
-export function createPlayerTable(
+export function printOpponentGrid(player: StdPlayer, logger: Logger): void {
+    const opponentGrid = printTable(
+        createPlayerTable(player.getPlayerGridRows()),
+    );
+
+    logger.log('Your opponent grid:');
+    logger.log(opponentGrid);
+}
+
+function createPlayerTable(
     rows: Readonly<GridRows<StdColumnIndex, StdRowIndex, PlayerGridCell>>,
 ): ReadonlyArray<ReadonlyArray<string>> {
     return rows

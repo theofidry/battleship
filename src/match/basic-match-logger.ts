@@ -33,4 +33,8 @@ export class BasicMatchLogger implements MatchLogger {
     recordWinner(winner: AnyPlayer, turn: number): void {
         this.logger.log(`"${winner.name}" has won the match in ${turn} turns.`);
     }
+
+    stopGame(player: AnyPlayer): void {
+        // Do nothing
+    }
 }
