@@ -5,6 +5,7 @@ import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-un
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
+import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
 import { HitStrategy, PreviousMove } from './hit-strategy';
@@ -126,11 +127,15 @@ export class AIHitStrategy<
         }
 
         if (this.enableSmartScreening) {
-            const possibleTraverses = this.coordinateNavigator.traverseGrid(this.movesAnalyzer.getMinShipSize());
+            const minShipSize = this.movesAnalyzer.getMinShipSize();
+            const possibleTraverses = this.coordinateNavigator.traverseGrid(minShipSize);
 
             strategies.push(
                 ...possibleTraverses.map(
-                    (possibleTraverse) => this.createGridScreeningFilterStrategy(possibleTraverse),
+                    (possibleTraverse) => this.createGridScreeningFilterStrategy(
+                        possibleTraverse,
+                        minShipSize,
+                    ),
                 ),
             );
         }
@@ -199,6 +204,7 @@ export class AIHitStrategy<
 
     private createGridScreeningFilterStrategy(
         coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+        minShipSize: ShipSize,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
         const validCandidates = coordinates;
 
@@ -207,7 +213,7 @@ export class AIHitStrategy<
         }
 
         return {
-            strategy: 'GridScreening',
+            strategy: `GridScreening<${minShipSize}>`,
             weight: StrategyWeight.SCREENING,
             filter: (candidate) => validCandidates.includes(candidate),
         };

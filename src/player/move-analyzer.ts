@@ -34,61 +34,22 @@ export class MoveAnalyzer<
 
         this.previousMoves = this.previousMoves.push(previousMove);
 
-        if ([HitResponse.HIT, HitResponse.SUNK].includes(previousMove.response)) {
-            this.previousHits = this.previousHits.push(previousMove.target);
-        }
-
-        this.previousAlignments = this.coordinateNavigator.findAlignments(
-            this.previousHits,
-            this.getMaxShipSize(),
-        );
-
-        this.recalculateState();
-    }
-
-    private recalculateState(): void {
-        if (!this.enableShipSizeTracking) {
-            return this.clearHitsIfSunk();
-        }
-
-        const previousMove = this.previousMoves.last();
-
-        if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
-            return;
-        }
-
+        console.log('–––––––––––––––');
         console.log({
+            method: 'recordPreviousMove',
             previousMove,
+            previousHits: this.previousHits.map(toString).toArray(),
             alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
         });
 
-        const sunkAlignment = this.previousAlignments
-            .filter((alignment) => alignment.coordinates.includes(previousMove.target))
-            .first();   // TODO: handle case where more than one has been found
-
-        assertIsNotUndefined(sunkAlignment);
-
-        this.opponentFleet.markAsPotentiallySunk(sunkAlignment);
-
-        console.log({
-            sunkAlignmentCoordinates: sunkAlignment.coordinates.map(toString).toArray(),
-            previousHits: this.previousHits.map((coordinate) => coordinate.toString()).toArray(),
-        });
-
-        this.previousHits = this.previousHits
-            .filter((coordinate) => !sunkAlignment.coordinates.includes(coordinate));
-
-        console.log({
-            previousHits: this.previousHits.map((coordinate) => coordinate.toString()).toArray(),
-        });
-    }
-
-    private clearHitsIfSunk(): void {
-        const previousMove = this.previousMoves.last();
-
-        if (undefined !== previousMove && previousMove.response === HitResponse.SUNK) {
-            this.previousHits = List();
+        if (![HitResponse.HIT, HitResponse.SUNK].includes(previousMove.response)) {
+            console.log('ignore previous move');
+            return;
         }
+
+        this.addHit(previousMove.target);
+
+        this.recalculateState();
     }
 
     getMinShipSize(): ShipSize {
@@ -109,6 +70,77 @@ export class MoveAnalyzer<
 
     getHitAlignments(): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
         return this.previousAlignments;
+    }
+
+    private recalculateState(): void {
+        console.log({
+            method: 'recalculateState',
+            previousHits: this.previousHits.map(toString).toArray(),
+            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
+        });
+
+
+        const previousMove = this.previousMoves.last();
+
+        if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
+            return;
+        }
+
+        if (!this.enableShipSizeTracking) {
+            console.log('enableShipSizeTracking not enabled: clear hits if sunk');
+            return this.clearHits();
+        }
+
+        console.log({
+            previousMove,
+            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
+        });
+
+        // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
+        const sunkAlignment = this.previousAlignments
+            .filter((alignment) => alignment.coordinates.includes(previousMove.target))
+            .first();   // TODO: handle case where more than one has been found
+
+        assertIsNotUndefined(sunkAlignment);
+
+        this.opponentFleet.markAsPotentiallySunk(sunkAlignment);
+
+        console.log({
+            sunkAlignmentCoordinates: sunkAlignment.coordinates.map(toString).toArray(),
+            previousHits: this.previousHits.map((coordinate) => coordinate.toString()).toArray(),
+        });
+
+        this.removeHitsBelongingToAlignment(sunkAlignment);
+
+        console.log({
+            previousHits: this.previousHits.map((coordinate) => coordinate.toString()).toArray(),
+            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
+        });
+    }
+
+    private addHit(target: Coordinate<ColumnIndex, RowIndex>): void {
+        this.previousHits = this.previousHits.push(target);
+
+        this.recalculateAlignments();
+    }
+
+    private removeHitsBelongingToAlignment(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+        this.previousHits = this.previousHits
+            .filter((coordinate) => !alignment.coordinates.includes(coordinate));
+
+        this.recalculateAlignments();
+    }
+
+    private recalculateAlignments(): void {
+        this.previousAlignments = this.coordinateNavigator.findAlignments(
+            this.previousHits,
+            this.getMaxShipSize(),
+        );
+    }
+
+    private clearHits(): void {
+        this.previousHits = List();
+        this.previousAlignments = List();
     }
 }
 

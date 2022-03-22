@@ -57,7 +57,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: false,
-        [AIVersion.V4]: true,
+        [AIVersion.V4]: false,
     };
 
     const fromV3Support = {
@@ -65,6 +65,13 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V2]: false,
         [AIVersion.V3]: true,
         [AIVersion.V4]: true,
+    };
+
+    const onlyV3Support = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: false,
+        [AIVersion.V3]: true,
+        [AIVersion.V4]: false,
     };
 
     const fromV4Support = {
@@ -319,8 +326,8 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        fromV3Support,
-        'GridScreening',
+        onlyV3Support,
+        'GridScreening<2>',
         [
             'D1',
             'F1',
@@ -368,6 +375,63 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'C10',
             'E10',
             'G10',
+            'I10',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'picks the most efficient screen strategy after sinking a ship',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row1),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.SUNK,
+            },
+        ],
+        fromV4Support,
+        'GridScreening<3>',
+        [
+            'F1',
+            'I1',
+            'A2',
+            'D2',
+            'G2',
+            'J2',
+            'E3',
+            'H3',
+            'C4',
+            'F4',
+            'I4',
+            'A5',
+            'D5',
+            'G5',
+            'J5',
+            'B6',
+            'E6',
+            'H6',
+            'C7',
+            'F7',
+            'I7',
+            'A8',
+            'D8',
+            'G8',
+            'J8',
+            'B9',
+            'E9',
+            'H9',
+            'C10',
+            'F10',
             'I10',
         ],
     );
