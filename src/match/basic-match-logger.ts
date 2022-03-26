@@ -35,6 +35,6 @@ export class BasicMatchLogger implements MatchLogger {
     }
 
     stopGame(player: AnyPlayer): void {
-        // Do nothing
+        this.logger.log('Game stopped.');
     }
 }

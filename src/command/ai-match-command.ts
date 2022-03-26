@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { firstValueFrom, map } from 'rxjs';
+import { lastValueFrom, map } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { BasicMatchLogger } from '../match/basic-match-logger';
@@ -32,5 +32,5 @@ AIMatchCommand
             )
             .pipe(map(() => undefined));
 
-        return firstValueFrom(play$);
+        return lastValueFrom(play$);
     });

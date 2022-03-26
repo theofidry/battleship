@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { Command, InvalidOptionArgumentError } from 'commander';
 import { isNumber, mean, range } from 'lodash';
-import { combineLatest, filter, firstValueFrom, map, Observable, tap } from 'rxjs';
+import { combineLatest, filter, lastValueFrom, map, Observable, tap } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { Logger } from '../logger/logger';
@@ -46,7 +46,7 @@ AIBenchmarkCommand
                 map(() => undefined),
             );
 
-        return firstValueFrom(play$);
+        return lastValueFrom(play$);
     });
 
 function parseSampleOption(value: string): number {
