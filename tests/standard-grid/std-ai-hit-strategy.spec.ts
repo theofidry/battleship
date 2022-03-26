@@ -46,13 +46,6 @@ class HitChoicesSet {
 }
 
 function* provideHitChoices(): Generator<HitChoicesSet> {
-    const startingV1 = {
-        [AIVersion.V1]: true,
-        [AIVersion.V2]: true,
-        [AIVersion.V3]: true,
-        [AIVersion.V4]: true,
-    };
-
     const startingV2 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
@@ -72,6 +65,13 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V2]: false,
         [AIVersion.V3]: true,
         [AIVersion.V4]: true,
+    };
+
+    const onlyV3 = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: false,
+        [AIVersion.V3]: true,
+        [AIVersion.V4]: false,
     };
 
     const startingV4 = {
@@ -326,7 +326,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        startingV3,
+        onlyV3,
         'GridScreening<2>',
         [
             'D1',
@@ -375,6 +375,63 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'C10',
             'E10',
             'G10',
+            'I10',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'picks the most efficient screen strategy after sinking a ship',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row1),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
+                response: HitResponse.SUNK,
+            },
+        ],
+        startingV4,
+        'GridScreening<3>',
+        [
+            'F1',
+            'I1',
+            'A2',
+            'D2',
+            'G2',
+            'J2',
+            'E3',
+            'H3',
+            'C4',
+            'F4',
+            'I4',
+            'A5',
+            'D5',
+            'G5',
+            'J5',
+            'B6',
+            'E6',
+            'H6',
+            'C7',
+            'F7',
+            'I7',
+            'A8',
+            'D8',
+            'G8',
+            'J8',
+            'B9',
+            'E9',
+            'H9',
+            'C10',
+            'F10',
             'I10',
         ],
     );
@@ -476,6 +533,193 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'G10',
             'H10',
         ]),
+    );
+
+    yield new HitChoicesSet(
+        'anti-regression case (1)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+        ],
+        startingV2,
+        'HitTargetSurroundings<I4>',
+        [
+            'I3',
+            'H4',
+            'J4',
+            'I5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'does not forget another potential target',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row8),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row9),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row10),
+                response: HitResponse.SUNK,
+            },
+        ],
+        startingV4,
+        'HitTargetSurroundings<G7>',
+        [
+            'G6',
+            'G8',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'relies on the known max size to find elements (max size = 5)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
+                response: HitResponse.HIT,
+            },
+        ],
+        startingV4,
+        'HitAlignedGapsHitTargets<VERTICAL,List [ "B2", "B6" ]>',
+        [
+            'B3',
+            'B4',
+            'B5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'does not find any alignment if the distance exceeds max size',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+        ],
+        startingV4,
+        'HitTargetSurroundings<B2>',
+        [
+            'B1',
+            'A2',
+            'C2',
+            'B3',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'it finds alignment based on the max size',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+        ],
+        startingV4,
+        'HitAlignedGapsHitTargets<VERTICAL,List [ "D2", "D5" ]>',
+        [
+            'D3',
+            'D4',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'it does not find alignment if the distance exceeds max size (max size = 4)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
+                response: HitResponse.HIT,
+            },
+        ],
+        startingV4,
+        'HitTargetSurroundings<D2>',
+        [
+            'D1',
+            'C2',
+            'E2',
+            'D3',
+        ],
     );
 }
 

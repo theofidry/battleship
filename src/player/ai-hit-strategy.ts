@@ -168,6 +168,18 @@ export class AIHitStrategy<
             return undefined;
         }
 
+        // TODO: optimize this code. Indeed if we are looking for a ship of
+        //  size 3 and we have the following configuration:
+        //     A  B  C  D
+        //  1
+        //  2     H
+        //  3
+        //  Then the current surrounding coordinates are B1, A2, C2, B3.
+        //  However a ship of size 3 is unlikely to be in B1 and A2. It is not
+        //  impossible, the ship could be A2,B2,C2 or B1,B2,B3, but in this
+        //  scenario the coordinates B3 and C2 would be hit as well so in either
+        //  cases it would be more interesting to aim at those ones.
+
         return {
             strategy: `HitTargetSurroundings<${hitTarget.toString()}>`,
             weight: StrategyWeight.SURROUNDING,

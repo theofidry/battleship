@@ -1,7 +1,6 @@
 import {
-    catchError,
-    concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
-    Subject, switchMap, takeUntil, tap, throwError,
+    catchError, concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range,
+    shareReplay, Subject, takeUntil, tap, throwError,
 } from 'rxjs';
 import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
