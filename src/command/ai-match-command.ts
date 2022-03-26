@@ -7,6 +7,7 @@ import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
 import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
+import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { createAIVersionOption } from './ai-version-option';
@@ -28,7 +29,7 @@ AIMatchCommand
             .play(
                 createAIPlayer(fleet, ai, false, logger),
                 createAIPlayer(fleet, ai, false, logger),
-                STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
+                MAX_TURN,
             )
             .pipe(map(() => undefined));
 

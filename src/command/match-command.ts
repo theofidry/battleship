@@ -10,6 +10,7 @@ import {
     createInteractivePlayer,
 } from '../standard-grid/interactive-player/interactive-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
+import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { createAIVersionOption } from './ai-version-option';
@@ -43,7 +44,7 @@ matchCommand
             .play(
                 createAIPlayer(fleet, ai, debug, logger),
                 createInteractivePlayer(fleet, logger),
-                STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
+                MAX_TURN,
             )
             .pipe(map(() => undefined));
 
