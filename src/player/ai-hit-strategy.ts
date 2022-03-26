@@ -2,13 +2,16 @@ import { List, Map, Set } from 'immutable';
 import { sample, toString } from 'lodash';
 import { Observable, of } from 'rxjs';
 import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
-import { HitResponse } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
+import { Logger } from '../logger/logger';
+import { Fleet } from '../ship/fleet';
+import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
 import { HitStrategy, PreviousMove } from './hit-strategy';
+import { MoveAnalyzer } from './move-analyzer';
 
 export type UntouchedCoordinatesFinder<
     ColumnIndex extends PropertyKey,
@@ -27,17 +30,25 @@ export class AIHitStrategy<
     RowIndex extends PropertyKey,
     OpponentCell,
 > implements HitStrategy<ColumnIndex, RowIndex, OpponentCell> {
-    private previousMoves: List<PreviousMove<ColumnIndex, RowIndex>> = List();
-    private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
+    private movesAnalyzer: MoveAnalyzer<ColumnIndex, RowIndex, OpponentCell>;
 
     constructor(
+        private readonly fleet: Fleet,
         private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
         private readonly stateRecorder: AiHitStrategyStateRecorder<ColumnIndex, RowIndex, OpponentCell>,
+        private readonly logger: Logger,
         private readonly enableSmartTargeting: boolean,
         private readonly enableSmartScreening: boolean,
+        private readonly enableShipSizeTracking: boolean,
     ) {
+        this.movesAnalyzer = new MoveAnalyzer(
+            coordinateNavigator,
+            fleet,
+            logger,
+            enableShipSizeTracking,
+        );
     }
 
     decide(
@@ -59,26 +70,24 @@ export class AIHitStrategy<
         grid: OpponentGrid<ColumnIndex, RowIndex, OpponentCell>,
         previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined,
     ): Either<InvalidAIStrategy<ColumnIndex, RowIndex, OpponentCell>, AppliedChoiceStrategy<ColumnIndex, RowIndex>> {
-        this.recordPreviousMove(previousMove);
+        this.movesAnalyzer.recordPreviousMove(previousMove);
 
-        const { previousHits } = this;
+        const previousHits = this.movesAnalyzer.getPreviousHits();
+        const alignedHitCoordinatesList = this.movesAnalyzer.getHitAlignments();
+        const suspiciousAlignedHitCoordinatesList = this.movesAnalyzer.getSuspiciousHitAlignments();
 
         const untouchedCoordinates = this.findUntouchedCoordinates(grid);
-
-        const alignedHitCoordinatesList = this.coordinateNavigator.findAlignments(
-            previousHits,
-            5,  // TODO: double check this number
-        );
 
         const filters: List<ChoiceStrategy<ColumnIndex, RowIndex>> = List([
                 ...this.createChoiceStrategies(
                     previousHits,
                     alignedHitCoordinatesList,
+                    suspiciousAlignedHitCoordinatesList,
                 ),
                 // Always keep this one as a fallback as any previous strategy may
                 // result in an empty choice
                 createNoFilterFilterStrategy(),
-            ].filter(isNotUndefined)
+            ].filter(isNotUndefined),
         );
 
         const choicesList = filters
@@ -106,6 +115,7 @@ export class AIHitStrategy<
     private createChoiceStrategies(
         previousHits: List<Coordinate<ColumnIndex, RowIndex>>,
         alignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+        suspiciousAlignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
     ): ReadonlyArray<ChoiceStrategy<ColumnIndex, RowIndex>> {
         const strategies: Array<ChoiceStrategy<ColumnIndex, RowIndex> | undefined> = [];
 
@@ -119,17 +129,26 @@ export class AIHitStrategy<
                         this.createTargetAlignmentGapsFilterStrategy(alignedHitCoordinates),
                         this.createTargetAlignmentExtremumsFilterStrategy(alignedHitCoordinates),
                     ],
-                )
+                ),
+                ...suspiciousAlignedHitCoordinatesList.flatMap(
+                    (alignedHitCoordinates) => [
+                        this.createTargetAlignmentGapsFilterStrategy(alignedHitCoordinates),
+                        this.createTargetAlignmentExtremumsFilterStrategy(alignedHitCoordinates),
+                    ],
+                ),
             );
         }
 
         if (this.enableSmartScreening) {
-            // TODO: adjust this number
-            const possibleTraverses = this.coordinateNavigator.traverseGrid(2);
+            const minShipSize = this.movesAnalyzer.getMinShipSize();
+            const possibleTraverses = this.coordinateNavigator.traverseGrid(minShipSize);
 
             strategies.push(
                 ...possibleTraverses.map(
-                    (possibleTraverse) => this.createGridScreeningFilterStrategy(possibleTraverse),
+                    (possibleTraverse) => this.createGridScreeningFilterStrategy(
+                        possibleTraverse,
+                        minShipSize,
+                    ),
                 ),
             );
         }
@@ -198,6 +217,7 @@ export class AIHitStrategy<
 
     private createGridScreeningFilterStrategy(
         coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+        minShipSize: ShipSize,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
         const validCandidates = coordinates;
 
@@ -206,26 +226,10 @@ export class AIHitStrategy<
         }
 
         return {
-            strategy: 'GridScreening',
+            strategy: `GridScreening<${minShipSize}>`,
             weight: StrategyWeight.SCREENING,
             filter: (candidate) => validCandidates.includes(candidate),
         };
-    }
-
-    private recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
-        if (undefined === previousMove) {
-            return;
-        }
-
-        this.previousMoves = this.previousMoves.push(previousMove);
-
-        if (previousMove.response === HitResponse.HIT) {
-            this.previousHits = this.previousHits.push(previousMove.target);
-        }
-
-        if (previousMove.response === HitResponse.SUNK) {
-            this.previousHits = List();
-        }
     }
 
     private checkChoicesFound(
@@ -261,8 +265,8 @@ export class AIHitStrategy<
                 new InvalidAIStrategy(
                     grid,
                     untouchedCoordinates,
-                    this.previousMoves,
-                    this.previousHits,
+                    this.movesAnalyzer.getPreviousMoves(),
+                    this.movesAnalyzer.getPreviousHits(),
                     choicesList,
                 ),
             );

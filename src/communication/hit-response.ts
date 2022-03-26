@@ -8,3 +8,7 @@ export enum HitResponse {
     SUNK = 'sunk',
     WON = 'won',
 }
+
+export function isHitOrSunk(response: HitResponse): boolean {
+    return [HitResponse.HIT, HitResponse.SUNK].includes(response);
+}
