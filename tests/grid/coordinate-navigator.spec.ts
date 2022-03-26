@@ -229,12 +229,27 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned coordinates at the border of maximum distance',
+        'two aligned coordinates at the border of maximum distance (maxDistance=2)',
+        Set([
+            new Coordinate('C', '2'),
+            new Coordinate('C', '1'),
+        ]),
+        2,
+        [
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C1', 'C2'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'two aligned coordinates at the border of maximum distance (maxDistance=3)',
         Set([
             new Coordinate('C', '3'),
             new Coordinate('C', '1'),
         ]),
-        2,
+        3,
         [
             {
                 direction: ShipDirection.VERTICAL,
@@ -247,24 +262,34 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
         'two aligned (horizontally) coordinates',
         Set([
             new Coordinate('C', '3'),
-            new Coordinate('E', '3'),
+            new Coordinate('D', '3'),
         ]),
         2,
         [
             {
                 direction: ShipDirection.HORIZONTAL,
-                coordinates: ['C3', 'E3'].sort(),
+                coordinates: ['C3', 'D3'].sort(),
             },
         ],
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned coordinates more distant that the maximum distance',
+        'two aligned coordinates more distant that the maximum distance (maxDistance=2)',
+        Set([
+            new Coordinate('C', '3'),
+            new Coordinate('C', '1'),
+        ]),
+        2,
+        [].sort(),
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'two aligned coordinates more distant that the maximum distance (maxDistance=3)',
         Set([
             new Coordinate('C', '4'),
             new Coordinate('C', '1'),
         ]),
-        2,
+        3,
         [].sort(),
     );
 
@@ -275,7 +300,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
             new Coordinate('C', '5'),
             new Coordinate('D', '3'),
         ]),
-        2,
+        3,
         [
             {
                 direction: ShipDirection.HORIZONTAL,
@@ -289,7 +314,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'multiple aligned coordinates with some out of reach',
+        'multiple aligned coordinates with some out of reach (maxDistance=2)',
         Set([
             new Coordinate('C', '1'),
             new Coordinate('C', '2'),
@@ -298,6 +323,36 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
             new Coordinate('C', '5'),
         ]),
         2,
+        [
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C1', 'C2'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C2', 'C3'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C3', 'C4'].sort(),
+            },
+            {
+                direction: ShipDirection.VERTICAL,
+                coordinates: ['C4', 'C5'].sort(),
+            },
+        ],
+    );
+
+    yield new CoordinateAlignmentsSet(
+        'multiple aligned coordinates with some out of reach (maxDistance=3)',
+        Set([
+            new Coordinate('C', '1'),
+            new Coordinate('C', '2'),
+            new Coordinate('C', '3'),
+            new Coordinate('C', '4'),
+            new Coordinate('C', '5'),
+        ]),
+        3,
         [
             {
                 direction: ShipDirection.VERTICAL,
@@ -323,7 +378,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
             new Coordinate('C', '5'),
             new Coordinate('C', '3'),
         ]),
-        2,
+        3,
         [
             {
                 direction: ShipDirection.VERTICAL,

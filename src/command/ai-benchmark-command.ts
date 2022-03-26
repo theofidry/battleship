@@ -8,6 +8,7 @@ import { Logger } from '../logger/logger';
 import { Match } from '../match/match';
 import { NullMatchLogger } from '../match/null-match-logger';
 import { createFleet, Fleet } from '../ship/fleet';
+import { calculateEfficiency } from '../standard-grid/efficiency';
 import { AIVersion, AIVersionNames, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { EnumHelper } from '../utils/enum-helper';
@@ -37,8 +38,9 @@ AIBenchmarkCommand
                 tap((averageEndTurn) => {
                     const endTimeInSeconds = process.hrtime()[0];
                     const elapsedTime = endTimeInSeconds - startTimeInSeconds;
+                    const efficiency = calculateEfficiency(fleet, averageEndTurn);
 
-                    console.log(`Matches finished in ${chalk.redBright(averageEndTurn)} turns on average (efficiency: ${chalk.redBright(calculateEfficiency(fleet, averageEndTurn) + '%')}).`);
+                    console.log(`Matches finished in ${chalk.redBright(averageEndTurn)} turns on average (efficiency: ${chalk.redBright(efficiency + '%')}).`);
                     console.log(`Took ${chalk.yellowBright(formatTime(elapsedTime))}.`);
                 }),
                 map(() => undefined),
@@ -95,16 +97,4 @@ function startMatch(
             filter(({ winner }) => undefined !== winner),
             map(({ turn }) => turn),
         );
-}
-
-export function calculateEfficiency(fleet: Fleet, average: number): number {
-    const fleetSize = fleet.reduce((sum, { size }) => sum + size, 0);
-
-    const min = fleetSize * 2 - 1; // Minimum amount of turns it takes to end the game
-    const max = MAX_TURN - 1;      // Maximum amount of turns it takes to end the game
-
-    const maxDistance = max - min;
-    const averageDistance = average - min;
-
-    return Math.floor((1 - averageDistance / maxDistance) * 100);
 }
