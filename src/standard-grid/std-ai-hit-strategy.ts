@@ -2,12 +2,14 @@ import { Map } from 'immutable';
 import { toString } from 'lodash';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { Coordinate } from '../grid/coordinate';
+import { DebugLogger } from '../logger/debug-logger';
 import { Logger } from '../logger/logger';
 import {
     AIErrorHandler, AIHitStrategy, UntouchedCoordinatesFinder,
 } from '../player/ai-hit-strategy';
 import { AiHitStrategyStateRecorder } from '../player/ai-hit-strategy-state-recorder';
 import { NullAIHitStrategyStateRecorder } from '../player/null-ai-hit-strategy-state-recorder';
+import { Fleet } from '../ship/fleet';
 import { printTable } from '../utils/table-printer';
 import { createOpponentTable } from './interactive-player/grid-printer';
 import { Cell as OpponentCell } from './standard-opponent-grid';
@@ -74,18 +76,23 @@ const errorHandler: AIErrorHandler<StdColumnIndex, StdRowIndex, OpponentCell> = 
 export type StdAiHitStrategy = AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell>;
 
 export function createStdAIHitStrategy(
+    fleet: Fleet,
     logger: Logger,
     debug: boolean,
     enableSmartTargeting: boolean,
     enableSmartScreening: boolean,
+    enableShipSizeTracking: boolean,
 ): AIHitStrategy<StdColumnIndex, StdRowIndex, OpponentCell> {
     return new AIHitStrategy(
+        fleet,
         StdCoordinateNavigator,
         findUntouchedCoordinates,
         errorHandler,
         createStateRecorder(debug, logger),
+        new DebugLogger(debug, logger),
         enableSmartTargeting,
         enableSmartScreening,
+        enableShipSizeTracking,
     );
 }
 
@@ -99,6 +106,7 @@ function createStateRecorder(
 }
 
 export function createHitStrategy(
+    fleet: Fleet,
     version: AIVersion,
     debug: boolean,
     logger: Logger,
@@ -106,26 +114,32 @@ export function createHitStrategy(
     switch (version) {
         case AIVersion.V1:
             return createStdAIHitStrategy(
+                fleet,
                 logger,
                 debug,
+                false,
                 false,
                 false,
             );
 
         case AIVersion.V2:
             return createStdAIHitStrategy(
+                fleet,
                 logger,
                 debug,
                 true,
+                false,
                 false,
             );
 
         case AIVersion.V3:
             return createStdAIHitStrategy(
+                fleet,
                 logger,
                 debug,
                 true,
                 true,
+                false,
             );
     }
 

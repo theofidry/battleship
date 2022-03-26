@@ -8,6 +8,7 @@ import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
 import { NullLogger } from '../../src/logger/null-logger';
 import { PreviousMove } from '../../src/player/hit-strategy';
+import { createFleet } from '../../src/ship/fleet';
 import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
 import { createHitStrategy, StdAiHitStrategy } from '../../src/standard-grid/std-ai-hit-strategy';
 import { AIVersion } from '../../src/standard-grid/std-ai-player-factory';
@@ -315,7 +316,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         v3OnwardsSupport,
-        'GridScreening',
+        'GridScreening<2>',
         [
             'D1',
             'F1',
@@ -471,6 +472,7 @@ describe('HitStrategy V1 (minimal)', () => {
     it('can provide a random coordinate', (done) => {
         const opponentGrid = new StandardOpponentGrid();
         const strategy = createHitStrategy(
+            createFleet(),
             AIVersion.V1,
             false,
             new NullLogger(),
@@ -487,6 +489,7 @@ describe('HitStrategy V1 (minimal)', () => {
         const opponentGrid = new StandardOpponentGrid();
         const expectedCoordinate = new Coordinate(StdColumnIndex.A, StdRowIndex.Row1);
         const strategy = createHitStrategy(
+            createFleet(),
             AIVersion.V1,
             false,
             new NullLogger(),
@@ -539,6 +542,7 @@ describe('HitStrategy', () => {
             it(`can decide on a strategy: ${title} (AI ${version})`, (done) => {
                 const opponentGrid = new StandardOpponentGrid();
                 const strategy = createHitStrategy(
+                    createFleet(),
                     version,
                     false,
                     new NullLogger(),

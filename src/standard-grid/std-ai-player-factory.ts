@@ -52,7 +52,7 @@ export function createAIPlayer(
         `${AIVersionNames[version]} ${resolvedName}`.trim(),
         fleet,
         RandomPlacementStrategy,
-        createHitStrategy(version, debug, logger),
+        createHitStrategy(fleet, version, debug, logger),
         () => new StandardOpponentGrid(),
     );
 }
