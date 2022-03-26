@@ -159,10 +159,10 @@ function colorizeCoordinate(coordinate: AnyCoordinate): string {
 function colorizeHitResponse(hitResponse: HitResponse): string {
     switch (hitResponse) {
         case HitResponse.SUNK:
-            return chalk.yellowBright(hitResponse);
+            return `${chalk.yellowBright(hitResponse)} 💀`;
 
         case HitResponse.HIT:
-            return chalk.redBright(hitResponse);
+            return `${chalk.redBright(hitResponse)} 💥`;
 
         case HitResponse.MISS:
             return chalk.blueBright(hitResponse);
