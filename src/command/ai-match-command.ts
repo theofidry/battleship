@@ -1,10 +1,11 @@
 import { Command } from 'commander';
-import { lastValueFrom, map } from 'rxjs';
+import { filter, lastValueFrom, map, tap } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { BasicMatchLogger } from '../match/basic-match-logger';
 import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
+import { calculateEfficiency } from '../standard-grid/efficiency';
 import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { EnumHelper } from '../utils/enum-helper';
@@ -30,11 +31,15 @@ AIMatchCommand
 
         const play$ = match
             .play(
-                createAIPlayer(fleet, ai, false, logger),
+                createAIPlayer(fleet, ai, debug, logger),
                 createAIPlayer(fleet, ai, false, logger),
                 MAX_TURN,
             )
-            .pipe(map(() => undefined));
+            .pipe(
+                filter(({ winner }) => undefined !== winner),
+                tap(({ turn }) => console.log(`Efficiency: ${calculateEfficiency(fleet, turn)}%`)),
+                map(() => undefined),
+            );
 
         return lastValueFrom(play$);
     });
