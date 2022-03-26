@@ -8,7 +8,7 @@ export function createAIVersionOption(flags = '--ai <aiVersion>', description = 
 
     return option
         .choices(getAIVersions())
-        .default(AIVersion.V3);
+        .default(AIVersion.V4);
 }
 
 function getAIVersions(): ReadonlyArray<string> {

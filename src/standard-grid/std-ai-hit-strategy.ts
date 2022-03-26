@@ -141,6 +141,16 @@ export function createHitStrategy(
                 true,
                 false,
             );
+
+        case AIVersion.V4:
+            return createStdAIHitStrategy(
+                fleet,
+                logger,
+                debug,
+                true,
+                true,
+                true,
+            );
     }
 
     assertIsUnreachableCase(version);
