@@ -88,7 +88,8 @@ export class MoveAnalyzer<
             return this.clearHits();
         }
 
-        throw new Error('TODO');
+        // TODO
+        return this.clearHits();
     }
 
     private addHitAndRecalculateAlignments(target: Coordinate<ColumnIndex, RowIndex>): void {

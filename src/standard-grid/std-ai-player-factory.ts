@@ -12,12 +12,14 @@ export enum AIVersion {
     V1 = 'v1',
     V2 = 'v2',
     V3 = 'v3',
+    V4 = 'v4',
 }
 
 export const AIVersionNames: Record<AIVersion, string> = {
     [AIVersion.V1]: 'AI.I',
     [AIVersion.V2]: 'AI.II',
     [AIVersion.V3]: 'AI.III',
+    [AIVersion.V4]: 'AI.IV',
 };
 
 const NAME_LIST = [
