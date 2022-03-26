@@ -46,25 +46,25 @@ class HitChoicesSet {
 }
 
 function* provideHitChoices(): Generator<HitChoicesSet> {
-    const v1OnwardsSupport = {
+    const startingV1 = {
         [AIVersion.V1]: true,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
     };
 
-    const v2OnwardsSupport = {
+    const startingV2 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
     };
 
-    const v2OnlySupport = {
+    const onlyV2 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: false,
     };
 
-    const v3OnwardsSupport = {
+    const startingV3 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: false,
         [AIVersion.V3]: true,
@@ -78,7 +78,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -100,7 +100,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitTargetSurroundings<C3>',
         [
             'B3',
@@ -125,7 +125,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitTargetSurroundings<C3>',
         [
             'B3',
@@ -153,7 +153,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitTargetSurroundings<C3>',
         [
             'C4',
@@ -172,7 +172,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
@@ -196,7 +196,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C5',
@@ -219,7 +219,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
         [
             'C2',
@@ -243,7 +243,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitAlignedGapsHitTargets<VERTICAL,List [ "C3", "C5" ]>',
         [
             'C4',
@@ -270,7 +270,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitTargetSurroundings<C3>',
         [
             'C2',
@@ -290,7 +290,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        v2OnlySupport,
+        onlyV2,
         'NoFilter',
         getAllCellsExcept(['C3', 'B3']),
     );
@@ -315,7 +315,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.SUNK,
             },
         ],
-        v3OnwardsSupport,
+        startingV3,
         'GridScreening<2>',
         [
             'D1',
@@ -388,7 +388,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.MISS,
             },
         ],
-        v2OnwardsSupport,
+        startingV2,
         'HitTargetSurroundings<B3>',
         [
             'B2',
@@ -449,7 +449,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
         ],
-        v2OnlySupport,
+        onlyV2,
         'NoFilter',
         getAllCellsExcept([
             'E7',
