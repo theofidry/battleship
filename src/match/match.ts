@@ -162,6 +162,11 @@ class PlayerTurn<
         try {
             move$ = this.player.askMove();
         } catch (error) {
+            // We wrap this around in order to be able to use the catchError
+            // close afterwards.
+            // Indeed, there can be two types of failures here: one is an
+            // uncaught error throw by askMove but another can be from askMove
+            // itself that returns an empty observable or an error observable.
             move$ = throwError(error);
         }
 

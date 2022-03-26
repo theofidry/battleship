@@ -29,8 +29,6 @@ export class AdaptablePlayer<
 
     private lastResponse: HitResponse | undefined;
 
-    private i = 0;
-
     constructor(
         public readonly name: string,
         fleet: Fleet,
