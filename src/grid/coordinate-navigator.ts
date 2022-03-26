@@ -216,7 +216,12 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
 
             return isNotUndefined(alignment)
                 && Number.isInteger(distance)
-                && distance <= maxDistance;
+                // We use < here instead of <= since the distance needs to account
+                // for the origin.
+                // For example, when we look for alignments for D5 with a max
+                // distance of 3, then an example of max alignment would be
+                // D5, D6, D7 in which case distance(D5, D7) = 2.
+                && distance < maxDistance;
         };
 
         const groupCandidatesFromDirection = (
