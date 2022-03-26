@@ -50,24 +50,35 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V1]: true,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
     };
 
     const startingV2 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
     };
 
     const onlyV2 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: true,
         [AIVersion.V3]: false,
+        [AIVersion.V4]: false,
     };
 
     const startingV3 = {
         [AIVersion.V1]: false,
         [AIVersion.V2]: false,
         [AIVersion.V3]: true,
+        [AIVersion.V4]: true,
+    };
+
+    const startingV4 = {
+        [AIVersion.V1]: false,
+        [AIVersion.V2]: false,
+        [AIVersion.V3]: false,
+        [AIVersion.V4]: true,
     };
 
     yield new HitChoicesSet(
