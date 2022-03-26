@@ -1,7 +1,7 @@
 import {
     catchError,
     concatMap, map, MonoTypeOperatorFunction, Observable, OperatorFunction, range, shareReplay,
-    Subject, takeUntil, tap, throwError,
+    Subject, switchMap, takeUntil, tap, throwError,
 } from 'rxjs';
 import { assert } from '../assert/assert';
 import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
@@ -157,14 +157,26 @@ class PlayerTurn<
     }
 
     play(): Observable<TurnResult<ColumnIndex, RowIndex, PlayerGridCell, OpponentGridCell>> {
-        return this.player
-            .askMove()
+        let move$: Observable<Coordinate<ColumnIndex, RowIndex>>;
+
+        try {
+            move$ = this.player.askMove();
+        } catch (error) {
+            // We wrap this around in order to be able to use the catchError
+            // close afterwards.
+            // Indeed, there can be two types of failures here: one is an
+            // uncaught error throw by askMove but another can be from askMove
+            // itself that returns an empty observable or an error observable.
+            move$ = throwError(error);
+        }
+
+        return move$
             .pipe(
                 map((targetCoordinate) => this.getResult(targetCoordinate)),
                 catchError((error) => {
                     this.logger.stopGame(this.opponent);
 
-                    throw error;
+                    return throwError(error);
                 })
             );
     }

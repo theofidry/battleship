@@ -1,14 +1,14 @@
 import { Command, Option } from 'commander';
-import { firstValueFrom, map } from 'rxjs';
+import { lastValueFrom, map } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { InteractiveVsAiMatchLogger } from '../match/interactive-vs-ai-match-logger';
 import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
-import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import {
     createInteractivePlayer,
 } from '../standard-grid/interactive-player/interactive-player-factory';
+import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
@@ -48,5 +48,5 @@ matchCommand
             )
             .pipe(map(() => undefined));
 
-        return firstValueFrom(play$);
+        return lastValueFrom(play$);
     });

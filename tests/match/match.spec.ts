@@ -135,6 +135,7 @@ describe('Match', () => {
             createLogRecord('Starting a match between the player "Player A" and "Fake Player".'),
             createLogRecord('Turn 1.'),
             createLogRecord('"Player A" targets "C1R2".'),
+            createLogRecord('Game stopped.'),
         ];
 
         const result$ = game.play(
@@ -161,6 +162,7 @@ describe('Match', () => {
             createLogRecord('Starting a match between the player "Player A" and "Player B".'),
             createLogRecord('Turn 1.'),
             createLogRecord('"Player A" targets "C1R2".'),
+            createLogRecord('Game stopped.'),
         ];
 
         const result$ = game.play(
@@ -193,6 +195,7 @@ describe('Match', () => {
             createLogRecord('Turn 1.'),
             createLogRecord('"Player A" targets "C1R2".'),
             createLogRecord('"Player B" replies "miss".'),
+            createLogRecord('Game stopped.'),
         ];
 
         const result$ = game.play(
@@ -231,6 +234,7 @@ describe('Match', () => {
             createLogRecord('Turn 1.'),
             createLogRecord('"Player A" targets "C1R2".'),
             createLogRecord('"Player B" replies "miss".'),
+            createLogRecord('Game stopped.'),
         ];
 
         const result$ = game.play(
