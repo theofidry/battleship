@@ -30,8 +30,7 @@ AIMatchCommand
                 createAIPlayer(fleet, ai, false, logger),
                 STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
             )
-            // eslint-disable-next-line no-void
-            .pipe(map(() => void 0));
+            .pipe(map(() => undefined));
 
         return firstValueFrom(play$);
     });

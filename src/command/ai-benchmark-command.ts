@@ -43,8 +43,7 @@ AIBenchmarkCommand
                     console.log(`Matches finished in ${chalk.redBright(averageEndTurn)} turns on average (efficiency: ${chalk.redBright(calculateEfficiency(fleet, averageEndTurn) + '%')}).`);
                     console.log(`Took ${chalk.yellowBright(formatTime(elapsedTime))}.`);
                 }),
-                // eslint-disable-next-line no-void
-                map(() => void 0),
+                map(() => undefined),
             );
 
         return firstValueFrom(play$);
