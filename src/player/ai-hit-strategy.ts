@@ -6,12 +6,12 @@ import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { Logger } from '../logger/logger';
+import { Fleet } from '../ship/fleet';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
 import { HitStrategy, PreviousMove } from './hit-strategy';
 import { MoveAnalyzer } from './move-analyzer';
-import { Fleet } from '../ship/fleet';
 
 export type UntouchedCoordinatesFinder<
     ColumnIndex extends PropertyKey,
@@ -75,6 +75,7 @@ export class AIHitStrategy<
         const previousHits = this.movesAnalyzer.getPreviousHits();
         const alignedHitCoordinatesList = this.movesAnalyzer.getHitAlignments();
         const suspiciousAlignedHitCoordinatesList = this.movesAnalyzer.getSuspiciousHitAlignments();
+
         const untouchedCoordinates = this.findUntouchedCoordinates(grid);
 
         const filters: List<ChoiceStrategy<ColumnIndex, RowIndex>> = List([

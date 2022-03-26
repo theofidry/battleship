@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { Command, InvalidOptionArgumentError } from 'commander';
 import { isNumber, mean, range } from 'lodash';
-import { combineLatest, filter, firstValueFrom, map, Observable, tap } from 'rxjs';
+import { combineLatest, filter, lastValueFrom, map, Observable, tap } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { Logger } from '../logger/logger';
@@ -9,9 +9,7 @@ import { Match } from '../match/match';
 import { NullMatchLogger } from '../match/null-match-logger';
 import { createFleet, Fleet } from '../ship/fleet';
 import { AIVersion, AIVersionNames, createAIPlayer } from '../standard-grid/std-ai-player-factory';
-import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
-import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { formatTime } from '../utils/time-formatter';
 import { createAIVersionOption } from './ai-version-option';
@@ -43,11 +41,10 @@ AIBenchmarkCommand
                     console.log(`Matches finished in ${chalk.redBright(averageEndTurn)} turns on average (efficiency: ${chalk.redBright(calculateEfficiency(fleet, averageEndTurn) + '%')}).`);
                     console.log(`Took ${chalk.yellowBright(formatTime(elapsedTime))}.`);
                 }),
-                // eslint-disable-next-line no-void
                 map(() => undefined),
             );
 
-        return firstValueFrom(play$);
+        return lastValueFrom(play$);
     });
 
 function parseSampleOption(value: string): number {
@@ -103,8 +100,8 @@ function startMatch(
 export function calculateEfficiency(fleet: Fleet, average: number): number {
     const fleetSize = fleet.reduce((sum, { size }) => sum + size, 0);
 
-    const min = fleetSize * 2 - 1; // minimum amount of turns it takes to end the game
-    const max = MAX_TURN - 1;      // maximum amount of turns it takes to end the game
+    const min = fleetSize * 2 - 1; // Minimum amount of turns it takes to end the game
+    const max = MAX_TURN - 1;      // Maximum amount of turns it takes to end the game
 
     const maxDistance = max - min;
     const averageDistance = average - min;

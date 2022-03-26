@@ -37,7 +37,7 @@ module.exports = {
         'arrow-parens': ['error', 'always'],
         'camelcase': ['error'],
         'no-var': 'error',
-        'no-void': ['error', { 'allowAsStatement': true }],
+        'no-void': ['error'],
         'prefer-regex-literals': ['error'],
         'quotes': ['error', 'single'],
         'radix': 'error',

@@ -9,6 +9,7 @@ import {
 } from '../player/ai-hit-strategy';
 import { AiHitStrategyStateRecorder } from '../player/ai-hit-strategy-state-recorder';
 import { NullAIHitStrategyStateRecorder } from '../player/null-ai-hit-strategy-state-recorder';
+import { Fleet } from '../ship/fleet';
 import { printTable } from '../utils/table-printer';
 import { createOpponentTable } from './interactive-player/grid-printer';
 import { Cell as OpponentCell } from './standard-opponent-grid';
@@ -17,7 +18,6 @@ import { AIVersion } from './std-ai-player-factory';
 import { StdColumnIndex } from './std-column-index';
 import { StdCoordinateNavigator } from './std-coordinate-navigator';
 import { StdRowIndex } from './std-row-index';
-import { Fleet } from '../ship/fleet';
 
 const findUntouchedCoordinates: UntouchedCoordinatesFinder<StdColumnIndex, StdRowIndex, OpponentCell> = (grid) => {
     return Map(
@@ -106,7 +106,8 @@ function createStateRecorder(
 }
 
 export function createHitStrategy(
-    fleet: Fleet, version: AIVersion,
+    fleet: Fleet,
+    version: AIVersion,
     debug: boolean,
     logger: Logger,
 ): StdAiHitStrategy {
