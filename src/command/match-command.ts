@@ -1,4 +1,4 @@
-import { Command, Option } from 'commander';
+import { Command } from 'commander';
 import { lastValueFrom, map } from 'rxjs';
 import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
@@ -9,25 +9,17 @@ import {
     createInteractivePlayer,
 } from '../standard-grid/interactive-player/interactive-player-factory';
 import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
-import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
-import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { createAIVersionOption } from './ai-version-option';
+import { createDebugOption } from './debug-option';
 
 export const matchCommand = new Command('match');
 
 matchCommand
     .description('Starts a match against the AI')
     .addOption(createAIVersionOption())
-    .addOption(
-        (
-            new Option(
-                '--debug',
-                'Enables debug mode.',
-            )
-        ).default(false),
-    )
+    .addOption(createDebugOption())
     .action(() => {
         const { ai, debug } = matchCommand.opts();
 
