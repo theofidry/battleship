@@ -10,23 +10,18 @@ import {
     createInteractivePlayer,
 } from '../standard-grid/interactive-player/interactive-player-factory';
 import { STD_COLUMN_INDICES } from '../standard-grid/std-column-index';
+import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { STD_ROW_INDICES } from '../standard-grid/std-row-index';
 import { EnumHelper } from '../utils/enum-helper';
 import { createAIVersionOption } from './ai-version-option';
+import { createDebugOption } from './debug-option';
 
 export const matchCommand = new Command('match');
 
 matchCommand
     .description('Starts a match against the AI')
     .addOption(createAIVersionOption())
-    .addOption(
-        (
-            new Option(
-                '--debug',
-                'Enables debug mode.',
-            )
-        ).default(false),
-    )
+    .addOption(createDebugOption())
     .action(() => {
         const { ai, debug } = matchCommand.opts();
 
@@ -43,7 +38,7 @@ matchCommand
             .play(
                 createAIPlayer(fleet, ai, debug, logger),
                 createInteractivePlayer(fleet, logger),
-                STD_COLUMN_INDICES.length * STD_ROW_INDICES.length * 2,
+                MAX_TURN,
             )
             // eslint-disable-next-line no-void
             .pipe(map(() => void 0));

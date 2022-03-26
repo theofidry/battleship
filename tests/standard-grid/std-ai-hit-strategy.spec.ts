@@ -596,6 +596,131 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'G8',
         ],
     );
+
+    yield new HitChoicesSet(
+        'relies on the known max size to find elements (max size = 5)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+        ],
+        fromV4Support,
+        'HitAlignedGapsHitTargets<VERTICAL,List [ "B2", "B6" ]>',
+        [
+            'B3',
+            'B4',
+            'B5',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'does not find any alignment if the distance exceeds max size',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row7),
+                response: HitResponse.HIT,
+            },
+        ],
+        fromV4Support,
+        'HitTargetSurroundings<B2>',
+        [
+            'B1',
+            'A2',
+            'C2',
+            'B3',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'it finds alignment based on the max size',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+        ],
+        fromV4Support,
+        'HitAlignedGapsHitTargets<VERTICAL,List [ "D2", "D5" ]>',
+        [
+            'D3',
+            'D4',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'it does not find alignment if the distance exceeds max size (max size = 4)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
+                response: HitResponse.HIT,
+            },
+        ],
+        fromV4Support,
+        'HitTargetSurroundings<D2>',
+        [
+            'D1',
+            'C2',
+            'E2',
+            'D3',
+        ],
+    );
 }
 
 describe('HitStrategy V1 (minimal)', () => {

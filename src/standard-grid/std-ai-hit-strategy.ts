@@ -2,6 +2,7 @@ import { Map } from 'immutable';
 import { toString } from 'lodash';
 import { assertIsUnreachableCase } from '../assert/assert-is-unreachable';
 import { Coordinate } from '../grid/coordinate';
+import { DebugLogger } from '../logger/debug-logger';
 import { Logger } from '../logger/logger';
 import {
     AIErrorHandler, AIHitStrategy, UntouchedCoordinatesFinder,
@@ -88,6 +89,7 @@ export function createStdAIHitStrategy(
         findUntouchedCoordinates,
         errorHandler,
         createStateRecorder(debug, logger),
+        new DebugLogger(debug, logger),
         enableSmartTargeting,
         enableSmartScreening,
         enableShipSizeTracking,

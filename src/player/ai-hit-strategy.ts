@@ -5,6 +5,7 @@ import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-un
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
+import { Logger } from '../logger/logger';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
@@ -37,6 +38,7 @@ export class AIHitStrategy<
         private readonly findUntouchedCoordinates: UntouchedCoordinatesFinder<ColumnIndex, RowIndex, OpponentCell>,
         private readonly handleError: AIErrorHandler<ColumnIndex, RowIndex, OpponentCell>,
         private readonly stateRecorder: AiHitStrategyStateRecorder<ColumnIndex, RowIndex, OpponentCell>,
+        private readonly logger: Logger,
         private readonly enableSmartTargeting: boolean,
         private readonly enableSmartScreening: boolean,
         private readonly enableShipSizeTracking: boolean,
@@ -44,6 +46,7 @@ export class AIHitStrategy<
         this.movesAnalyzer = new MoveAnalyzer(
             coordinateNavigator,
             fleet,
+            logger,
             enableShipSizeTracking,
         );
     }
@@ -71,12 +74,14 @@ export class AIHitStrategy<
 
         const previousHits = this.movesAnalyzer.getPreviousHits();
         const alignedHitCoordinatesList = this.movesAnalyzer.getHitAlignments();
+        const suspiciousAlignedHitCoordinatesList = this.movesAnalyzer.getSuspiciousHitAlignments();
         const untouchedCoordinates = this.findUntouchedCoordinates(grid);
 
         const filters: List<ChoiceStrategy<ColumnIndex, RowIndex>> = List([
                 ...this.createChoiceStrategies(
                     previousHits,
                     alignedHitCoordinatesList,
+                    suspiciousAlignedHitCoordinatesList,
                 ),
                 // Always keep this one as a fallback as any previous strategy may
                 // result in an empty choice
@@ -109,6 +114,7 @@ export class AIHitStrategy<
     private createChoiceStrategies(
         previousHits: List<Coordinate<ColumnIndex, RowIndex>>,
         alignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+        suspiciousAlignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
     ): ReadonlyArray<ChoiceStrategy<ColumnIndex, RowIndex>> {
         const strategies: Array<ChoiceStrategy<ColumnIndex, RowIndex> | undefined> = [];
 
@@ -122,7 +128,13 @@ export class AIHitStrategy<
                         this.createTargetAlignmentGapsFilterStrategy(alignedHitCoordinates),
                         this.createTargetAlignmentExtremumsFilterStrategy(alignedHitCoordinates),
                     ],
-                )
+                ),
+                ...suspiciousAlignedHitCoordinatesList.flatMap(
+                    (alignedHitCoordinates) => [
+                        this.createTargetAlignmentGapsFilterStrategy(alignedHitCoordinates),
+                        this.createTargetAlignmentExtremumsFilterStrategy(alignedHitCoordinates),
+                    ],
+                ),
             );
         }
 

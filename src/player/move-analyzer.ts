@@ -1,12 +1,14 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../assert/assert';
-import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
-import { HitResponse } from '../communication/hit-response';
+import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
+import { HitResponse, isHitOrSunk } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
+import { Logger } from '../logger/logger';
 import { Fleet } from '../ship/fleet';
 import { assertIsShipSize, ShipSize } from '../ship/ship-size';
+import { Either } from '../utils/either';
 import { PreviousMove } from './hit-strategy';
 
 export class MoveAnalyzer<
@@ -17,14 +19,16 @@ export class MoveAnalyzer<
     private previousMoves: List<PreviousMove<ColumnIndex, RowIndex>> = List();
     private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
     private previousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
+    private suspiciousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
     private opponentFleet: OpponentFleet<ColumnIndex, RowIndex>;
 
     constructor(
         private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
         private readonly fleet: Fleet,
+        private readonly logger: Logger,
         private readonly enableShipSizeTracking: boolean,
     ) {
-        this.opponentFleet = new OpponentFleet<ColumnIndex, RowIndex>(fleet);
+        this.opponentFleet = new OpponentFleet<ColumnIndex, RowIndex>(fleet, logger);
     }
 
     recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
@@ -32,22 +36,17 @@ export class MoveAnalyzer<
             return;
         }
 
+        this.logger.log('recording previous move.');
+        this.logState('state before recalculation');
+
         this.previousMoves = this.previousMoves.push(previousMove);
 
-        console.log('–––––––––––––––');
-        console.log({
-            method: 'recordPreviousMove',
-            previousMove,
-            previousHits: this.previousHits.map(toString).toArray(),
-            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
-        });
-
-        if (![HitResponse.HIT, HitResponse.SUNK].includes(previousMove.response)) {
-            console.log('ignore previous move');
+        if (!isHitOrSunk(previousMove.response)) {
+            this.logger.log('ignore previous move; do nothing');
             return;
         }
 
-        this.addHit(previousMove.target);
+        this.addHitAndRecalculateAlignments(previousMove.target);
 
         this.recalculateState();
     }
@@ -72,53 +71,68 @@ export class MoveAnalyzer<
         return this.previousAlignments;
     }
 
+    getSuspiciousHitAlignments(): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        return this.suspiciousAlignments;
+    }
+
     private recalculateState(): void {
-        console.log({
-            method: 'recalculateState',
-            previousHits: this.previousHits.map(toString).toArray(),
-            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
-        });
-
-
         const previousMove = this.previousMoves.last();
+        const suspiciousAlignments = this.suspiciousAlignments;
+
+        this.logState('recalculating state');
 
         if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
+            this.logger.log('Nothing to do.');
+            // If is not sunk there is nothing special to do.
             return;
         }
 
         if (!this.enableShipSizeTracking) {
-            console.log('enableShipSizeTracking not enabled: clear hits if sunk');
+            this.logger.log('enableShipSizeTracking not enabled: clear hits if sunk');
             return this.clearHits();
         }
 
-        console.log({
-            previousMove,
-            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
-        });
+        try {
+            const sunkSuspiciousAlignment = suspiciousAlignments
+                .filter((alignment) => alignment.coordinates.includes(previousMove.target))
+                .first();
 
-        // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
-        const sunkAlignment = this.previousAlignments
-            .filter((alignment) => alignment.coordinates.includes(previousMove.target))
-            .first();   // TODO: handle case where more than one has been found
+            if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
+                suspiciousAlignments.forEach((suspiciousAlignment) => this.handleSunkAlignment(suspiciousAlignment));
 
-        assertIsNotUndefined(sunkAlignment);
+                this.suspiciousAlignments = List();
+            } else {
+                // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
+                const sunkAlignment = this.previousAlignments
+                    .filter((alignment) => alignment.coordinates.includes(previousMove.target))
+                    .first();   // TODO: handle case where more than one has been found
+                assertIsNotUndefined(sunkAlignment);
 
-        this.opponentFleet.markAsPotentiallySunk(sunkAlignment);
+                this.handleSunkAlignment(sunkAlignment);
+            }
+        } catch (error) {
+            console.log('💥💥💥💥💥');
+            console.log({ error });
+            process.exit(1);
+        }
 
-        console.log({
-            sunkAlignmentCoordinates: sunkAlignment.coordinates.map(toString).toArray(),
-            previousHits: this.previousHits.map((coordinate) => coordinate.toString()).toArray(),
-        });
-
-        this.removeHitsBelongingToAlignment(sunkAlignment);
-
-        console.log({
-            previousHits: this.previousHits.map((coordinate) => coordinate.toString()).toArray(),
-            alignments: this.previousAlignments.map(({ direction, coordinates }) => coordinates.map(toString).toArray()).toArray(),
-        });
+        this.logState('recalculation done.');
     }
 
-    private addHit(target: Coordinate<ColumnIndex, RowIndex>): void {
+    private handleSunkAlignment(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+        this.opponentFleet
+            .markAsPotentiallySunk(sunkAlignment)
+            .fold(
+                (suspiciousAlignments) => {
+                    this.suspiciousAlignments = suspiciousAlignments;
+
+                    this.recalculateAlignments();
+                },
+                () => this.removeHitsBelongingToAlignment(sunkAlignment),
+            );
+    }
+
+    private addHitAndRecalculateAlignments(target: Coordinate<ColumnIndex, RowIndex>): void {
         this.previousHits = this.previousHits.push(target);
 
         this.recalculateAlignments();
@@ -142,6 +156,21 @@ export class MoveAnalyzer<
         this.previousHits = List();
         this.previousAlignments = List();
     }
+
+    private logState(label: string): void {
+        this.logger.log({
+            label: label,
+            previousMoves: this.previousMoves
+                .map(({ target, response }) => ({ target: target.toString(), response }))
+                .toArray(),
+            previousHits: this.previousHits.map(toString).toArray(),
+            alignments: this.previousAlignments
+                .map(({ direction, coordinates }) => `${direction}: ${coordinates.map(toString).toArray()}`)
+                .toArray(),
+            opponentFleetMin: this.opponentFleet.getMinShipSize(),
+            opponentFleetMax: this.opponentFleet.getMaxShipSize(),
+        });
+    }
 }
 
 class OpponentFleet<
@@ -154,6 +183,7 @@ class OpponentFleet<
 
     constructor(
         gameFleet: Fleet,
+        private readonly logger: Logger,
     ) {
         const opponentFleet = List(
             gameFleet.map((ship) => new OpponentShip<ColumnIndex, RowIndex>(ship.size)),
@@ -173,16 +203,39 @@ class OpponentFleet<
         return this.maxShipSize;
     }
 
-    markAsPotentiallySunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        const invalidStatuses = [OpponentShipStatus.POTENTIALLY_SUNK, OpponentShipStatus.SUNK];
+    markAsPotentiallySunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
+        const alignmentSize = sunkAlignment.coordinates.size;
+        const unsunkShips = this.fleet
+            .filter((ship) => isNotFoundStatus(ship.getStatus()) && ship.size === alignmentSize);
 
-        const ship = this.fleet
-            .filter((_ship) => !invalidStatuses.includes(_ship.getStatus()) && _ship.size === sunkAlignment.coordinates.size)
-            .first()!;
+        const matchingShip = unsunkShips.first();
 
-        ship.markAsPotentiallySunk(sunkAlignment.coordinates);
+        if (undefined === matchingShip) {
+            // This means one of the ship we thought we sank was not of the size
+            // we expected. In other words, it was not one single ship but rather
+            // a ship AND bits of another one.
+            const sunkShipOfSize = this.fleet
+                .filter((ship) => ship.getStatus() === OpponentShipStatus.POTENTIALLY_SUNK && ship.size === alignmentSize)
+                .first();
+
+            assertIsNotUndefined(sunkShipOfSize);
+
+            const suspiciousAlignment = sunkShipOfSize.unmarkAsPotentiallySunk();
+
+            return Either.left(List([
+                sunkAlignment,
+                suspiciousAlignment,
+            ]));
+        } else {
+            this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.coordinates.map(toString).join(', ')}) as sunk.`);
+            matchingShip.markAsPotentiallySunk(sunkAlignment);
+        }
 
         this.recalculateSize();
+
+        this.logState();
+
+        return Either.right(undefined);
     }
 
     private recalculateSize(): void {
@@ -190,6 +243,30 @@ class OpponentFleet<
 
         this.minShipSize = calculateMinShipSize(fleet);
         this.maxShipSize = calculateMaxShipSize(fleet);
+    }
+
+    private logState(): void {
+        const remainingShips: ShipSize[] = [];
+        const potentiallySunkShips: ShipSize[] = [];
+
+        this.fleet.forEach((ship) => {
+            switch (ship.getStatus()) {
+                case OpponentShipStatus.NOT_FOUND:
+                    remainingShips.push(ship.size);
+                    break;
+
+                case OpponentShipStatus.POTENTIALLY_SUNK:
+                    potentiallySunkShips.push(ship.size);
+                    break;
+            }
+        });
+
+        this.logger.log({
+            remainingShips,
+            potentiallySunkShips,
+            min: this.minShipSize,
+            max: this.maxShipSize,
+        });
     }
 }
 
@@ -204,26 +281,35 @@ class OpponentShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > {
-    private coordinates: Array<Coordinate<ColumnIndex, RowIndex> | undefined>;
+    private alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined;
     private status = OpponentShipStatus.NOT_FOUND;
 
     constructor(
         public readonly size: ShipSize,
     ) {
-        this.coordinates = new Array(size).fill(undefined);
+        this.alignment = undefined;
     }
 
     getStatus(): OpponentShipStatus {
         return this.status;
     }
 
-    markAsPotentiallySunk(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): void {
+    unmarkAsPotentiallySunk(): CoordinateAlignment<ColumnIndex, RowIndex> {
+        assert(this.status === OpponentShipStatus.POTENTIALLY_SUNK);
+
+        const alignment = this.alignment;
+        assertIsNotUndefined(alignment);
+
+        return alignment;
+    }
+
+    markAsPotentiallySunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
         const previousStatus = this.status;
 
         assert(previousStatus !== OpponentShipStatus.SUNK);
 
         this.status = OpponentShipStatus.POTENTIALLY_SUNK;
-        this.coordinates = coordinates.toArray();
+        this.alignment = alignment;
     }
 }
 
@@ -231,10 +317,8 @@ function calculateMinShipSize<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
-    const validStates = [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT];
-
     const min = fleet
-        .filter((ship) => validStates.includes(ship.getStatus()))
+        .filter((ship) => isNotFoundStatus(ship.getStatus()))
         .map((ship) => ship.size)
         .min();
 
@@ -247,14 +331,16 @@ function calculateMaxShipSize<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
-    const validStates = [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT];
-
     const max = fleet
-        .filter((ship) => validStates.includes(ship.getStatus()))
+        .filter((ship) => isNotFoundStatus(ship.getStatus()))
         .map((ship) => ship.size)
         .max();
 
     assertIsShipSize(max);
 
     return max;
+}
+
+function isNotFoundStatus(status: OpponentShipStatus): boolean {
+    return [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT].includes(status);
 }

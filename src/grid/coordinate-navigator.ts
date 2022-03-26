@@ -216,7 +216,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
 
             return isNotUndefined(alignment)
                 && Number.isInteger(distance)
-                && distance <= maxDistance;
+                && distance < maxDistance;
         };
 
         const groupCandidatesFromDirection = (
