@@ -605,7 +605,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
             {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row7),
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
                 response: HitResponse.HIT,
             },
         ],

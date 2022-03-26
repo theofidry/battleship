@@ -97,7 +97,7 @@ export class MoveAnalyzer<
             .first();
 
         if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
-            suspiciousAlignments.forEach((suspiciousAlignment) => this.handleSunkAlignment(suspiciousAlignment));
+            suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
             this.suspiciousAlignments = List();
         } else {
@@ -107,21 +107,17 @@ export class MoveAnalyzer<
                 .first();   // TODO: handle case where more than one has been found
             assertIsNotUndefined(sunkAlignment);
 
-            this.handleSunkAlignment(sunkAlignment);
+            this.handleAlignmentWithSunkHit(sunkAlignment);
         }
 
         this.logState('recalculation done.');
     }
 
-    private handleSunkAlignment(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+    private handleAlignmentWithSunkHit(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
         this.opponentFleet
             .markAsPotentiallySunk(sunkAlignment)
             .fold(
-                (suspiciousAlignments) => {
-                    this.suspiciousAlignments = suspiciousAlignments;
-
-                    this.recalculateAlignments();
-                },
+                (suspiciousAlignments) => this.suspiciousAlignments = suspiciousAlignments,
                 () => this.removeHitsBelongingToAlignment(sunkAlignment),
             );
     }
