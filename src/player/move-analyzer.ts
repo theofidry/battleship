@@ -92,28 +92,22 @@ export class MoveAnalyzer<
             return this.clearHits();
         }
 
-        try {
-            const sunkSuspiciousAlignment = suspiciousAlignments
+        const sunkSuspiciousAlignment = suspiciousAlignments
+            .filter((alignment) => alignment.coordinates.includes(previousMove.target))
+            .first();
+
+        if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
+            suspiciousAlignments.forEach((suspiciousAlignment) => this.handleSunkAlignment(suspiciousAlignment));
+
+            this.suspiciousAlignments = List();
+        } else {
+            // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
+            const sunkAlignment = this.previousAlignments
                 .filter((alignment) => alignment.coordinates.includes(previousMove.target))
-                .first();
+                .first();   // TODO: handle case where more than one has been found
+            assertIsNotUndefined(sunkAlignment);
 
-            if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
-                suspiciousAlignments.forEach((suspiciousAlignment) => this.handleSunkAlignment(suspiciousAlignment));
-
-                this.suspiciousAlignments = List();
-            } else {
-                // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
-                const sunkAlignment = this.previousAlignments
-                    .filter((alignment) => alignment.coordinates.includes(previousMove.target))
-                    .first();   // TODO: handle case where more than one has been found
-                assertIsNotUndefined(sunkAlignment);
-
-                this.handleSunkAlignment(sunkAlignment);
-            }
-        } catch (error) {
-            console.log('💥💥💥💥💥');
-            console.log({ error });
-            process.exit(1);
+            this.handleSunkAlignment(sunkAlignment);
         }
 
         this.logState('recalculation done.');
