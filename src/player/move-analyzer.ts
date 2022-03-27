@@ -150,9 +150,9 @@ export class MoveAnalyzer<
         // TODO: move the block above to the opponentFleet in order to keep the recalculateSize private?
         this.opponentFleet.recalculateSize();
 
-        // console.log({
-        //     potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
-        // });
+        console.log({
+            potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
+        });
 
         assert(potentiallySunkAlignments.size > 0, 'Expected to find a suspicious alignment.');
 
@@ -168,6 +168,11 @@ export class MoveAnalyzer<
         //let alignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>;
         //let matchingAlignment: CoordinateAlignment<ColumnIndex, RowIndex>;
 
+        console.log({
+            suspiciousCoordinates: suspiciousCoordinates.map(toString).toArray(),
+            sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
+        });
+
         while (sortedSunkCoordinates.size > 0) {
             const maxShipSize = this.getMaxShipSize();
 
@@ -182,14 +187,17 @@ export class MoveAnalyzer<
                     maxShipSize,
                 );
 
-            // console.log({
-            //     prefilterAlignments: prefilterAlignments.map(toString).toArray(),
-            //     gaps: prefilterAlignments
-            //         .map((alignment) => alignment.sortedGaps)
-            //         .filter((gaps) => gaps.size > 0)
-            //         .map((gaps) => gaps.map(toString).join(','))
-            //         .toArray(),
-            // });
+            console.log({
+                maxShipSize,
+                sunkCoordinate,
+                sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
+                prefilterAlignments: prefilterAlignments.map(toString).toArray(),
+                gaps: prefilterAlignments
+                    .map((alignment) => alignment.sortedGaps)
+                    .filter((gaps) => gaps.size > 0)
+                    .map((gaps) => gaps.map(toString).join(','))
+                    .toArray(),
+            });
 
             const alignments = this.coordinateNavigator
                 .findAlignments(
@@ -201,8 +209,19 @@ export class MoveAnalyzer<
             let alignmentsWithoutGap = alignments.filter(isAlignmentWithNoGap);
 
             if (alignmentsWithoutGap.size === 0) {
+                console.log('no alignment without gap found! Retrying by exploding alignment by gaps');
+
                 alignmentsWithoutGap = alignments
-                    .flatMap((alignment) => this.coordinateNavigator.explodeByGaps(alignment))
+                    .flatMap((alignment) => {
+                        const x = this.coordinateNavigator.explodeByGaps(alignment);
+
+                        console.log({
+                            alignment: alignment.toString(),
+                            alignmentsAfterExplode: x.map(toString).toArray(),
+                        });
+
+                        return x;
+                    })
                     .filter(isAlignmentWithNoGap)
                     .filter((alignment) => alignment.contains(sunkCoordinate));
             }
@@ -214,10 +233,17 @@ export class MoveAnalyzer<
 
             const matchingAlignment = alignmentsWithoutGap.first()!;
 
+            console.log(`found matching alignment! ${matchingAlignment.toString()}`);
+
             this.handleAlignmentWithSunkHit(matchingAlignment);
             suspiciousCoordinates = suspiciousCoordinates.filter((coordinate) => !matchingAlignment.contains(coordinate));
         }
 
+        console.log('update previous hits');
+        console.log({
+            previousHitsBefore: this.previousHits.map(toString).toArray(),
+            previousHitsAfter: suspiciousCoordinates.map(toString).toArray(),
+        });
         this.previousHits = suspiciousCoordinates;
 
 
@@ -282,7 +308,7 @@ export class MoveAnalyzer<
             .map(({ size }) => size)
             .join('|');
 
-        this.logger.log({
+        console.log({
             label: label,
             previousMoves: this.previousMoves
                 .map(({ target, response }) => ({ target: target.toString(), response }))
@@ -303,7 +329,7 @@ class OpponentFleet<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > {
-    private fleet: List<OpponentShip<ColumnIndex, RowIndex>>;
+    private readonly fleet: List<OpponentShip<ColumnIndex, RowIndex>>;
     private minShipSize: ShipSize;
     private maxShipSize: ShipSize;
 

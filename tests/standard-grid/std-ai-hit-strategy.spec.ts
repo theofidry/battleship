@@ -465,253 +465,95 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'regression',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row10),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row4),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row7),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row1),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row9),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row6),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row4),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row2),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row10),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row9),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row8),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row2),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row5),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row1),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row5),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row9),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row10),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row8),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row8),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row6),
-                response: HitResponse.SUNK,
-            },
-        ],
-        startingV4,
-        'HitTargetSurroundings<D2>',
-        [
-            'D1',
-            'C2',
-            'E2',
-            'D3',
-        ],
-    );
-
-    yield new HitChoicesSet(
         'unexpected sunk (case 1)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row6),
-                response: HitResponse.SUNK,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'D7'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.SUNK, 'D3'),
+            createMoves(HitResponse.SUNK, 'E6'),
+        ]),
         startingV4,
-        'GridScreening<5>',
+        'HitTargetSurroundings<D7>',
         [
-            'E1',
-            'J1',
-            'A2',
-            'F2',
-            'B3',
-            'G3',
-            'C4',
-            'H4',
-            'I5',
-            'J6',
-            'A7',
-            'F7',
-            'B8',
-            'G8',
-            'C9',
-            'H9',
-            'D10',
-            'I10',
+            'C7',
+            'E7',
+            'D8',
         ],
     );
 
     yield new HitChoicesSet(
         'unexpected sunk (case 2)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row5),
-                response: HitResponse.SUNK,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'D7'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.SUNK, 'D3'),
+            createMoves(HitResponse.SUNK, 'E7'),
+        ]),
         startingV4,
-        'HitTargetSurroundings<D6>',
+        'GridScreening<5>',
         [
-            'C6',
-            'E6',
-            'D7',
+            'D1',
+            'I1',
+            'E2',
+            'J2',
+            'A3',
+            'F3',
+            'B4',
+            'G4',
+            'C5',
+            'H5',
+            'I6',
+            'J7',
+            'A8',
+            'F8',
+            'B9',
+            'G9',
+            'C10',
+            'H10',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'a ship way too long',
+        flatten([
+            createMoves(HitResponse.HIT, 'D7'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.HIT, 'D3'),
+            createMoves(HitResponse.SUNK, 'D2'),
+        ]),
+        startingV4,
+        'HitTargetSurroundings<D7>',
+        [
+            'C7',
+            'E7',
+            'D8',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'finding 2 ships of 5',
+        flatten([
+            createMoves(HitResponse.HIT, 'D3'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.SUNK, 'D7'),
+            createMoves(HitResponse.HIT, 'F3'),
+            createMoves(HitResponse.HIT, 'F4'),
+            createMoves(HitResponse.HIT, 'F5'),
+            createMoves(HitResponse.HIT, 'F6'),
+            createMoves(HitResponse.SUNK, 'F7'),
+            createMoves(HitResponse.MISS, 'F3'),
+        ]),
+        startingV4,
+        'TODO',
+        [
         ],
     );
 }
