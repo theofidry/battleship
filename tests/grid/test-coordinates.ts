@@ -1,5 +1,6 @@
 import { Map } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
+import { CoordinateAlignment } from '../../src/grid/coordinate-alignment';
 import { CoordinateNavigator } from '../../src/grid/coordinate-navigator';
 import { Grid } from '../../src/grid/grid';
 import {
@@ -20,6 +21,7 @@ export const TEST_ROW_INDICES = ['1', '2', '3', '4', '5'] as const;
 export type TestRowIndex = typeof TEST_ROW_INDICES[number];
 
 export type TestCoordinate = Coordinate<TestColumnIndex, TestRowIndex>;
+export type TestCoordinateAlignment = CoordinateAlignment<TestColumnIndex, TestRowIndex>;
 
 const findPreviousTestColumnIndex = createFindPreviousIndex(TEST_COLUMN_INDICES);
 const findNextTestColumnIndex = createFindNextIndex(TEST_COLUMN_INDICES);

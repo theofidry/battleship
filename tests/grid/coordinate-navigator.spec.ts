@@ -4,7 +4,8 @@ import { toString } from 'lodash';
 import heredoc from 'tsheredoc';
 import { Coordinate } from '../../src/grid/coordinate';
 import {
-    CoordinateAlignment, createIndices, findNextIndexByStep, LoopableIndices, NonAlignedCoordinates,
+    createIndices, findNextIndexByStep, IncompleteCoordinateAlignment, LoopableIndices,
+    NonAlignedCoordinates,
 } from '../../src/grid/coordinate-navigator';
 import { printGrid } from '../../src/grid/grid-printer';
 import { ShipDirection } from '../../src/ship/ship-direction';
@@ -121,42 +122,42 @@ class DistanceSet {
 
 function* provideDistanceSet(): Generator<DistanceSet> {
     yield new DistanceSet(
-        'two identical coordinates',
+        'two identical sortedCoordinates',
         new Coordinate('C', '3'),
         new Coordinate('C', '3'),
         0,
     );
 
     yield new DistanceSet(
-        'two adjacent coordinates (vertical)',
+        'two adjacent sortedCoordinates (vertical)',
         new Coordinate('C', '3'),
         new Coordinate('C', '4'),
         1,
     );
 
     yield new DistanceSet(
-        'two aligned coordinates (vertical)',
+        'two aligned sortedCoordinates (vertical)',
         new Coordinate('C', '2'),
         new Coordinate('C', '5'),
         3,
     );
 
     yield new DistanceSet(
-        'two adjacent coordinates (horizontal)',
+        'two adjacent sortedCoordinates (horizontal)',
         new Coordinate('C', '3'),
         new Coordinate('D', '3'),
         1,
     );
 
     yield new DistanceSet(
-        'two aligned coordinates (horizontal)',
+        'two aligned sortedCoordinates (horizontal)',
         new Coordinate('B', '2'),
         new Coordinate('E', '2'),
         3,
     );
 
     yield new DistanceSet(
-        'two diagonally aligned coordinates',
+        'two diagonally aligned sortedCoordinates',
         new Coordinate('C', '2'),
         new Coordinate('D', '3'),
         new NonAlignedCoordinates('The coordinates "C2" and "D3" are not aligned.'),
@@ -214,7 +215,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two adjacent coordinates',
+        'two adjacent sortedCoordinates',
         Set([
             new Coordinate('C', '3'),
             new Coordinate('C', '2'),
@@ -229,7 +230,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned coordinates at the border of maximum distance (maxDistance=2)',
+        'two aligned sortedCoordinates at the border of maximum distance (maxDistance=2)',
         Set([
             new Coordinate('C', '2'),
             new Coordinate('C', '1'),
@@ -244,7 +245,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned coordinates at the border of maximum distance (maxDistance=3)',
+        'two aligned sortedCoordinates at the border of maximum distance (maxDistance=3)',
         Set([
             new Coordinate('C', '3'),
             new Coordinate('C', '1'),
@@ -259,7 +260,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned (horizontally) coordinates',
+        'two aligned (horizontally) sortedCoordinates',
         Set([
             new Coordinate('C', '3'),
             new Coordinate('D', '3'),
@@ -274,7 +275,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned coordinates more distant that the maximum distance (maxDistance=2)',
+        'two aligned sortedCoordinates more distant that the maximum distance (maxDistance=2)',
         Set([
             new Coordinate('C', '3'),
             new Coordinate('C', '1'),
@@ -284,7 +285,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'two aligned coordinates more distant that the maximum distance (maxDistance=3)',
+        'two aligned sortedCoordinates more distant that the maximum distance (maxDistance=3)',
         Set([
             new Coordinate('C', '4'),
             new Coordinate('C', '1'),
@@ -314,7 +315,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'multiple aligned coordinates with some out of reach (maxDistance=2)',
+        'multiple aligned sortedCoordinates with some out of reach (maxDistance=2)',
         Set([
             new Coordinate('C', '1'),
             new Coordinate('C', '2'),
@@ -344,7 +345,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'multiple aligned coordinates with some out of reach (maxDistance=3)',
+        'multiple aligned sortedCoordinates with some out of reach (maxDistance=3)',
         Set([
             new Coordinate('C', '1'),
             new Coordinate('C', '2'),
@@ -370,7 +371,7 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 
     yield new CoordinateAlignmentsSet(
-        'unordered aligned coordinates with some out of reach',
+        'unordered aligned sortedCoordinates with some out of reach',
         Set([
             new Coordinate('C', '2'),
             new Coordinate('C', '4'),
@@ -396,11 +397,11 @@ function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     );
 }
 
-describe('CoordinateNavigator::findAlignments()', () => {
+describe('CoordinateNavigator::findAlignedCoordinates()', () => {
     for (const { title, coordinates, maxDistance, expected } of provideCoordinateAlignmentsSet()) {
         it(title, () => {
             const actual = testCoordinateNavigator
-                .findAlignments(coordinates, maxDistance)
+                .findAlignedCoordinates(coordinates, maxDistance)
                 .map(({ direction, coordinates: alignedCoordinates }) => ({
                     direction,
                     coordinates: alignedCoordinates.map(toString).toArray().sort(),
@@ -415,7 +416,7 @@ describe('CoordinateNavigator::findAlignments()', () => {
 class CoordinateAlignmentSet {
     constructor(
         readonly title: string,
-        readonly alignment: CoordinateAlignment<TestColumnIndex, TestRowIndex>,
+        readonly alignment: IncompleteCoordinateAlignment<TestColumnIndex, TestRowIndex>,
         readonly expectedGaps: ReadonlyArray<string>,
         readonly expectedExtremums: ReadonlyArray<string>,
     ) {
@@ -424,7 +425,7 @@ class CoordinateAlignmentSet {
 
 function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet> {
     yield new CoordinateAlignmentSet(
-        'alignment with no coordinates',
+        'alignment with no sortedCoordinates',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List(),
@@ -458,7 +459,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        'alignment with two adjacent coordinates',
+        'alignment with two adjacent sortedCoordinates',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -471,7 +472,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        'alignment with two separated coordinates',
+        'alignment with two separated sortedCoordinates',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -484,7 +485,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        'alignment with two separated coordinates with incorrect direction',
+        'alignment with two separated sortedCoordinates with incorrect direction',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
@@ -497,7 +498,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        'alignment with two separated coordinates (inverse order)',
+        'alignment with two separated sortedCoordinates (inverse order)',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -510,7 +511,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        'alignment with two separated coordinates (horizontally)',
+        'alignment with two separated sortedCoordinates (horizontally)',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
@@ -523,7 +524,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        'alignment with two separated coordinates (x2)',
+        'alignment with two separated sortedCoordinates (x2)',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([

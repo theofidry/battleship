@@ -1,6 +1,6 @@
 /**
  * Possible response the player must give back after being given the hit
- * coordinates.
+ * sortedCoordinates.
  */
 export enum HitResponse {
     MISS = 'miss',

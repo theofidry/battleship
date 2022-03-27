@@ -1,9 +1,10 @@
 import { List, Map, Set } from 'immutable';
-import { sample, toString } from 'lodash';
+import { sample } from 'lodash';
 import { Observable, of } from 'rxjs';
 import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
 import { Coordinate } from '../grid/coordinate';
-import { CoordinateAlignment, CoordinateNavigator } from '../grid/coordinate-navigator';
+import { CoordinateAlignment } from '../grid/coordinate-alignment';
+import { CoordinateNavigator } from '../grid/coordinate-navigator';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { Logger } from '../logger/logger';
 import { Fleet } from '../ship/fleet';
@@ -159,7 +160,7 @@ export class AIHitStrategy<
     private createTargetSurroundingCoordinatesFilterStrategy(
         hitTarget: Coordinate<ColumnIndex, RowIndex>,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
-        // Picks the coordinates surrounding the given hit target.
+        // Picks the sortedCoordinates surrounding the given hit target.
         const validCandidates = Set(
             this.coordinateNavigator.getSurroundingCoordinates(hitTarget),
         );
@@ -174,10 +175,10 @@ export class AIHitStrategy<
         //  1
         //  2     H
         //  3
-        //  Then the current surrounding coordinates are B1, A2, C2, B3.
+        //  Then the current surrounding sortedCoordinates are B1, A2, C2, B3.
         //  However a ship of size 3 is unlikely to be in B1 and A2. It is not
         //  impossible, the ship could be A2,B2,C2 or B1,B2,B3, but in this
-        //  scenario the coordinates B3 and C2 would be hit as well so in either
+        //  scenario the sortedCoordinates B3 and C2 would be hit as well so in either
         //  cases it would be more interesting to aim at those ones.
 
         return {
@@ -190,18 +191,15 @@ export class AIHitStrategy<
     private createTargetAlignmentGapsFilterStrategy(
         alignedHitCoordinates: CoordinateAlignment<ColumnIndex, RowIndex>,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
-        // Picks the coordinates between aligned hit coordinates.
-        const validCandidates = this.coordinateNavigator.findAlignmentGaps(alignedHitCoordinates);
+        // Picks the sortedCoordinates between aligned hit sortedCoordinates.
+        const validCandidates = alignedHitCoordinates.sortedGaps;
 
         if (validCandidates.size === 0) {
             return undefined;
         }
 
-        const directionString = alignedHitCoordinates.direction.toString();
-        const alignedCoordinatesString = alignedHitCoordinates.coordinates.map(toString);
-
         return {
-            strategy: `HitAlignedGapsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            strategy: `HitAlignedGapsHitTargets<${alignedHitCoordinates.toString()}>`,
             weight: StrategyWeight.ALIGNMENT_GAPS,
             filter: (candidate) => validCandidates.includes(candidate),
         };
@@ -210,18 +208,15 @@ export class AIHitStrategy<
     private createTargetAlignmentExtremumsFilterStrategy(
         alignedHitCoordinates: CoordinateAlignment<ColumnIndex, RowIndex>,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
-        // Picks the extremums coordinates of aligned hit coordinates.
-        const validCandidates = this.coordinateNavigator.findNextExtremums(alignedHitCoordinates);
+        // Picks the extremums sortedCoordinates of aligned hit sortedCoordinates.
+        const validCandidates = alignedHitCoordinates.extremums;
 
         if (validCandidates.size === 0) {
             return undefined;
         }
 
-        const directionString = alignedHitCoordinates.direction.toString();
-        const alignedCoordinatesString = alignedHitCoordinates.coordinates.map(toString);
-
         return {
-            strategy: `HitAlignedExtremumsHitTargets<${directionString},${alignedCoordinatesString}>`,
+            strategy: `HitAlignedExtremumsHitTargets<${alignedHitCoordinates.toString()}>`,
             weight: StrategyWeight.ALIGNMENT,
             filter: (candidate) => validCandidates.includes(candidate),
         };
