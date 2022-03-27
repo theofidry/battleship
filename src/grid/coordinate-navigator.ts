@@ -7,11 +7,12 @@ import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { Coordinate } from './coordinate';
+import { CoordinateAlignment } from './coordinate-alignment';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
 
-export type CoordinateAlignment<
+export type IncompleteCoordinateAlignment<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > = {
@@ -58,11 +59,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     /**
-     * Gets the coordinates that are adjacent, horizontally and vertically, to
+     * Gets the sortedCoordinates that are adjacent, horizontally and vertically, to
      * the given target.
      *
      * For example with a grid system of (column,row)=(A-J,1-10), the surrounding
-     * coordinates of E8 will be E7,E9,D8,F8.
+     * sortedCoordinates of E8 will be E7,E9,D8,F8.
      */
     getSurroundingCoordinates(target: Coordinate<ColumnIndex, RowIndex>): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
         const targetColumnIndex = target.columnIndex;
@@ -133,8 +134,29 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         return Either.left(error);
     }
 
+    findCompleteAlignments(
+        coordinates: Collection<unknown, Coordinate<ColumnIndex, RowIndex>>,
+        maxDistance: ShipSize,
+    ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        return this
+            .findAlignedCoordinates(coordinates, maxDistance)
+            .map((alignment) => {
+                const [head, tail] = this.findNextExtremums(alignment).toArray();
+
+                return new CoordinateAlignment(
+                    alignment.direction,
+                    alignment.coordinates,
+                   this.findAlignmentGaps(alignment),
+                   head,
+                   tail,
+                );
+            });
+    }
+
     /**
-     * Finds sets of coordinates that are aligned together within the max
+     * @internal
+     *
+     * Finds sets of sortedCoordinates that are aligned together within the max
      * distance, i.e. if aligned but the distance between the two points
      * exceeds the maximum distance given then they will not be recognised
      * as aligned.
@@ -145,15 +167,15 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
      * (A1, E1) will be discarded. A5 will be kept though since the distance
      * between A3 and A5 is less than 4.
      */
-    findAlignments(
+    findAlignedCoordinates(
         coordinates: Collection<unknown, Coordinate<ColumnIndex, RowIndex>>,
         maxDistance: ShipSize,
-    ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+    ): List<IncompleteCoordinateAlignment<ColumnIndex, RowIndex>> {
         /*
         Implementation details
 
         Given the set a0, a1, a2, a3, a4, we first map each coordinate to
-        the subset of the following coordinates:
+        the subset of the following sortedCoordinates:
 
         Map([
            [a0, [a1, a2, a3, a4, a5]]
@@ -228,7 +250,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             direction: ShipDirection,
             alignmentCandidates: List<ValidCoordinateAlignmentCandidate<ColumnIndex, RowIndex>>,
             reference: Coordinate<ColumnIndex, RowIndex>,
-        ): CoordinateAlignment<ColumnIndex, RowIndex> => ({
+        ): IncompleteCoordinateAlignment<ColumnIndex, RowIndex> => ({
             direction,
             coordinates: alignmentCandidates
                 .filter(({ alignment }) => alignment === direction)
@@ -238,9 +260,9 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         });
 
         const filterRedundantAlignments = (
-            alignment: CoordinateAlignment<ColumnIndex, RowIndex>,
+            alignment: IncompleteCoordinateAlignment<ColumnIndex, RowIndex>,
             alignmentIndex: number,
-            alignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+            alignments: List<IncompleteCoordinateAlignment<ColumnIndex, RowIndex>>,
         ): boolean => {
             if (alignmentIndex === 0) {
                 return true;
@@ -281,11 +303,13 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     /**
-     * Finds missing coordinates within an alignment. For example for the
-     * alignments (A1, A3) and (B2, E2), the coordinates found will be A2, C2,
+     * @internal
+     *
+     * Finds missing sortedCoordinates within an alignment. For example for the
+     * alignments (A1, A3) and (B2, E2), the sortedCoordinates found will be A2, C2,
      * and D2.
      */
-    findAlignmentGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+    findAlignmentGaps(alignment: IncompleteCoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const direction = alignment.direction;
 
         if (alignment.coordinates.size <= 1) {
@@ -328,12 +352,14 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     /**
-     * Finds the coordinates at the extremums of the given alignments.
+     * @internal
      *
-     * For example for the alignments (A1, A3) and (B2, E2), the coordinates
+     * Finds the sortedCoordinates at the extremums of the given alignments.
+     *
+     * For example for the alignments (A1, A3) and (B2, E2), the sortedCoordinates
      * found will be A4, A2 and F2.
      */
-    findNextExtremums(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+    findNextExtremums(alignment: IncompleteCoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const direction = alignment.direction;
 
         if (alignment.coordinates.size === 0) {
@@ -406,7 +432,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         Implementation details.
 
         Uses the pattern "traverse grid diagonally" to find a result (list of
-        coordinates) and then apply the transformation "translation" to this
+        sortedCoordinates) and then apply the transformation "translation" to this
         pattern to obtain a different result.
 
         It applies this transformation as many times as necessary to obtain the
@@ -796,7 +822,7 @@ function traverseGridDiagonally<
 >(
     columnIndices: List<ColumnIndex>,
     minShipSize: ShipSize,
-    // traversal starting coordinates: need to be one of the grid starting coordinate
+    // traversal starting sortedCoordinates: need to be one of the grid starting coordinate
     potentialStartingCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
     startingCoordinate: Coordinate<ColumnIndex, RowIndex>,
     findNextRowIndex: AdjacentIndexFinder<RowIndex>,
@@ -807,14 +833,14 @@ function traverseGridDiagonally<
     Although the result is diagonals, the way we achieve this result is
     differently.
 
-    We have a list of "potential starting coordinates" which defines the
+    We have a list of "potential starting sortedCoordinates" which defines the
     exhaustive minimal list of points to start the traverse from to cover the
     grid. From this list, we can get the row index of the starting point. We
     then loop over the remaining rows by a step matching the min ship size for
     the whole column.
 
     Once the first column done, we start over with the next column, the initial
-    row index shifted by 1 (among the starting coordinates, if the last one is
+    row index shifted by 1 (among the starting sortedCoordinates, if the last one is
     reached we loop over to the beginning) and traverse the column in a similar
     fashion.
 

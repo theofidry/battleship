@@ -24,14 +24,14 @@ function* provideEqualitySets(): Generator<EqualitySet> {
     );
 
     yield new EqualitySet(
-        'same coordinates but different references',
+        'same sortedCoordinates but different references',
         coordinate,
         new Coordinate('A', '4'),
         true,
     );
 
     yield new EqualitySet(
-        'different coordinates',
+        'different sortedCoordinates',
         coordinate,
         new Coordinate('A', '5'),
         false,

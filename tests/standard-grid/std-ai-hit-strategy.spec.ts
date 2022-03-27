@@ -184,7 +184,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV2,
-        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
         [
             'C2',
             'C5',
@@ -208,7 +208,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV2,
-        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
         [
             'C5',
         ],
@@ -231,7 +231,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV2,
-        'HitAlignedExtremumsHitTargets<VERTICAL,List [ "C3", "C4" ]>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
         [
             'C2',
             'C5',
@@ -255,7 +255,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV2,
-        'HitAlignedGapsHitTargets<VERTICAL,List [ "C3", "C5" ]>',
+        'HitAlignedGapsHitTargets<VERTICAL:(C3,C5)>',
         [
             'C4',
         ],
@@ -584,7 +584,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV4,
-        'HitAlignedGapsHitTargets<VERTICAL,List [ "B2", "B6" ]>',
+        'HitAlignedGapsHitTargets<VERTICAL:(B2,B6)>',
         [
             'B3',
             'B4',
@@ -647,7 +647,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV4,
-        'HitAlignedGapsHitTargets<VERTICAL,List [ "D2", "D5" ]>',
+        'HitAlignedGapsHitTargets<VERTICAL:(D2,D5)>',
         [
             'D3',
             'D4',

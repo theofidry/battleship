@@ -1,13 +1,13 @@
 import { List, Map } from 'immutable';
 import { toString } from 'lodash';
 import { Coordinate } from '../grid/coordinate';
-import { CoordinateAlignment } from '../grid/coordinate-navigator';
+import { CoordinateAlignment } from '../grid/coordinate-alignment';
 import { OpponentGrid } from '../grid/opponent-grid';
 import { Logger } from '../logger/logger';
-import { createOpponentTable } from './interactive-player/grid-printer';
-import { printTable } from '../utils/table-printer';
 import { AppliedChoiceStrategy, ChoiceStrategy } from '../player/ai-hit-strategy';
 import { AiHitStrategyStateRecorder } from '../player/ai-hit-strategy-state-recorder';
+import { printTable } from '../utils/table-printer';
+import { createOpponentTable } from './interactive-player/grid-printer';
 import { Cell as OpponentCell } from './standard-opponent-grid';
 import { StdColumnIndex } from './std-column-index';
 import { StdRowIndex } from './std-row-index';
@@ -38,7 +38,7 @@ export class StdAiHitStrategyStateRecorderLogger implements AiHitStrategyStateRe
             .map(toString)
             .toArray();
 
-        this.logger.log('List of untouched coordinates found:');
+        this.logger.log('List of untouched sortedCoordinates found:');
         this.logger.log(renderCoordinates(untouchedCoordinates));
 
         this.logger.log(
@@ -48,13 +48,9 @@ export class StdAiHitStrategyStateRecorderLogger implements AiHitStrategyStateRe
                 .toArray(),
         );
         this.logger.log(
-            'Hit coordinates alignments:',
+            'Hit sortedCoordinates alignments:',
             alignedHitCoordinatesList
-                .map(({ direction, coordinates }) => {
-                    const stringCoordinates = coordinates.map(toString).toArray().join(',');
-
-                    return `${direction}: ${stringCoordinates}`;
-                })
+                .map(toString)
                 .toArray(),
         );
 

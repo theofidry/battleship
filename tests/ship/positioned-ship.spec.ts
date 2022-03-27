@@ -107,7 +107,7 @@ describe('PositionedShip', () => {
         expect(positionedShip.getHits().toArray()).to.eqls([false, true, false]);
     });
 
-    it('becomes sank as soon as all its coordinates have been hit', () => {
+    it('becomes sank as soon as all its sortedCoordinates have been hit', () => {
         // Sanity check
         expect(positionedShip.isSunk()).to.equal(false);
         expect(positionedShip.getHits().toArray()).to.eqls([false, false, false]);

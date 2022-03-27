@@ -46,7 +46,7 @@ const errorHandler: AIErrorHandler<StdColumnIndex, StdRowIndex, OpponentCell> = 
 
     const renderCoordinates = (map: Map<unknown, Coordinate<any, any>>) => map.valueSeq().map(toString).toArray();
 
-    console.log('List of untouched coordinates found:');
+    console.log('List of untouched sortedCoordinates found:');
     console.log(renderCoordinates(error.untouchedCoordinates));
 
     console.log(
