@@ -58,3 +58,10 @@ export class CoordinateAlignment<
         return stringValue;
     }
 }
+
+export function isAlignmentWithNoGap<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): boolean {
+    return alignment.sortedGaps.size === 0;
+}

@@ -134,7 +134,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         return Either.left(error);
     }
 
-    findCompleteAlignments(
+    findAlignments(
         coordinates: Collection<unknown, Coordinate<ColumnIndex, RowIndex>>,
         maxDistance: ShipSize,
     ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
@@ -401,6 +401,11 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
         assertIsUnreachableCase(direction);
 
         throw new Error('Unreachable.');
+    }
+
+    explodeByGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        // TODO
+        return List();
     }
 
     traverseGrid(minShipSize: ShipSize): List<List<Coordinate<ColumnIndex, RowIndex>>> {

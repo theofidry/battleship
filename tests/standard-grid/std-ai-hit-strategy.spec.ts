@@ -859,7 +859,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'unexpected sunk',
+        'unexpected sunk (case 1)',
         [
             {
                 target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
@@ -874,7 +874,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
                 response: HitResponse.HIT,
             },
             {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
                 response: HitResponse.SUNK,
             },
             {
@@ -887,12 +887,78 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             },
         ],
         startingV4,
-        'HitTargetSurroundings<D2>',
+        'GridScreening<5>',
         [
-            'D1',
-            'C2',
-            'E2',
-            'D3',
+            'E1',
+            'J1',
+            'A2',
+            'F2',
+            'B3',
+            'G3',
+            'C4',
+            'H4',
+            'I5',
+            'J6',
+            'A7',
+            'F7',
+            'B8',
+            'G8',
+            'C9',
+            'H9',
+            'D10',
+            'I10',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'unexpected sunk (case 2)',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row5),
+                response: HitResponse.SUNK,
+            },
+        ],
+        startingV4,
+        'GridScreening<5>',
+        [
+            'E1',
+            'J1',
+            'A2',
+            'F2',
+            'B3',
+            'G3',
+            'C4',
+            'H4',
+            'I5',
+            'J6',
+            'A7',
+            'F7',
+            'B8',
+            'G8',
+            'C9',
+            'H9',
+            'D10',
+            'I10',
         ],
     );
 }

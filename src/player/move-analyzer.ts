@@ -1,10 +1,10 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../assert/assert';
-import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
 import { HitResponse, isHitOrSunk } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
-import { CoordinateAlignment } from '../grid/coordinate-alignment';
+import { CoordinateAlignment, isAlignmentWithNoGap } from '../grid/coordinate-alignment';
 import { CoordinateNavigator } from '../grid/coordinate-navigator';
 import { Logger } from '../logger/logger';
 import { Fleet } from '../ship/fleet';
@@ -49,7 +49,9 @@ export class MoveAnalyzer<
 
         this.addHitAndRecalculateAlignments(previousMove.target);
 
+        this.logState('recalculating state');
         this.recalculateState();
+        this.logState('recalculation done.');
     }
 
     getMinShipSize(): ShipSize {
@@ -80,8 +82,6 @@ export class MoveAnalyzer<
         const previousMove = this.previousMoves.last();
         const suspiciousAlignments = this.suspiciousAlignments;
 
-        this.logState('recalculating state');
-
         if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
             this.logger.log('Nothing to do.');
             // If is not sunk there is nothing special to do.
@@ -102,21 +102,145 @@ export class MoveAnalyzer<
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
             this.suspiciousAlignments = List();
-        } else {
-            // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
-            const sunkAlignment = this.previousAlignments
-                .filter((alignment) => alignment.contains(previousMove.target))
-                .first();   // TODO: handle case where more than one has been found
-            assertIsNotUndefined(sunkAlignment);
 
-            this.handleAlignmentWithSunkHit(sunkAlignment);
+            return;
         }
 
-        this.logState('recalculation done.');
+        const sunkAlignment = this.previousAlignments
+            .filter(
+                (alignment) => alignment.contains(previousMove.target)
+                    && alignment.sortedGaps.size === 0
+            )
+            .first();
+
+        if (undefined !== sunkAlignment) {
+            this.logger.log('Target belongs to a known alignment.');
+
+            return this.handleAlignmentWithSunkHit(sunkAlignment);
+        }
+
+        this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
+
+        const surroundingCoordinateStrings = this.coordinateNavigator
+            .getSurroundingCoordinates(previousMove.target)
+            .map(toString);
+
+        const surroundingHitCoordinates = this.previousMoves
+            .filter(({ target, response }) => {
+                return response === HitResponse.HIT
+                    && surroundingCoordinateStrings.includes(target.toString());
+            })
+            .map(({ target }) => target);
+
+        const alignmentContainsSurroundingHitCoordinates = (alignment: CoordinateAlignment<ColumnIndex, RowIndex>) => surroundingHitCoordinates.reduce(
+            (contains, coordinate) => contains || alignment.contains(coordinate),
+            false,
+        );
+
+        const potentiallySunkAlignments = this.opponentFleet
+            .getFleet()
+            .filter((ship) => ship.getStatus() === OpponentShipStatus.POTENTIALLY_SUNK)
+            .filter((ship) => {
+                const alignment = ship.getAlignment();
+
+                return undefined !== alignment && alignmentContainsSurroundingHitCoordinates(alignment);
+            })
+            .map((ship) => ship.unmarkAsPotentiallySunk());
+
+        // TODO: move the block above to the opponentFleet in order to keep the recalculateSize private?
+        this.opponentFleet.recalculateSize();
+
+        console.log({
+            potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
+        });
+
+        assert(potentiallySunkAlignments.size > 0, 'Expected to find a suspicious alignment.');
+
+        // TODO: handle when there is more than one
+        const suspiciousAlignment = potentiallySunkAlignments.first()!;
+
+        let suspiciousCoordinates = suspiciousAlignment.sortedCoordinates.push(previousMove.target);
+        let sortedSunkCoordinates = this.previousMoves
+            .filter(({ target, response }) => response === HitResponse.SUNK && suspiciousAlignment.contains(target))
+            .map(({ target }) => target)
+            .unshift(previousMove.target);
+        //let sunkCoordinate: Coordinate<ColumnIndex, RowIndex> | undefined;
+        //let alignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>;
+        //let matchingAlignment: CoordinateAlignment<ColumnIndex, RowIndex>;
+
+        while (sortedSunkCoordinates.size > 0) {
+            const maxShipSize = this.getMaxShipSize();
+
+            const sunkCoordinate = sortedSunkCoordinates.first();
+            assertIsNotUndefined(sunkCoordinate);
+
+            sortedSunkCoordinates = sortedSunkCoordinates.shift();
+
+            const prefilterAlignments = this.coordinateNavigator
+                .findAlignments(
+                    suspiciousCoordinates,
+                    maxShipSize,
+                );
+
+            console.log({
+                prefilterAlignments: prefilterAlignments.map(toString).toArray(),
+                gaps: prefilterAlignments
+                    .map((alignment) => alignment.sortedGaps)
+                    .filter((gaps) => gaps.size > 0)
+                    .map((gaps) => gaps.map(toString).join(','))
+                    .toArray(),
+            });
+
+            const alignments = this.coordinateNavigator
+                .findAlignments(
+                    suspiciousCoordinates,
+                    maxShipSize,
+                )
+                .filter((alignment) => alignment.contains(sunkCoordinate));
+
+            let alignmentsWithoutGap = alignments.filter(isAlignmentWithNoGap);
+
+            if (alignmentsWithoutGap.size === 0) {
+                alignmentsWithoutGap = alignments
+                    .flatMap((alignment) => this.coordinateNavigator.explodeByGaps(alignment))
+                    .filter(isAlignmentWithNoGap)
+                    .filter((alignment) => alignment.contains(sunkCoordinate));
+            }
+
+            assert(
+                alignmentsWithoutGap.size === 1,
+                () => `Expected to find only one alignment containing the sunk coordinate ${sunkCoordinate.toString()} among the coordinates ${suspiciousCoordinates.join(', ')} for the max size of ${maxShipSize}. Got: "${alignments.map(toString).join('", "')}".`,
+            );
+
+            const matchingAlignment = alignmentsWithoutGap.first()!;
+
+            this.handleAlignmentWithSunkHit(matchingAlignment);
+            suspiciousCoordinates = suspiciousCoordinates.filter((coordinate) => !matchingAlignment.contains(coordinate));
+        }
+
+        this.previousHits = suspiciousCoordinates;
+
+
+        // const potentiallySunkAlignment = suspiciousAlignment;
+        //
+        // const alignments = this.coordinateNavigator
+        //     .findAlignments(
+        //         potentiallySunkAlignment.sortedCoordinates.push(previousMove.target),
+        //         this.getMaxShipSize(),
+        //     )
+        //     .filter((alignment) => alignment.sortedGaps.size === 0);
+        //
+        // alignments.forEach(
+        //     (alignment) => this.handleAlignmentWithSunkHit(alignment),
+        // );
+        //
+        // console.log({
+        //     alignments: alignments.map(toString).toArray(),
+        // });
     }
 
     private handleAlignmentWithSunkHit(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        this.logger.log(`Marking alignment as potentially sunk ${sunkAlignment.direction}:${sunkAlignment.coordinates.map(toString).toArray().join(',')}`);
+        this.logger.log(`Marking alignment as potentially sunk ${sunkAlignment.toString()}`);
 
         this.opponentFleet
             .markAsPotentiallySunk(sunkAlignment)
@@ -140,7 +264,7 @@ export class MoveAnalyzer<
     }
 
     private recalculateAlignments(): void {
-        this.previousAlignments = this.coordinateNavigator.findCompleteAlignments(
+        this.previousAlignments = this.coordinateNavigator.findAlignments(
             this.previousHits,
             this.getMaxShipSize(),
         );
@@ -152,6 +276,12 @@ export class MoveAnalyzer<
     }
 
     private logState(label: string): void {
+        const formatFleet = (shipStatus: OpponentShipStatus) => this.opponentFleet
+            .getFleet()
+            .filter((ship) => ship.getStatus() === shipStatus)
+            .map(({ size }) => size)
+            .join('|');
+
         console.log({
             label: label,
             previousMoves: this.previousMoves
@@ -159,9 +289,10 @@ export class MoveAnalyzer<
                 .toArray(),
             previousHits: this.previousHits.map(toString).toArray(),
             alignments: this.previousAlignments.map(toString).toArray(),
-            suspiciousAlignments: this.suspiciousAlignments
-                .map(({ direction, coordinates }) => `${direction}: ${coordinates.map(toString).toArray()}`)
-                .toArray(),
+            suspiciousAlignments: this.suspiciousAlignments.map(toString).toArray(),
+            sunkShips: formatFleet(OpponentShipStatus.SUNK),
+            potentiallySunkShips: formatFleet(OpponentShipStatus.POTENTIALLY_SUNK),
+            notFoundShips: formatFleet(OpponentShipStatus.NOT_FOUND),
             opponentFleetMin: this.opponentFleet.getMinShipSize(),
             opponentFleetMax: this.opponentFleet.getMaxShipSize(),
         });
@@ -196,6 +327,10 @@ class OpponentFleet<
 
     getMaxShipSize(): ShipSize {
         return this.maxShipSize;
+    }
+
+    getFleet(): List<OpponentShip<ColumnIndex, RowIndex>> {
+        return this.fleet;
     }
 
     markAsPotentiallySunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
@@ -234,7 +369,7 @@ class OpponentFleet<
         return Either.right(undefined);
     }
 
-    private recalculateSize(): void {
+    recalculateSize(): void {
         const { fleet } = this;
 
         this.minShipSize = calculateMinShipSize(fleet);
@@ -290,8 +425,14 @@ class OpponentShip<
         return this.status;
     }
 
+    getAlignment(): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
+        return this.alignment;
+    }
+
     unmarkAsPotentiallySunk(): CoordinateAlignment<ColumnIndex, RowIndex> {
         assert(this.status === OpponentShipStatus.POTENTIALLY_SUNK);
+
+        this.status = OpponentShipStatus.NOT_FOUND;
 
         const alignment = this.alignment;
         assertIsNotUndefined(alignment);
