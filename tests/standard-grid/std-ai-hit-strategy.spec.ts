@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { List } from 'immutable';
-import { toString } from 'lodash';
+import { flatten, toString } from 'lodash';
 import { Done } from 'mocha';
 import { Observable, of, switchMap } from 'rxjs';
 import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
@@ -9,6 +9,7 @@ import { Coordinate } from '../../src/grid/coordinate';
 import { NullLogger } from '../../src/logger/null-logger';
 import { PreviousMove } from '../../src/player/hit-strategy';
 import { createFleet } from '../../src/ship/fleet';
+import { parseCoordinate } from '../../src/standard-grid/interactive-player/coordinate-parser';
 import { StandardOpponentGrid } from '../../src/standard-grid/standard-opponent-grid';
 import { createHitStrategy, StdAiHitStrategy } from '../../src/standard-grid/std-ai-hit-strategy';
 import { AIVersion } from '../../src/standard-grid/std-ai-player-factory';
@@ -43,6 +44,16 @@ class HitChoicesSet {
         readonly sortedExpectedChoices: ReadonlyArray<string>,
     ) {
     }
+}
+
+function createMoves(response: HitResponse, ...coordinates: ReadonlyArray<string>): ReadonlyArray<PreviousMove<StdColumnIndex, StdRowIndex>> {
+    return coordinates
+        .map((coordinate) => {
+            const parsedCoordinate = parseCoordinate(coordinate)
+                .getOrThrow(new Error(`Invalid coordinate "${coordinate}".`));
+            
+            return { target: parsedCoordinate, response };
+        });
 }
 
 function* provideHitChoices(): Generator<HitChoicesSet> {
@@ -80,15 +91,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         [AIVersion.V3]: false,
         [AIVersion.V4]: true,
     };
-
+    
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells after a hit',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+        ]),
         startingV2,
         'HitTargetSurroundings<C3>',
         [
@@ -101,16 +109,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells after a hit (second hit is a miss)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
-                response: HitResponse.MISS,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'C2'),
+        ]),
         startingV2,
         'HitTargetSurroundings<C3>',
         [
@@ -122,20 +124,11 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells after a hit (third hit is a miss)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'C2'),
+            createMoves(HitResponse.MISS, 'D3'),
+        ]),
         startingV2,
         'HitTargetSurroundings<C3>',
         [
@@ -146,24 +139,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells after a hit (4th hit is a miss)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'C2'),
+            createMoves(HitResponse.MISS, 'D3'),
+            createMoves(HitResponse.MISS, 'B3'),
+        ]),
         startingV2,
         'HitTargetSurroundings<C3>',
         [
@@ -173,16 +154,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the aligned cells following the direction after a hit (second hit)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.HIT, 'C4'),
+        ]),
         startingV2,
         'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
         [
@@ -193,20 +168,11 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells following the direction after a hit (2nd hit – 3rd miss)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
-                response: HitResponse.MISS,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.HIT, 'C4'),
+            createMoves(HitResponse.MISS, 'C2'),
+        ]),
         startingV2,
         'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
         [
@@ -216,20 +182,11 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the aligned cells following the direction after a hit (second hit after a miss)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'B3'),
+            createMoves(HitResponse.HIT, 'C4'),
+        ]),
         startingV2,
         'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
         [
@@ -240,20 +197,11 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the aligned cells in-between alignments',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'B3'),
+            createMoves(HitResponse.HIT, 'C5'),
+        ]),
         startingV2,
         'HitAlignedGapsHitTargets<VERTICAL:(C3,C5)>',
         [
@@ -263,24 +211,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'restrict the choice to the surrounding cells following the direction after a hit (second hit after two miss)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'D3'),
+            createMoves(HitResponse.MISS, 'E3'),
+            createMoves(HitResponse.MISS, 'B3'),
+        ]),
         startingV2,
         'HitTargetSurroundings<C3>',
         [
@@ -291,16 +227,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'resumes a random search after sinking the ship',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.SUNK,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.SUNK, 'B3'),
+        ]),
         onlyV2,
         'NoFilter',
         getAllCellsExcept(['C3', 'B3']),
@@ -308,24 +238,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'picks the most efficient screen strategy after sinking a ship',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row1),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
-                response: HitResponse.SUNK,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.MISS, 'B1'),
+            createMoves(HitResponse.MISS, 'B3'),
+            createMoves(HitResponse.HIT, 'C1'),
+            createMoves(HitResponse.SUNK, 'C2'),
+        ]),
         onlyV3,
         'GridScreening<5>',
         [
@@ -352,36 +270,15 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'picks the most efficient screen strategy after sinking a ship',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row1),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
-                response: HitResponse.SUNK,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.MISS, 'B1'),
+            createMoves(HitResponse.MISS, 'B3'),
+            createMoves(HitResponse.HIT, 'C1'),
+            createMoves(HitResponse.HIT, 'C2'),
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.HIT, 'C4'),
+            createMoves(HitResponse.SUNK, 'C5'),
+        ]),
         startingV4,
         'GridScreening<4>',
         [
@@ -412,24 +309,12 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'falls back on a different strategy: head tail failed, picks surrounding',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'B3'),
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.MISS, 'D3'),
+            createMoves(HitResponse.MISS, 'A3'),
+        ]),
         startingV2,
         'HitTargetSurroundings<B3>',
         [
@@ -441,56 +326,20 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     // See AIHitStrategy::checkChoicesFound() for the explanation
     yield new HitChoicesSet(
         'falls back on a different strategy: v2 limitation falls back to no filter',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row8),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row9),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row7),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row8),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row9),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row10),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row10),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row10),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row9),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row8),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.MISS, 'H8'),
+            createMoves(HitResponse.MISS, 'H9'),
+            createMoves(HitResponse.HIT, 'G7'),
+            createMoves(HitResponse.HIT, 'F7'),
+            createMoves(HitResponse.MISS, 'E7'),
+            createMoves(HitResponse.HIT, 'F8'),
+            createMoves(HitResponse.SUNK, 'F9'),
+            createMoves(HitResponse.HIT, 'G10'),
+            createMoves(HitResponse.MISS, 'H10'),
+            createMoves(HitResponse.MISS, 'F10'),
+            createMoves(HitResponse.HIT, 'G9'),
+            createMoves(HitResponse.HIT, 'G8'),
+        ]),
         onlyV2,
         'NoFilter',
         getAllCellsExcept([
@@ -511,16 +360,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'anti-regression case (1)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.MISS, 'E3'),
+            createMoves(HitResponse.HIT, 'I4'),
+        ]),
         startingV2,
         'HitTargetSurroundings<I4>',
         [
@@ -533,36 +376,15 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'does not forget another potential target',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row7),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row7),
-                response: HitResponse.MISS,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row8),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row9),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row10),
-                response: HitResponse.SUNK,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'G7'),
+            createMoves(HitResponse.MISS, 'H7'),
+            createMoves(HitResponse.HIT, 'F7'),
+            createMoves(HitResponse.MISS, 'E7'),
+            createMoves(HitResponse.HIT, 'F8'),
+            createMoves(HitResponse.HIT, 'F9'),
+            createMoves(HitResponse.SUNK, 'F10'),
+        ]),
         startingV4,
         'HitTargetSurroundings<G7>',
         [
@@ -573,16 +395,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'relies on the known max size to find elements (max size = 5)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'B2'),
+            createMoves(HitResponse.HIT, 'B6'),
+        ]),
         startingV4,
         'HitAlignedGapsHitTargets<VERTICAL:(B2,B6)>',
         [
@@ -594,16 +410,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'does not find any alignment if the distance exceeds max size',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row7),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'B2'),
+            createMoves(HitResponse.HIT, 'B7'),
+        ]),
         startingV4,
         'HitTargetSurroundings<B2>',
         [
@@ -616,36 +426,15 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'it finds alignment based on the max size',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'B2'),
+            createMoves(HitResponse.HIT, 'B3'),
+            createMoves(HitResponse.HIT, 'B4'),
+            createMoves(HitResponse.HIT, 'B5'),
+            createMoves(HitResponse.SUNK, 'B6'),
+            createMoves(HitResponse.HIT, 'D2'),
+            createMoves(HitResponse.HIT, 'D5'),
+        ]),
         startingV4,
         'HitAlignedGapsHitTargets<VERTICAL:(D2,D5)>',
         [
@@ -656,36 +445,15 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
 
     yield new HitChoicesSet(
         'it does not find alignment if the distance exceeds max size (max size = 4)',
-        [
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row3),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row4),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row5),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
-                response: HitResponse.SUNK,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row2),
-                response: HitResponse.HIT,
-            },
-            {
-                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
-                response: HitResponse.HIT,
-            },
-        ],
+        flatten([
+            createMoves(HitResponse.HIT, 'B2'),
+            createMoves(HitResponse.HIT, 'B3'),
+            createMoves(HitResponse.HIT, 'B4'),
+            createMoves(HitResponse.HIT, 'B5'),
+            createMoves(HitResponse.SUNK, 'B6'),
+            createMoves(HitResponse.HIT, 'D2'),
+            createMoves(HitResponse.HIT, 'D6'),
+        ]),
         startingV4,
         'HitTargetSurroundings<D2>',
         [
