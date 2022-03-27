@@ -137,7 +137,7 @@ export class MoveAnalyzer<
     }
 
     private recalculateAlignments(): void {
-        this.previousAlignments = this.coordinateNavigator.findCompleteAlignments(
+        this.previousAlignments = this.coordinateNavigator.findAlignments(
             this.previousHits,
             this.getMaxShipSize(),
         );
