@@ -4,8 +4,10 @@ import { flatten, toString } from 'lodash';
 import { Done } from 'mocha';
 import { Observable, of, switchMap } from 'rxjs';
 import { assertIsNotUndefined } from '../../src/assert/assert-is-not-undefined';
+import { parseDebugEnv } from '../../src/command/parse-debug-env';
 import { HitResponse } from '../../src/communication/hit-response';
 import { Coordinate } from '../../src/grid/coordinate';
+import { ConsoleLogger } from '../../src/logger/console-logger';
 import { NullLogger } from '../../src/logger/null-logger';
 import { PreviousMove } from '../../src/player/hit-strategy';
 import { createFleet } from '../../src/ship/fleet';
@@ -634,8 +636,8 @@ describe('HitStrategy', () => {
                 const strategy = createHitStrategy(
                     createFleet(),
                     version,
-                    false,
-                    new NullLogger(),
+                    parseDebugEnv().orElse(false),
+                    new ConsoleLogger(),
                 );
 
                 expectNextChoices(
