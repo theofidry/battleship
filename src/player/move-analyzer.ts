@@ -150,9 +150,9 @@ export class MoveAnalyzer<
         // TODO: move the block above to the opponentFleet in order to keep the recalculateSize private?
         this.opponentFleet.recalculateSize();
 
-        console.log({
-            potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
-        });
+        // console.log({
+        //     potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
+        // });
 
         assert(potentiallySunkAlignments.size > 0, 'Expected to find a suspicious alignment.');
 
@@ -182,14 +182,14 @@ export class MoveAnalyzer<
                     maxShipSize,
                 );
 
-            console.log({
-                prefilterAlignments: prefilterAlignments.map(toString).toArray(),
-                gaps: prefilterAlignments
-                    .map((alignment) => alignment.sortedGaps)
-                    .filter((gaps) => gaps.size > 0)
-                    .map((gaps) => gaps.map(toString).join(','))
-                    .toArray(),
-            });
+            // console.log({
+            //     prefilterAlignments: prefilterAlignments.map(toString).toArray(),
+            //     gaps: prefilterAlignments
+            //         .map((alignment) => alignment.sortedGaps)
+            //         .filter((gaps) => gaps.size > 0)
+            //         .map((gaps) => gaps.map(toString).join(','))
+            //         .toArray(),
+            // });
 
             const alignments = this.coordinateNavigator
                 .findAlignments(
@@ -282,7 +282,7 @@ export class MoveAnalyzer<
             .map(({ size }) => size)
             .join('|');
 
-        console.log({
+        this.logger.log({
             label: label,
             previousMoves: this.previousMoves
                 .map(({ target, response }) => ({ target: target.toString(), response }))
