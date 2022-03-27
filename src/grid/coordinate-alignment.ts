@@ -29,6 +29,10 @@ export class CoordinateAlignment<
         this.extremums = List([head, tail].filter(isNotUndefined));
     }
 
+    first(): Coordinate<ColumnIndex, RowIndex> {
+        return this.sortedCoordinates.first()!;
+    }
+
     contains(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
         return this.sortedCoordinates.includes(coordinate);
     }

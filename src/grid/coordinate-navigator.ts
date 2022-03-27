@@ -12,6 +12,9 @@ import { CoordinateAlignment } from './coordinate-alignment';
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
 
+/**
+ * @internal
+ */
 export type IncompleteCoordinateAlignment<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
@@ -404,8 +407,40 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     }
 
     explodeByGaps(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
-        // TODO
-        return List();
+        const getNextCoordinate = createFindNextCoordinate(
+            alignment,
+            this.findNextColumnIndex,
+            this.findNextRowIndex,
+        );
+
+        const groups: Array<Array<Coordinate<ColumnIndex, RowIndex>>> = [];
+        const coordinates = alignment.sortedCoordinates.toArray();
+
+        let current: Coordinate<ColumnIndex, RowIndex> = coordinates.shift()!;
+        let next: Coordinate<ColumnIndex, RowIndex> | undefined;
+        let currentGroup = [current];
+
+        while (coordinates.length > 0) {
+            next = getNextCoordinate(current);
+            current = coordinates.shift()!;
+
+            if (undefined === next || current.equals(next)) {
+                currentGroup.push(current);
+                continue;
+            }
+
+            groups.push(currentGroup);
+            currentGroup = [current];
+        }
+
+        groups.push(currentGroup);
+
+        return List(
+            groups.flatMap((_coordinates) => this.findAlignments(
+                List(_coordinates),
+                _coordinates.length as ShipSize,
+            ).toArray()),
+        );
     }
 
     traverseGrid(minShipSize: ShipSize): List<List<Coordinate<ColumnIndex, RowIndex>>> {
@@ -720,6 +755,44 @@ function findFirstIndex<Index extends PropertyKey>(
     }
 
     return previousIndex;
+}
+
+export type AdjacentCoordinateFinder<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = (coordinate: Coordinate<ColumnIndex, RowIndex>)=> Coordinate<ColumnIndex, RowIndex> | undefined;
+
+function createFindNextCoordinate<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(
+    alignment: CoordinateAlignment<ColumnIndex, RowIndex>,
+    findNextColumnIndex: AdjacentIndexFinder<ColumnIndex>,
+    findNextRowIndex: AdjacentIndexFinder<RowIndex>,
+): AdjacentCoordinateFinder<ColumnIndex, RowIndex> {
+    const reference = alignment.first();
+
+    switch (alignment.direction) {
+        case ShipDirection.VERTICAL:
+            return (coordinate) => {
+                const nextRow = findNextRowIndex(coordinate.rowIndex);
+
+                return undefined === nextRow
+                    ? undefined
+                    : new Coordinate(reference.columnIndex, nextRow);
+            };
+
+        case ShipDirection.HORIZONTAL:
+            return (coordinate) => {
+                const nextColumn = findNextColumnIndex(coordinate.columnIndex);
+
+                return undefined === nextColumn
+                    ? undefined
+                    : new Coordinate(nextColumn, reference.rowIndex);
+            };
+    }
+
+    assertIsUnreachableCase(alignment.direction);
 }
 
 /**

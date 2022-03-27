@@ -3,6 +3,7 @@ import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import heredoc from 'tsheredoc';
 import { Coordinate } from '../../src/grid/coordinate';
+import { CoordinateAlignment } from '../../src/grid/coordinate-alignment';
 import {
     createIndices, findNextIndexByStep, IncompleteCoordinateAlignment, LoopableIndices,
     NonAlignedCoordinates,
@@ -573,6 +574,88 @@ describe('CoordinateNavigator::findNextExtremums()', () => {
                 .toArray();
 
             expect(actual).to.eqls(expectedExtremums);
+        });
+    }
+});
+
+class CoordinateAlignmentExplodeGapsSet {
+    constructor(
+        readonly title: string,
+        readonly alignment: CoordinateAlignment<TestColumnIndex, TestRowIndex>,
+        readonly expectedAlignments: ReadonlyArray<string>,
+    ) {
+    }
+}
+
+function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignmentExplodeGapsSet> {
+    yield new CoordinateAlignmentExplodeGapsSet(
+        'alignment with no gaps',
+        new CoordinateAlignment(
+            ShipDirection.VERTICAL,
+            List([
+                new Coordinate('A', '1'),
+                new Coordinate('A', '2'),
+                new Coordinate('A', '3'),
+                new Coordinate('A', '4'),
+            ]),
+            List(),
+            undefined,
+            new Coordinate('A', '5'),
+        ),
+        [
+            'VERTICAL:(A1,A2,A3,A4)',
+        ],
+    );
+
+    yield new CoordinateAlignmentExplodeGapsSet(
+        'alignment with one gap',
+        new CoordinateAlignment(
+            ShipDirection.VERTICAL,
+            List([
+                new Coordinate('A', '1'),
+                new Coordinate('A', '2'),
+                new Coordinate('A', '4'),
+                new Coordinate('A', '5'),
+            ]),
+            List(),
+            undefined,
+            undefined,
+        ),
+        [
+            'VERTICAL:(A1,A2)',
+            'VERTICAL:(A4,A5)',
+        ],
+    );
+
+    yield new CoordinateAlignmentExplodeGapsSet(
+        'alignment with two gaps',
+        new CoordinateAlignment(
+            ShipDirection.VERTICAL,
+            List([
+                new Coordinate('A', '1'),
+                new Coordinate('A', '2'),
+                new Coordinate('A', '3'),
+                new Coordinate('A', '5'),
+            ]),
+            List(),
+            undefined,
+            undefined,
+        ),
+        [
+            'VERTICAL:(A1,A2,A3)',
+        ],
+    );
+}
+
+describe('CoordinateNavigator::explodeByGaps()', () => {
+    for (const { title, alignment, expectedAlignments } of provideCoordinateAlignmentExplodeGapsSet()) {
+        it(title, () => {
+            const actual = testCoordinateNavigator
+                .explodeByGaps(alignment)
+                .map(toString)
+                .toArray();
+
+            expect(actual).to.eqls(expectedAlignments);
         });
     }
 });
