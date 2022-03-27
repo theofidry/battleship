@@ -140,14 +140,14 @@ export class AIHitStrategy<
         }
 
         if (this.enableSmartScreening) {
-            const minShipSize = this.movesAnalyzer.getMinShipSize();
-            const possibleTraverses = this.coordinateNavigator.traverseGrid(minShipSize);
+            const maxShipSize = this.movesAnalyzer.getMaxShipSize();
+            const possibleTraverses = this.coordinateNavigator.traverseGrid(maxShipSize);
 
             strategies.push(
                 ...possibleTraverses.map(
                     (possibleTraverse) => this.createGridScreeningFilterStrategy(
                         possibleTraverse,
-                        minShipSize,
+                        maxShipSize,
                     ),
                 ),
             );
@@ -229,7 +229,7 @@ export class AIHitStrategy<
 
     private createGridScreeningFilterStrategy(
         coordinates: List<Coordinate<ColumnIndex, RowIndex>>,
-        minShipSize: ShipSize,
+        size: ShipSize,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
         const validCandidates = coordinates;
 
@@ -238,7 +238,7 @@ export class AIHitStrategy<
         }
 
         return {
-            strategy: `GridScreening<${minShipSize}>`,
+            strategy: `GridScreening<${size}>`,
             weight: StrategyWeight.SCREENING,
             filter: (candidate) => validCandidates.includes(candidate),
         };
