@@ -695,6 +695,206 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'D3',
         ],
     );
+
+    yield new HitChoicesSet(
+        'regression',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row10),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row1),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row4),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row4),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row7),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row1),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row9),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row5),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.G, StdRowIndex.Row6),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row4),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row2),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.B, StdRowIndex.Row6),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row10),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row9),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row8),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row2),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.F, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row5),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row3),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row2),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row1),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.J, StdRowIndex.Row5),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row9),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row10),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.H, StdRowIndex.Row3),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.A, StdRowIndex.Row8),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row8),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.I, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row6),
+                response: HitResponse.SUNK,
+            },
+        ],
+        startingV4,
+        'HitTargetSurroundings<D2>',
+        [
+            'D1',
+            'C2',
+            'E2',
+            'D3',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'unexpected sunk',
+        [
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row6),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row5),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.D, StdRowIndex.Row4),
+                response: HitResponse.HIT,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row3),
+                response: HitResponse.SUNK,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.C, StdRowIndex.Row7),
+                response: HitResponse.MISS,
+            },
+            {
+                target: new Coordinate(StdColumnIndex.E, StdRowIndex.Row6),
+                response: HitResponse.SUNK,
+            },
+        ],
+        startingV4,
+        'HitTargetSurroundings<D2>',
+        [
+            'D1',
+            'C2',
+            'E2',
+            'D3',
+        ],
+    );
 }
 
 describe('HitStrategy V1 (minimal)', () => {
@@ -839,7 +1039,11 @@ function expectNextChoices(
                     },
                 );
             },
-            error: (error) => expect.fail(error, 'Did not expect to have an error.'),
+            error: (error) => {
+                console.log({ error });
+
+                expect.fail(error, 'Did not expect to have an error.');
+            },
         });
 }
 

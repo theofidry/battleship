@@ -97,6 +97,7 @@ export class MoveAnalyzer<
             .first();
 
         if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
+            this.logger.log('Target belongs to a suspicious alignment.');
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
             this.suspiciousAlignments = List();
@@ -114,6 +115,8 @@ export class MoveAnalyzer<
     }
 
     private handleAlignmentWithSunkHit(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+        this.logger.log(`Marking alignment as potentially sunk ${sunkAlignment.direction}:${sunkAlignment.coordinates.map(toString).toArray().join(',')}`);
+
         this.opponentFleet
             .markAsPotentiallySunk(sunkAlignment)
             .fold(
@@ -148,13 +151,16 @@ export class MoveAnalyzer<
     }
 
     private logState(label: string): void {
-        this.logger.log({
+        console.log({
             label: label,
             previousMoves: this.previousMoves
                 .map(({ target, response }) => ({ target: target.toString(), response }))
                 .toArray(),
             previousHits: this.previousHits.map(toString).toArray(),
             alignments: this.previousAlignments
+                .map(({ direction, coordinates }) => `${direction}: ${coordinates.map(toString).toArray()}`)
+                .toArray(),
+            suspiciousAlignments: this.suspiciousAlignments
                 .map(({ direction, coordinates }) => `${direction}: ${coordinates.map(toString).toArray()}`)
                 .toArray(),
             opponentFleetMin: this.opponentFleet.getMinShipSize(),
