@@ -1,30 +1,35 @@
-import { Command } from 'commander';
 import { filter, lastValueFrom, map, tap } from 'rxjs';
-import { assert } from '../assert/assert';
 import { ConsoleLogger } from '../logger/console-logger';
 import { BasicMatchLogger } from '../match/basic-match-logger';
 import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
 import { calculateEfficiency } from '../standard-grid/efficiency';
-import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
+import { createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
-import { EnumHelper } from '../utils/enum-helper';
-import { createAIVersionOption } from './ai-version-option';
-import { createDebugOption } from './debug-option';
-import { matchCommand } from './match-command';
+import { AIVersionOption, createAIVersionOption, parseAIVersionOption } from './ai-version-option';
+import { createCommand, noopParser, OptionParser } from './command';
+import { createDebugOption, DebugOption, parseDebugOption } from './debug-option';
 
-export const AIMatchCommand = new Command('ai:test-match');
+type Options = AIVersionOption & DebugOption;
 
-AIMatchCommand
-    .description('Starts a match between two AIs')
-    .addOption(createAIVersionOption())
-    .addOption(createDebugOption())
-    .action(() => {
-        const { ai, debug } = matchCommand.opts();
+const parseOptions: OptionParser<Options> = (options) => {
+    return {
+        ...parseAIVersionOption(options),
+        ...parseDebugOption(options),
+    };
+};
 
-        assert(EnumHelper.hasValue(AIVersion, ai));
-        assert('boolean' === typeof debug);
-
+export const AIMatchCommand = createCommand(
+    'ai:test-match',
+    'Starts a match between two AIs',
+    [],
+    [
+        createAIVersionOption(),
+        createDebugOption(),
+    ],
+    noopParser,
+    parseOptions,
+    (args, { ai, debug }) => {
         const logger = new ConsoleLogger();
         const match = new Match(new BasicMatchLogger(logger));
         const fleet = createFleet();
@@ -42,4 +47,5 @@ AIMatchCommand
             );
 
         return lastValueFrom(play$);
-    });
+    }
+);

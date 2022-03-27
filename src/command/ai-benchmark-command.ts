@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Command, InvalidOptionArgumentError } from 'commander';
+import { InvalidOptionArgumentError, Option, OptionValues } from 'commander';
 import { isNumber, mean, range } from 'lodash';
 import { combineLatest, filter, lastValueFrom, map, Observable, tap } from 'rxjs';
 import { assert } from '../assert/assert';
@@ -9,29 +9,63 @@ import { Match } from '../match/match';
 import { NullMatchLogger } from '../match/null-match-logger';
 import { createFleet, Fleet } from '../ship/fleet';
 import { calculateEfficiency } from '../standard-grid/efficiency';
-import { AIVersion, AIVersionNames, createAIPlayer } from '../standard-grid/std-ai-player-factory';
+import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
-import { EnumHelper } from '../utils/enum-helper';
+import { hasOwnProperty } from '../utils/has-own-property';
 import { formatTime } from '../utils/time-formatter';
-import { createAIVersionOption } from './ai-version-option';
-
-export const AIBenchmarkCommand = new Command('ai:benchmark');
+import { AIVersionOption, createAIVersionOption, parseAIVersionOption } from './ai-version-option';
+import { createCommand, noopParser, OptionParser } from './command';
 
 const DEFAULT_SAMPLES_SIZE = 50;
 
-AIBenchmarkCommand
-    .description('Runs several matches between two AIs')
-    .option('-s, --samples <number>', 'Number of matches to play', parseSampleOption, DEFAULT_SAMPLES_SIZE)
-    .addOption(createAIVersionOption())
-    .action(() => {
-        const { samples, ai } = AIBenchmarkCommand.opts();
+type SamplesOptions = {
+    samples: number;
+};
+
+type Options = AIVersionOption & SamplesOptions;
+
+function parseSamples(options: OptionValues): SamplesOptions {
+    assert(hasOwnProperty(options, 'samples'));
+
+    const samples = options['samples'];
+
+    assert(isNumber(samples));
+
+    return { samples };
+}
+
+const parseOptions: OptionParser<Options> = (options) => {
+    return {
+        ...parseAIVersionOption(options),
+        ...parseSamples(options),
+    };
+};
+
+function createSampleOption(): Option {
+    const option =  new Option(
+        '-s, --samples <number>',
+        'Number of matches to play',
+    );
+
+    option.argParser(parseSampleOption);
+    option.default(DEFAULT_SAMPLES_SIZE);
+
+    return option;
+}
+
+export const AIBenchmarkCommand = createCommand(
+    'ai:benchmark',
+    'Runs several matches between two AIs',
+    [],
+    [
+        createAIVersionOption(),
+        createSampleOption(),
+    ],
+    noopParser,
+    parseOptions,
+    (args, { ai, samples }) => {
         const startTimeInSeconds = process.hrtime()[0];
         const fleet = createFleet();
-
-        assert(isNumber(samples));
-        assert(EnumHelper.hasValue(AIVersion, ai));
-
-        console.log(`Starting benchmark between ${AIVersionNames[ai]} for ${chalk.yellowBright(samples)} matches.`);
 
         const play$ = playMatches(fleet, samples, ai, false)
             .pipe(
@@ -47,7 +81,8 @@ AIBenchmarkCommand
             );
 
         return lastValueFrom(play$);
-    });
+    },
+);
 
 function parseSampleOption(value: string): number {
     const parsedValue = parseInt(value, 10);
