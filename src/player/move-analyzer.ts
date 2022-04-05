@@ -173,7 +173,7 @@ class OpponentFleet<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > {
-    private fleet: List<OpponentShip<ColumnIndex, RowIndex>>;
+    private readonly fleet: List<OpponentShip<ColumnIndex, RowIndex>>;
     private minShipSize: ShipSize;
     private maxShipSize: ShipSize;
 
@@ -203,10 +203,24 @@ class OpponentFleet<
         return this.fleet;
     }
 
+    find(size: ShipSize, statusOrStatuses: OpponentShipStatus | ReadonlyArray<OpponentShipStatus>): List<OpponentShip<ColumnIndex, RowIndex>> {
+        const statuses: ReadonlyArray<OpponentShipStatus> = Array.isArray(statusOrStatuses)
+            ? statusOrStatuses
+            : [statusOrStatuses];
+
+        return this.fleet.filter((
+            ship) => ship.size === size && statuses.includes(ship.getStatus()),
+        );
+    }
+
     markAsPotentiallySunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
         const alignmentSize = sunkAlignment.sortedCoordinates.size;
-        const unsunkShips = this.fleet
-            .filter((ship) => isNotFoundStatus(ship.getStatus()) && ship.size === alignmentSize);
+        assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
+
+        const unsunkShips = this.find(
+            alignmentSize,
+            OpponentShipStatus.NOT_FOUND,
+        );
 
         const matchingShip = unsunkShips.first();
 
@@ -214,8 +228,10 @@ class OpponentFleet<
             // This means one of the ship we thought we sank was not of the size
             // we expected. In other words, it was not one single ship but rather
             // a ship AND bits of another one.
-            const sunkShipOfSize = this.fleet
-                .filter((ship) => ship.getStatus() === OpponentShipStatus.POTENTIALLY_SUNK && ship.size === alignmentSize)
+            const sunkShipOfSize = this.find(
+                    alignmentSize,
+                    OpponentShipStatus.POTENTIALLY_SUNK,
+                )
                 .first();
 
             assertIsNotUndefined(sunkShipOfSize);
@@ -279,7 +295,6 @@ class OpponentFleet<
 
 enum OpponentShipStatus {
     NOT_FOUND = 'NOT_FOUND',
-    PARTIALLY_HIT = 'PARTIALLY_HIT',
     POTENTIALLY_SUNK = 'POTENTIALLY_SUNK',
     SUNK = 'SUNK',
 }
@@ -325,7 +340,7 @@ function calculateMinShipSize<
     RowIndex extends PropertyKey,
 >(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
     const min = fleet
-        .filter((ship) => isNotFoundStatus(ship.getStatus()))
+        .filter((ship) => OpponentShipStatus.NOT_FOUND === ship.getStatus())
         .map((ship) => ship.size)
         .min();
 
@@ -339,15 +354,11 @@ function calculateMaxShipSize<
     RowIndex extends PropertyKey,
 >(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
     const max = fleet
-        .filter((ship) => isNotFoundStatus(ship.getStatus()))
+        .filter((ship) => OpponentShipStatus.NOT_FOUND === ship.getStatus())
         .map((ship) => ship.size)
         .max();
 
     assertIsShipSize(max);
 
     return max;
-}
-
-function isNotFoundStatus(status: OpponentShipStatus): boolean {
-    return [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT].includes(status);
 }
