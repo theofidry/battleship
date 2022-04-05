@@ -37,23 +37,21 @@ export class MoveAnalyzer<
             return;
         }
 
-        this.logger.log('recording previous move.');
-        this.logState('state before recalculation');
+        this.logger.log(`Recording previous move ${previousMove.target.toString()}:${previousMove.response}.`);
+        this.logState('State before recalculation');
 
         this.previousMoves = this.previousMoves.push(previousMove);
 
         if (!isHitOrSunk(previousMove.response)) {
-            this.logger.log('ignore previous move; do nothing');
-            return;
+            return this.logger.log('Ignore previous move: do nothing.');
         }
 
+        this.logger.log('Add hit and re-calculate alignments.');
         this.addHitAndRecalculateAlignments(previousMove.target);
 
+        this.logState('Recalculating state');
         this.recalculateState();
-    }
-
-    getMinShipSize(): ShipSize {
-        return this.opponentFleet.getMinShipSize();
+        this.logState('Recalculated state');
     }
 
     getMaxShipSize(): ShipSize {
@@ -80,8 +78,6 @@ export class MoveAnalyzer<
         const previousMove = this.previousMoves.last();
         const suspiciousAlignments = this.suspiciousAlignments;
 
-        this.logState('recalculating state');
-
         if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
             this.logger.log('Nothing to do.');
             // If is not sunk there is nothing special to do.
@@ -89,7 +85,7 @@ export class MoveAnalyzer<
         }
 
         if (!this.enableShipSizeTracking) {
-            this.logger.log('enableShipSizeTracking not enabled: clear hits if sunk');
+            this.logger.log('Setting enableShipSizeTracking not enabled: clear hits if sunk.');
             return this.clearHits();
         }
 
@@ -98,10 +94,13 @@ export class MoveAnalyzer<
             .first();
 
         if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
+            this.logger.log('Target belongs to a suspicious alignment.');
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
             this.suspiciousAlignments = List();
         } else {
+            this.logger.log('No matching suspicious alignment found.');
+
             // TODO: maybe sunk alignment needs to be calculated in a special way (with no gaps?)
             const sunkAlignment = this.previousAlignments
                 .filter((alignment) => alignment.contains(previousMove.target))
@@ -110,8 +109,6 @@ export class MoveAnalyzer<
 
             this.handleAlignmentWithSunkHit(sunkAlignment);
         }
-
-        this.logState('recalculation done.');
     }
 
     private handleAlignmentWithSunkHit(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
@@ -149,13 +146,23 @@ export class MoveAnalyzer<
     }
 
     private logState(label: string): void {
+        const formatFleet = (shipStatus: OpponentShipStatus) => this.opponentFleet
+            .getFleet()
+            .filter((ship) => ship.getStatus() === shipStatus)
+            .map(({ size }) => size)
+            .join('|');
+
         this.logger.log({
             label: label,
             previousMoves: this.previousMoves
                 .map(({ target, response }) => ({ target: target.toString(), response }))
                 .toArray(),
             previousHits: this.previousHits.map(toString).toArray(),
-            alignments: this.previousAlignments.map(toString).toArray(),
+            previousAlignments: this.previousAlignments.map(toString).toArray(),
+            suspiciousAlignments: this.suspiciousAlignments.map(toString).toArray(),
+            sunkShips: formatFleet(OpponentShipStatus.SUNK),
+            potentiallySunkShips: formatFleet(OpponentShipStatus.POTENTIALLY_SUNK),
+            notFoundShips: formatFleet(OpponentShipStatus.NOT_FOUND),
             opponentFleetMin: this.opponentFleet.getMinShipSize(),
             opponentFleetMax: this.opponentFleet.getMaxShipSize(),
         });
@@ -192,6 +199,10 @@ class OpponentFleet<
         return this.maxShipSize;
     }
 
+    getFleet(): List<OpponentShip<ColumnIndex, RowIndex>> {
+        return this.fleet;
+    }
+
     markAsPotentiallySunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
         const alignmentSize = sunkAlignment.sortedCoordinates.size;
         const unsunkShips = this.fleet
@@ -216,7 +227,7 @@ class OpponentFleet<
                 suspiciousAlignment,
             ]));
         } else {
-            this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as sunk.`);
+            this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as potentially sunk.`);
 
             matchingShip.markAsPotentiallySunk(sunkAlignment);
         }
@@ -238,6 +249,7 @@ class OpponentFleet<
     private logState(): void {
         const remainingShips: ShipSize[] = [];
         const potentiallySunkShips: ShipSize[] = [];
+        const sunkShips: ShipSize[] = [];
 
         this.fleet.forEach((ship) => {
             switch (ship.getStatus()) {
@@ -248,12 +260,17 @@ class OpponentFleet<
                 case OpponentShipStatus.POTENTIALLY_SUNK:
                     potentiallySunkShips.push(ship.size);
                     break;
+
+                case OpponentShipStatus.SUNK:
+                    potentiallySunkShips.push(ship.size);
+                    break;
             }
         });
 
         this.logger.log({
             remainingShips,
             potentiallySunkShips,
+            sunkShips,
             min: this.minShipSize,
             max: this.maxShipSize,
         });
@@ -261,10 +278,10 @@ class OpponentFleet<
 }
 
 enum OpponentShipStatus {
-    NOT_FOUND,
-    PARTIALLY_HIT,
-    POTENTIALLY_SUNK,
-    SUNK,
+    NOT_FOUND = 'NOT_FOUND',
+    PARTIALLY_HIT = 'PARTIALLY_HIT',
+    POTENTIALLY_SUNK = 'POTENTIALLY_SUNK',
+    SUNK = 'SUNK',
 }
 
 class OpponentShip<
