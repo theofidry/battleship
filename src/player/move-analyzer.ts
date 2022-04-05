@@ -562,10 +562,10 @@ class OpponentFleet<
 }
 
 enum OpponentShipStatus {
-    NOT_FOUND,
-    PARTIALLY_HIT,
-    POTENTIALLY_SUNK,
-    SUNK,
+    NOT_FOUND = 'NOT_FOUND',
+    PARTIALLY_HIT = 'PARTIALLY_HIT',
+    POTENTIALLY_SUNK = 'POTENTIALLY_SUNK',
+    SUNK = 'SUNK',
 }
 
 class OpponentShip<
