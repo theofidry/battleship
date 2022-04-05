@@ -18,8 +18,8 @@ TOUCH = bash .makefile/touch.sh
 # App variables config
 #---------------------------------------------------------------------------
 
-SRC_DEPS=node_modules src tsconfig.base.json tsconfig.src.json
-TEST_DEPS=node_modules src tests tsconfig.base.json tsconfig.tests.json
+SRC_DEPS=$(shell find node_modules src -type f) tsconfig.base.json tsconfig.src.json
+TEST_DEPS=$(shell find node_modules src tests -type f) tsconfig.base.json tsconfig.tests.json
 RUN_ESLINT=npx eslint . --ext .js,.ts
 
 
