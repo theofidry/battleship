@@ -18,15 +18,15 @@ export class CoordinateAlignment<
         public readonly direction: ShipDirection,
         public readonly sortedCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
         public readonly sortedGaps: List<Coordinate<ColumnIndex, RowIndex>>,
-        public readonly head: Coordinate<ColumnIndex, RowIndex> | undefined,
-        public readonly tail: Coordinate<ColumnIndex, RowIndex> | undefined,
+        public readonly nextHead: Coordinate<ColumnIndex, RowIndex> | undefined,
+        public readonly nextTail: Coordinate<ColumnIndex, RowIndex> | undefined,
     ) {
         assert(
             sortedCoordinates.size >= 2,
             `Expected alignment to contain at least 2 elements. Got "${sortedCoordinates.size}".`,
         );
 
-        this.extremums = List([head, tail].filter(isNotUndefined));
+        this.extremums = List([nextHead, nextTail].filter(isNotUndefined));
     }
 
     first(): Coordinate<ColumnIndex, RowIndex> {
@@ -61,4 +61,11 @@ export class CoordinateAlignment<
 
         return stringValue;
     }
+}
+
+export function isAlignmentWithNoGap<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): boolean {
+    return alignment.sortedGaps.size === 0;
 }

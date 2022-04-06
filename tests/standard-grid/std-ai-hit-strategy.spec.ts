@@ -465,6 +465,103 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             'D3',
         ],
     );
+
+    yield new HitChoicesSet(
+        'unexpected sunk (case 1)',
+        flatten([
+            createMoves(HitResponse.HIT, 'D7'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.SUNK, 'D3'),
+            createMoves(HitResponse.SUNK, 'E6'),
+        ]),
+        startingV4,
+        'HitTargetSurroundings<D7>',
+        [
+            'C7',
+            'E7',
+            'D8',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'unexpected sunk (case 2)',
+        flatten([
+            createMoves(HitResponse.HIT, 'D7'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.SUNK, 'D3'),
+            createMoves(HitResponse.SUNK, 'E7'),
+        ]),
+        startingV4,
+        'GridScreening<5>',
+        [
+            'D1',
+            'I1',
+            'E2',
+            'J2',
+            'A3',
+            'F3',
+            'B4',
+            'G4',
+            'C5',
+            'H5',
+            'I6',
+            'J7',
+            'A8',
+            'F8',
+            'B9',
+            'G9',
+            'C10',
+            'H10',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'a ship way too long',
+        flatten([
+            createMoves(HitResponse.HIT, 'D7'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.HIT, 'D3'),
+            createMoves(HitResponse.SUNK, 'D2'),
+        ]),
+        startingV4,
+        'HitTargetSurroundings<D7>',
+        [
+            'C7',
+            'E7',
+            'D8',
+        ],
+    );
+
+    yield new HitChoicesSet(
+        'finding 2 ships of 5',
+        flatten([
+            createMoves(HitResponse.HIT, 'D3'),
+            createMoves(HitResponse.HIT, 'D4'),
+            createMoves(HitResponse.HIT, 'D5'),
+            createMoves(HitResponse.HIT, 'D6'),
+            createMoves(HitResponse.SUNK, 'D7'),
+            createMoves(HitResponse.HIT, 'F3'),
+            createMoves(HitResponse.HIT, 'F4'),
+            createMoves(HitResponse.HIT, 'F5'),
+            createMoves(HitResponse.HIT, 'F6'),
+            createMoves(HitResponse.SUNK, 'F7'),
+            createMoves(HitResponse.MISS, 'E3'),
+            createMoves(HitResponse.MISS, 'G3'),
+            createMoves(HitResponse.MISS, 'F2'),
+        ]),
+        startingV4,
+        'HitAlignedExtremumsHitTargets<VERTICAL:(D3,D4,D5,D6,D7)>',
+        [
+            'D2',
+            'D8',   // TODO: should prioritize D2 because D7 is sunk
+        ],
+    );
 }
 
 describe('HitStrategy V1 (minimal)', () => {
@@ -609,7 +706,11 @@ function expectNextChoices(
                     },
                 );
             },
-            error: (error) => expect.fail(error, 'Did not expect to have an error.'),
+            error: (error) => {
+                console.log({ error });
+
+                expect.fail(error, 'Did not expect to have an error.');
+            },
         });
 }
 
