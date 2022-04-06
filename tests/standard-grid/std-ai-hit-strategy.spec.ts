@@ -556,8 +556,10 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.MISS, 'F2'),
         ]),
         startingV4,
-        'TODO',
+        'HitAlignedExtremumsHitTargets<VERTICAL:(D3,D4,D5,D6,D7)>',
         [
+            'D2',
+            'D8',   // TODO: should prioritize D2 because D7 is sunk
         ],
     );
 }

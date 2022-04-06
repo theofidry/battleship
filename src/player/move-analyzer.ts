@@ -1,7 +1,7 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../assert/assert';
-import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { HitResponse, isHitOrSunk } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, isAlignmentWithNoGap } from '../grid/coordinate-alignment';
@@ -110,7 +110,9 @@ export class MoveAnalyzer<
             this.logger.log('Target belongs to a suspicious alignment.');
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
-            return this.suspiciousAlignments = List();
+            this.suspiciousAlignments = List();
+
+            return;
         }
 
         this.logger.log('No matching suspicious alignment found.');
@@ -289,7 +291,7 @@ export class MoveAnalyzer<
         // sunk boat.
         // In this scenario, it means that one of the previously sunk boat was
         // not the size we thought it was.
-        if (this.previousHits.size > 1) {
+        if (this.previousHits.size === 0 || this.previousHits.size > 1) {
             return this.logger.log('No orphan found: do nothing.');
         }
 
@@ -500,6 +502,8 @@ class OpponentFleet<
         this.logger.log(`Marking the ship matching the alignment ${correctAlignment.toString()} as sunk.`);
 
         const alignmentSize = correctAlignment.sortedCoordinates.size;
+        assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
+
         const potentiallySunkShips = this.fleet.filter(
             (ship) => ship.isPotentiallySunk() && ship.size === alignmentSize,
         );
@@ -508,11 +512,12 @@ class OpponentFleet<
 
         const suspiciousAlignment = potentiallySunkShips.first()!.unmarkAsPotentiallySunk();
 
-        const correctShip = this.fleet
-            .filter((ship) => ship.isNotSunk() && ship.size === alignmentSize)
+        const correctShip = this.find(
+                alignmentSize,
+                [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.POTENTIALLY_SUNK],
+            )
             .first()!;
 
-        // TODO: this does not work the ship we want to mark as sunk is a different ship!
         correctShip.markAsSunk(correctAlignment);
 
         return suspiciousAlignment;
@@ -587,10 +592,6 @@ class OpponentShip<
 
     isNotSunk(): boolean {
         return this.status !== OpponentShipStatus.SUNK;
-    }
-
-    isNotFound(): boolean {
-        return [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.PARTIALLY_HIT].includes(this.status);
     }
 
     getAlignment(): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
