@@ -284,7 +284,11 @@ export class MoveAnalyzer<
     }
 
     private checkOrphanHit(): void {
-        this.logger.log('Recording a miss; Checking for orphan hits');
+        if (!this.enableShipSizeTracking) {
+            return this.logger.log('Setting enableShipSizeTracking: record the miss and do nothing.');
+        }
+
+        this.logger.log('Recording a miss; Checking for orphan hits.');
 
         // We might end up in the situation where we have a hit but all the
         // surrounding coordinates are either a miss or a hit belonging to a
@@ -311,7 +315,19 @@ export class MoveAnalyzer<
         this.logger.log(`Orphan hit ${orphanHit.toString()} found!`);
 
         assert(this.suspiciousAlignments.size === 0, 'TODO');
-        this.suspiciousAlignments = List([this.opponentFleet.recordOrphanHit(orphanHit)]);
+
+        const suspiciousAlignment = this.opponentFleet.recordOrphanHit(orphanHit);
+
+        const sunkCoordinatesFromSuspiciousAlignment = this.previousMoves
+            .filter(({ target, response }) => HitResponse.SUNK === response && suspiciousAlignment.contains(target))
+            .map(({ target}) => target);
+
+        assert(sunkCoordinatesFromSuspiciousAlignment.size === 1, 'TODO');
+
+        this.suspiciousAlignments = List([
+            suspiciousAlignment.removeExtremum(sunkCoordinatesFromSuspiciousAlignment.first()!),
+        ]);
+        this.previousHits = List();
 
         this.logState('State after orphan check');
     }
@@ -478,7 +494,7 @@ class OpponentFleet<
                 // TODO: there is probably more to do here... For example if the
                 // alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
                 // want a match if the orphan hit is F8.
-                return undefined !== alignment && alignment.extremums.contains(orphanHit);
+                return undefined !== alignment && alignment.nextExtremums.contains(orphanHit);
             },
         );
         assertIsNotUndefined(shipThatShouldContainOrphan, 'Expected to find an incorrect potentially sunk ship.');

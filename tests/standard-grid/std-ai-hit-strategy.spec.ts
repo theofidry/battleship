@@ -539,7 +539,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'finding 2 ships of 5',
+        'finding two ships of 5',
         flatten([
             createMoves(HitResponse.HIT, 'D3'),
             createMoves(HitResponse.HIT, 'D4'),
@@ -557,10 +557,40 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         ]),
         startingV4,
         'HitAlignedExtremumsHitTargets<VERTICAL:(D3,D4,D5,D6,D7)>',
-        [
-            'D2',
-            'D8',   // TODO: should prioritize D2 because D7 is sunk
-        ],
+        ['D2'],
+    );
+
+    yield new HitChoicesSet(
+        'finding two ships of 4',
+        flatten([
+            createMoves(HitResponse.MISS, 'D9'),
+            createMoves(HitResponse.MISS, 'A2'),
+            createMoves(HitResponse.HIT, 'J8'),
+            createMoves(HitResponse.HIT, 'J9'),
+            createMoves(HitResponse.HIT, 'J7'),
+            createMoves(HitResponse.HIT, 'J10'),
+            createMoves(HitResponse.SUNK, 'J6'),
+            createMoves(HitResponse.HIT, 'A6'),
+            createMoves(HitResponse.MISS, 'B6'),
+            createMoves(HitResponse.HIT, 'A7'),
+            createMoves(HitResponse.HIT, 'A5'),
+            createMoves(HitResponse.SUNK, 'A8'),
+            createMoves(HitResponse.MISS, 'H9'),
+            createMoves(HitResponse.MISS, 'F7'),
+            createMoves(HitResponse.MISS, 'C1'),
+            createMoves(HitResponse.MISS, 'G5'),
+            createMoves(HitResponse.HIT, 'E3'),
+            createMoves(HitResponse.HIT, 'D3'),
+            createMoves(HitResponse.HIT, 'F3'),
+            createMoves(HitResponse.MISS, 'G3'),
+            createMoves(HitResponse.SUNK, 'C3'),
+            createMoves(HitResponse.MISS, 'F4'),
+            createMoves(HitResponse.MISS, 'F2'),
+            createMoves(HitResponse.MISS, 'A9'),
+        ]),
+        startingV4,
+        'HitAlignedExtremumsHitTargets<VERTICAL:(A5,A6,A7,A8)>',
+        ['A4'],
     );
 }
 
