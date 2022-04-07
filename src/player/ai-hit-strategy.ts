@@ -208,7 +208,7 @@ export class AIHitStrategy<
     private createTargetAlignmentExtremumsFilterStrategy(
         alignedHitCoordinates: CoordinateAlignment<ColumnIndex, RowIndex>,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
-        // Picks the nextExtremums sortedCoordinates of aligned hit sortedCoordinates.
+        // Picks the next extremums coordinates of aligned hit sortedCoordinates.
         const validCandidates = alignedHitCoordinates.nextExtremums;
 
         if (validCandidates.size === 0) {
