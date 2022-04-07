@@ -10,7 +10,7 @@ export class CoordinateAlignment<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > implements ValueObject {
-    public readonly extremums: List<Coordinate<ColumnIndex, RowIndex>>;
+    public readonly nextExtremums: List<Coordinate<ColumnIndex, RowIndex>>;
 
     private stringValue?: string;
 
@@ -26,7 +26,7 @@ export class CoordinateAlignment<
             `Expected alignment to contain at least 2 elements. Got "${sortedCoordinates.size}".`,
         );
 
-        this.extremums = List([nextHead, nextTail].filter(isNotUndefined));
+        this.nextExtremums = List([nextHead, nextTail].filter(isNotUndefined));
     }
 
     first(): Coordinate<ColumnIndex, RowIndex> {
@@ -44,6 +44,32 @@ export class CoordinateAlignment<
 
     hashCode(): number {
         return hashString(this.toString());
+    }
+
+    removeExtremum(extremum: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {
+        const { direction, sortedCoordinates, sortedGaps } = this;
+        let { nextHead, nextTail } = this;
+
+        const head = sortedCoordinates.first()!;
+
+        if (head.equals(extremum)) {
+            nextHead = undefined;
+        } else {
+            const tail = sortedCoordinates.last()!;
+
+            // Sanity check
+            assert(tail.equals(extremum));
+
+            nextTail = undefined;
+        }
+
+        return new CoordinateAlignment(
+            direction,
+            sortedCoordinates,
+            sortedGaps,
+            nextHead,
+            nextTail,
+        );
     }
 
     toString(): string {

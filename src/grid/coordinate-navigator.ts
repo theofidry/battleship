@@ -357,7 +357,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     /**
      * @internal
      *
-     * Finds the sortedCoordinates at the extremums of the given alignments.
+     * Finds the sortedCoordinates at the (next) extremums of the given alignments.
      *
      * For example for the alignments (A1, A3) and (B2, E2), the sortedCoordinates
      * found will be A4, A2 and F2.
