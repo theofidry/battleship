@@ -135,39 +135,14 @@ export class MoveAnalyzer<
 
         this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
 
-        const surroundingCoordinateStrings = this.coordinateNavigator
-            .getSurroundingCoordinates(previousMove.target)
-            .map(toString);
-
-        const surroundingHitCoordinates = this.previousMoves
-            .filter(({ target, response }) => {
-                return response === HitResponse.HIT
-                    && surroundingCoordinateStrings.includes(target.toString());
-            })
-            .map(({ target }) => target);
-
-        const alignmentContainsSurroundingHitCoordinates = (alignment: CoordinateAlignment<ColumnIndex, RowIndex>) => surroundingHitCoordinates.reduce(
-            (contains, coordinate) => contains || alignment.contains(coordinate),
-            false,
+        const newSuspiciousAlignments = this.opponentFleet.reconsiderPotentiallySunkShips(
+            previousMove.target,
+            this.previousMoves,
         );
+        assert(newSuspiciousAlignments.size === 1, 'TODO: 123P123K90');
+        const suspiciousAlignment = newSuspiciousAlignments.first()!;
 
-        const potentiallySunkAlignments = this.opponentFleet
-            .getFleet()
-            .filter((ship) => ship.isPotentiallySunk())
-            .filter((ship) => {
-                const alignment = ship.getAlignment();
-
-                return undefined !== alignment && alignmentContainsSurroundingHitCoordinates(alignment);
-            })
-            .map((ship) => ship.unmarkAsPotentiallySunk());
-
-        // TODO: move the block above to the opponentFleet in order to keep the recalculateSize private?
-        this.opponentFleet.recalculateSize();
-
-        assert(potentiallySunkAlignments.size > 0, 'Expected to find a suspicious alignment.');
-
-        const suspiciousAlignment = potentiallySunkAlignments.first()!;
-        assert(potentiallySunkAlignments.size === 1, 'TODO: 123P123K90');
+        this.logger.log(`New suspicious alignments found: ${newSuspiciousAlignments.map(toString).join(', ')}.`);
 
         let suspiciousCoordinates = suspiciousAlignment.sortedCoordinates.push(previousMove.target);
         let sortedSunkCoordinates = this.previousMoves
@@ -491,6 +466,48 @@ class OpponentFleet<
         correctShip.markAsSunk(correctAlignment);
 
         return suspiciousAlignment;
+    }
+
+    /**
+     * We have an unexpected sunk coordinate, which means one of the alignments
+     * containing this sunk coordinates is incorrect.
+     *
+     * This method returns the exhaustive list of potentially sunk ships for
+     * which the alignment contains at least one of the hit coordinate of the
+     * sunk coordinate.
+     */
+    reconsiderPotentiallySunkShips(
+        incorrectSunk: Coordinate<ColumnIndex, RowIndex>,
+        previousMoves: List<PreviousMove<ColumnIndex, RowIndex>>,
+    ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        const surroundingCoordinateStrings = this.coordinateNavigator
+            .getSurroundingCoordinates(incorrectSunk)
+            .map(toString);
+
+        const surroundingHitCoordinates = previousMoves
+            .filter(({ target, response }) => {
+                return response === HitResponse.HIT
+                    && surroundingCoordinateStrings.includes(target.toString());
+            })
+            .map(({ target }) => target);
+
+        const alignmentContainsSurroundingHitCoordinates = (alignment: CoordinateAlignment<ColumnIndex, RowIndex>) => surroundingHitCoordinates.reduce(
+            (contains, coordinate) => contains || alignment.contains(coordinate),
+            false,
+        );
+
+        const suspiciousAlignments =  this.fleet
+            .filter((ship) => ship.isPotentiallySunk())
+            .filter((ship) => {
+                const alignment = ship.getAlignment();
+
+                return undefined !== alignment && alignmentContainsSurroundingHitCoordinates(alignment);
+            })
+            .map((ship) => ship.unmarkAsPotentiallySunk());
+
+        this.recalculateSize();
+
+        return suspiciousAlignments;
     }
 
     recalculateSize(): void {
