@@ -1,7 +1,7 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../assert/assert';
-import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
 import { HitResponse, isHitOrSunk } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, isAlignmentWithNoGap } from '../grid/coordinate-alignment';
@@ -93,23 +93,25 @@ export class MoveAnalyzer<
 
         if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
             this.logger.log('Nothing to do.');
+
             // If is not sunk there is nothing special to do.
             return;
         }
 
         if (!this.enableShipSizeTracking) {
             this.logger.log('Setting enableShipSizeTracking not enabled: clear hits if sunk.');
+
             return this.clearHits();
         }
 
-        const sunkSuspiciousAlignment = suspiciousAlignments
+        const suspiciousAlignmentContainingSunk = suspiciousAlignments
             .filter((alignment) => alignment.contains(previousMove.target))
             .first();
 
-        if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
+        if (suspiciousAlignments.size > 0 && undefined !== suspiciousAlignmentContainingSunk) {
             this.logger.log('Target belongs to a suspicious alignment.');
-            suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
+            suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
             this.suspiciousAlignments = List();
 
             return;
@@ -117,67 +119,41 @@ export class MoveAnalyzer<
 
         this.logger.log('No matching suspicious alignment found.');
 
-        const sunkAlignment = this.previousAlignments
+        const knownAlignmentContainingSunk = this.previousAlignments
             .filter(
-                (alignment) => alignment.contains(previousMove.target)
-                    && alignment.sortedGaps.size === 0
+                (alignment) => {
+                    return alignment.sortedGaps.size === 0
+                        && alignment.contains(previousMove.target);
+                }
             )
             .first();
 
-        if (undefined !== sunkAlignment) {
-            this.logger.log(`Target belongs to a known alignment: ${sunkAlignment.toString()}.`);
+        if (undefined !== knownAlignmentContainingSunk) {
+            this.logger.log(`Target belongs to a known alignment: ${knownAlignmentContainingSunk.toString()}.`);
 
-            return this.handleAlignmentWithSunkHit(sunkAlignment);
+            return this.handleAlignmentWithSunkHit(knownAlignmentContainingSunk);
         }
 
         this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
 
-        const surroundingCoordinateStrings = this.coordinateNavigator
-            .getSurroundingCoordinates(previousMove.target)
-            .map(toString);
-
-        const surroundingHitCoordinates = this.previousMoves
-            .filter(({ target, response }) => {
-                return response === HitResponse.HIT
-                    && surroundingCoordinateStrings.includes(target.toString());
-            })
-            .map(({ target }) => target);
-
-        const alignmentContainsSurroundingHitCoordinates = (alignment: CoordinateAlignment<ColumnIndex, RowIndex>) => surroundingHitCoordinates.reduce(
-            (contains, coordinate) => contains || alignment.contains(coordinate),
-            false,
+        const newSuspiciousAlignments = this.opponentFleet.reconsiderPotentiallySunkShips(
+            previousMove.target,
+            this.previousMoves,
         );
+        assert(newSuspiciousAlignments.size > 0, 'Expected to find a suspicious alignment.');
 
-        const potentiallySunkAlignments = this.opponentFleet
-            .getFleet()
-            .filter((ship) => ship.isPotentiallySunk())
-            .filter((ship) => {
-                const alignment = ship.getAlignment();
+        this.logger.log(`New suspicious alignments found: ${newSuspiciousAlignments.map(toString).join(', ')}.`);
 
-                return undefined !== alignment && alignmentContainsSurroundingHitCoordinates(alignment);
-            })
-            .map((ship) => ship.unmarkAsPotentiallySunk());
-
-        // TODO: move the block above to the opponentFleet in order to keep the recalculateSize private?
-        this.opponentFleet.recalculateSize();
-
-        console.log({
-            potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
-        });
-
-        assert(potentiallySunkAlignments.size > 0, 'Expected to find a suspicious alignment.');
+        assert(newSuspiciousAlignments.size > 1, 'TODO: 34412831');
 
         // TODO: handle when there is more than one
-        const suspiciousAlignment = potentiallySunkAlignments.first()!;
+        const suspiciousAlignment = newSuspiciousAlignments.first()!;
 
         let suspiciousCoordinates = suspiciousAlignment.sortedCoordinates.push(previousMove.target);
         let sortedSunkCoordinates = this.previousMoves
             .filter(({ target, response }) => response === HitResponse.SUNK && suspiciousAlignment.contains(target))
             .map(({ target }) => target)
             .unshift(previousMove.target);
-        //let sunkCoordinate: Coordinate<ColumnIndex, RowIndex> | undefined;
-        //let alignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>;
-        //let matchingAlignment: CoordinateAlignment<ColumnIndex, RowIndex>;
 
         console.log({
             suspiciousCoordinates: suspiciousCoordinates.map(toString).toArray(),
@@ -316,20 +292,77 @@ export class MoveAnalyzer<
 
         assert(this.suspiciousAlignments.size === 0, 'TODO');
 
-        const suspiciousAlignment = this.opponentFleet.recordOrphanHit(orphanHit);
+        const { suspiciousAlignment, choppedCoordinate } = this.analyzeSuspiciousAlignment(
+            this.opponentFleet.recordOrphanHit(orphanHit),
+        );
 
-        const sunkCoordinatesFromSuspiciousAlignment = this.previousMoves
-            .filter(({ target, response }) => HitResponse.SUNK === response && suspiciousAlignment.contains(target))
-            .map(({ target}) => target);
+        this.logger.log(`Analysis result: ${suspiciousAlignment.toString()} and ${choppedCoordinate?.toString() || 'ø'}.`);
 
-        assert(sunkCoordinatesFromSuspiciousAlignment.size === 1, 'TODO');
-
-        this.suspiciousAlignments = List([
-            suspiciousAlignment.removeExtremum(sunkCoordinatesFromSuspiciousAlignment.first()!),
-        ]);
-        this.previousHits = List();
+        if (undefined === choppedCoordinate) {
+            this.suspiciousAlignments = List([suspiciousAlignment]);
+            this.previousHits = List();
+        } else {
+            this.handleAlignmentWithSunkHit(suspiciousAlignment);
+            this.previousHits = List([choppedCoordinate]);
+        }
 
         this.logState('State after orphan check');
+    }
+
+    /**
+     * Having the suspicious alignment is not enough. It at least contains a
+     * sunk coordinate at an extremum, which means probing at the next
+     * extremum is useless.
+     * Another issue is that both extremums may already have been probed:
+     * the researched ship may be in a different direction.
+     */
+    private analyzeSuspiciousAlignment(suspiciousAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): {
+        suspiciousAlignment: CoordinateAlignment<ColumnIndex, RowIndex>,
+        choppedCoordinate?: Coordinate<ColumnIndex, RowIndex>,
+    } {
+        this.logger.log(`Analyzing the suspicious alignment ${suspiciousAlignment.toString()}.`);
+
+        const sunkCoordinate = this.getSuspiciousAlignmentSunkCoordinate(suspiciousAlignment);
+        const sunkIsHead = sunkCoordinate.equals(suspiciousAlignment.head());
+
+        const isNextExtremum: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean = sunkIsHead
+            ? (coordinate) => coordinate.equals(suspiciousAlignment.tail())
+            : (coordinate) => coordinate.equals(suspiciousAlignment.head());
+
+        const nonSunkExtremumAlreadyTargeted = this.previousMoves
+            .map(({ target }) => target)
+            .filter(isNextExtremum)
+            .size > 0;
+
+        suspiciousAlignment = suspiciousAlignment.removeNextExtremum(sunkCoordinate);
+
+        if (!nonSunkExtremumAlreadyTargeted) {
+            // Nothing more to do: the ship may very well continue in the unchecked direction.
+            return { suspiciousAlignment };
+        }
+
+        this.logger.log('The extremums of the alignment have already been checked. Breaking apart the alignment.');
+
+        // It means that the alignment contains at least two ships: one in the
+        // current alignment that has already been sunk and at least another
+        // which is in a different direction.
+        const head = suspiciousAlignment.head();
+        const tail = suspiciousAlignment.tail();
+
+        return {
+            suspiciousAlignment: sunkIsHead ? suspiciousAlignment.pop() : suspiciousAlignment.shift(),
+            choppedCoordinate: sunkIsHead ? tail : head,
+        };
+    }
+
+    private getSuspiciousAlignmentSunkCoordinate(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): Coordinate<ColumnIndex, RowIndex> {
+        const sunkCoordinatesFromSuspiciousAlignment = this.previousMoves
+            .filter(({ target, response }) => HitResponse.SUNK === response && alignment.contains(target))
+            .map(({ target}) => target);
+
+        assert(sunkCoordinatesFromSuspiciousAlignment.size === 1, () => `The alignment ${alignment.toString()} can only contain one sunk coordinate. Found ${sunkCoordinatesFromSuspiciousAlignment.join(', ')}.`);
+
+        return sunkCoordinatesFromSuspiciousAlignment.first()!;
     }
 
     private isInPreviousMoves(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
@@ -478,6 +511,46 @@ class OpponentFleet<
         this.logState();
 
         return Either.right(undefined);
+    }
+
+    /**
+     * We have an unexpected sunk coordinate, which means one of the alignments
+     * containing this sunk coordinates is incorrect.
+     *
+     * This method returns the exhaustive list of potentially sunk ships for
+     * which the alignment contains at least one of the hit coordinate of the
+     * sunk coordinate.
+     */
+    reconsiderPotentiallySunkShips(
+        incorrectSunk: Coordinate<ColumnIndex, RowIndex>,
+        previousMoves: List<PreviousMove<ColumnIndex, RowIndex>>,
+    ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        const surroundingCoordinateAsStrings = this.coordinateNavigator
+            .getSurroundingCoordinates(incorrectSunk)
+            .map(toString);
+
+        const surroundingHitCoordinates = previousMoves
+            .filter(({ target, response }) => {
+                return response === HitResponse.HIT
+                    && surroundingCoordinateAsStrings.includes(target.toString());
+            })
+            .map(({ target }) => target);
+
+        const alignmentContainsSurroundingHitCoordinates: (alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined)=> boolean = (alignment) => surroundingHitCoordinates.reduce(
+            (contains: boolean, coordinate) => contains || (undefined !== alignment && alignment.contains(coordinate)),
+            false,
+        );
+
+        const suspiciousAlignments = this.fleet
+            .filter((ship) => {
+                return ship.isPotentiallySunk()
+                    && alignmentContainsSurroundingHitCoordinates(ship.getAlignment());
+            })
+            .map((ship) => ship.unmarkAsPotentiallySunk());
+
+        this.recalculateSize();
+
+        return suspiciousAlignments;
     }
 
     recordOrphanHit(orphanHit: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {

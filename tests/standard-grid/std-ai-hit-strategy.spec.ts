@@ -592,6 +592,45 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
         'HitAlignedExtremumsHitTargets<VERTICAL:(A5,A6,A7,A8)>',
         ['A4'],
     );
+
+    yield new HitChoicesSet(
+        'finding two ships of 5; last sunk extremums already explored',
+        flatten([
+            createMoves(HitResponse.MISS, 'B1'),
+            createMoves(HitResponse.MISS, 'G6'),
+            createMoves(HitResponse.MISS, 'A2'),
+            createMoves(HitResponse.HIT, 'E3'),
+            createMoves(HitResponse.HIT, 'F3'),
+            createMoves(HitResponse.MISS, 'G3'),
+            createMoves(HitResponse.HIT, 'D3'),
+            createMoves(HitResponse.HIT, 'C3'),
+            createMoves(HitResponse.SUNK, 'B3'),
+            createMoves(HitResponse.MISS, 'E8'),
+            createMoves(HitResponse.MISS, 'I4'),
+            createMoves(HitResponse.MISS, 'G2'),
+            createMoves(HitResponse.MISS, 'C2'),
+            createMoves(HitResponse.HIT, 'F7'),
+            createMoves(HitResponse.MISS, 'G7'),
+            createMoves(HitResponse.HIT, 'F6'),
+            createMoves(HitResponse.MISS, 'F5'),
+            createMoves(HitResponse.SUNK, 'F8'),
+            createMoves(HitResponse.MISS, 'I8'),
+            createMoves(HitResponse.MISS, 'E4'),
+            createMoves(HitResponse.MISS, 'C6'),
+            createMoves(HitResponse.HIT, 'B7'),
+            createMoves(HitResponse.MISS, 'A7'),
+            createMoves(HitResponse.HIT, 'B8'),
+            createMoves(HitResponse.MISS, 'B9'),
+            createMoves(HitResponse.HIT, 'B6'),
+            createMoves(HitResponse.HIT, 'B5'),
+            createMoves(HitResponse.SUNK, 'B4'),
+            createMoves(HitResponse.MISS, 'A8'),
+            createMoves(HitResponse.MISS, 'C8'),
+        ]),
+        startingV4,
+        'HitTargetSurroundings<F3>',
+        ['F2', 'F4'],
+    );
 }
 
 describe('HitStrategy V1 (minimal)', () => {

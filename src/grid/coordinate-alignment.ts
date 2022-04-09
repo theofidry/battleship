@@ -29,8 +29,40 @@ export class CoordinateAlignment<
         this.nextExtremums = List([nextHead, nextTail].filter(isNotUndefined));
     }
 
-    first(): Coordinate<ColumnIndex, RowIndex> {
+    head(): Coordinate<ColumnIndex, RowIndex> {
         return this.sortedCoordinates.first()!;
+    }
+
+    tail(): Coordinate<ColumnIndex, RowIndex> {
+        return this.sortedCoordinates.last()!;
+    }
+
+    pop(): CoordinateAlignment<ColumnIndex, RowIndex> {
+        const tail = this.tail();
+        const newSortedCoordinates = this.sortedCoordinates.pop();
+        assert(newSortedCoordinates.size >= 2, 'TODO: prob Either<>');
+
+        return new CoordinateAlignment(
+            this.direction,
+            newSortedCoordinates,
+            this.sortedGaps, // TODO: may be incorrect
+            this.nextHead,
+            tail,
+        );
+    }
+
+    shift(): CoordinateAlignment<ColumnIndex, RowIndex> {
+        const head = this.head();
+        const newSortedCoordinates = this.sortedCoordinates.shift();
+        assert(newSortedCoordinates.size >= 2, 'TODO: prob Either<>');
+
+        return new CoordinateAlignment(
+            this.direction,
+            newSortedCoordinates,
+            this.sortedGaps, // TODO: may be incorrect
+            head,
+            this.nextTail,
+        );
     }
 
     contains(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
@@ -46,7 +78,7 @@ export class CoordinateAlignment<
         return hashString(this.toString());
     }
 
-    removeExtremum(extremum: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {
+    removeNextExtremum(extremum: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {
         const { direction, sortedCoordinates, sortedGaps } = this;
         let { nextHead, nextTail } = this;
 

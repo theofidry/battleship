@@ -61,11 +61,11 @@ export class StdAiHitStrategyStateRecorderLogger implements AiHitStrategyStateRe
                 .toArray(),
         );
 
-        this.logger.log('Choice lists:');
-        this.logger.log(
-            choicesList
-                .map(({ strategy, coordinates }) => [strategy, renderCoordinates(coordinates)])
-                .toArray(),
-        );
+        // this.logger.log('Choice lists:');
+        // this.logger.log(
+        //     choicesList
+        //         .map(({ strategy, coordinates }) => [strategy, renderCoordinates(coordinates)])
+        //         .toArray(),
+        // );
     }
 }

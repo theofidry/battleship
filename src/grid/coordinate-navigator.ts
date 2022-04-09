@@ -770,7 +770,7 @@ function createFindNextCoordinate<
     findNextColumnIndex: AdjacentIndexFinder<ColumnIndex>,
     findNextRowIndex: AdjacentIndexFinder<RowIndex>,
 ): AdjacentCoordinateFinder<ColumnIndex, RowIndex> {
-    const reference = alignment.first();
+    const reference = alignment.head();
 
     switch (alignment.direction) {
         case ShipDirection.VERTICAL:
