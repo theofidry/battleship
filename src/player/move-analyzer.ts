@@ -102,12 +102,13 @@ export class MoveAnalyzer<
             return this.clearHits();
         }
 
-        const sunkSuspiciousAlignment = suspiciousAlignments
+        const suspiciousAlignmentContainingSunk = suspiciousAlignments
             .filter((alignment) => alignment.contains(previousMove.target))
             .first();
 
-        if (suspiciousAlignments.size > 0 && undefined !== sunkSuspiciousAlignment) {
+        if (suspiciousAlignments.size > 0 && undefined !== suspiciousAlignmentContainingSunk) {
             this.logger.log('Target belongs to a suspicious alignment.');
+
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
 
             this.suspiciousAlignments = List();
@@ -117,17 +118,19 @@ export class MoveAnalyzer<
 
         this.logger.log('No matching suspicious alignment found.');
 
-        const sunkAlignment = this.previousAlignments
+        const knownAlignmentContainingSunk = this.previousAlignments
             .filter(
-                (alignment) => alignment.contains(previousMove.target)
-                    && alignment.sortedGaps.size === 0
+                (alignment) => {
+                    return alignment.sortedGaps.size === 0
+                        && alignment.contains(previousMove.target);
+                }
             )
             .first();
 
-        if (undefined !== sunkAlignment) {
-            this.logger.log(`Target belongs to a known alignment: ${sunkAlignment.toString()}.`);
+        if (undefined !== knownAlignmentContainingSunk) {
+            this.logger.log(`Target belongs to a known alignment: ${knownAlignmentContainingSunk.toString()}.`);
 
-            return this.handleAlignmentWithSunkHit(sunkAlignment);
+            return this.handleAlignmentWithSunkHit(knownAlignmentContainingSunk);
         }
 
         this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
@@ -161,28 +164,16 @@ export class MoveAnalyzer<
         // TODO: move the block above to the opponentFleet in order to keep the recalculateSize private?
         this.opponentFleet.recalculateSize();
 
-        console.log({
-            potentiallySunkAlignments: potentiallySunkAlignments.map(toString).toArray(),
-        });
-
         assert(potentiallySunkAlignments.size > 0, 'Expected to find a suspicious alignment.');
 
-        // TODO: handle when there is more than one
         const suspiciousAlignment = potentiallySunkAlignments.first()!;
+        assert(potentiallySunkAlignments.size === 1, 'TODO: 123P123K90');
 
         let suspiciousCoordinates = suspiciousAlignment.sortedCoordinates.push(previousMove.target);
         let sortedSunkCoordinates = this.previousMoves
             .filter(({ target, response }) => response === HitResponse.SUNK && suspiciousAlignment.contains(target))
             .map(({ target }) => target)
             .unshift(previousMove.target);
-        //let sunkCoordinate: Coordinate<ColumnIndex, RowIndex> | undefined;
-        //let alignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>;
-        //let matchingAlignment: CoordinateAlignment<ColumnIndex, RowIndex>;
-
-        console.log({
-            suspiciousCoordinates: suspiciousCoordinates.map(toString).toArray(),
-            sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
-        });
 
         while (sortedSunkCoordinates.size > 0) {
             const maxShipSize = this.getMaxShipSize();
@@ -191,24 +182,6 @@ export class MoveAnalyzer<
             assertIsNotUndefined(sunkCoordinate);
 
             sortedSunkCoordinates = sortedSunkCoordinates.shift();
-
-            const prefilterAlignments = this.coordinateNavigator
-                .findAlignments(
-                    suspiciousCoordinates,
-                    maxShipSize,
-                );
-
-            console.log({
-                maxShipSize,
-                sunkCoordinate,
-                sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
-                prefilterAlignments: prefilterAlignments.map(toString).toArray(),
-                gaps: prefilterAlignments
-                    .map((alignment) => alignment.sortedGaps)
-                    .filter((gaps) => gaps.size > 0)
-                    .map((gaps) => gaps.map(toString).join(','))
-                    .toArray(),
-            });
 
             const alignments = this.coordinateNavigator
                 .findAlignments(
@@ -220,19 +193,8 @@ export class MoveAnalyzer<
             let alignmentsWithoutGap = alignments.filter(isAlignmentWithNoGap);
 
             if (alignmentsWithoutGap.size === 0) {
-                console.log('no alignment without gap found! Retrying by exploding alignment by gaps');
-
                 alignmentsWithoutGap = alignments
-                    .flatMap((alignment) => {
-                        const x = this.coordinateNavigator.explodeByGaps(alignment);
-
-                        console.log({
-                            alignment: alignment.toString(),
-                            alignmentsAfterExplode: x.map(toString).toArray(),
-                        });
-
-                        return x;
-                    })
+                    .flatMap((alignment) => this.coordinateNavigator.explodeByGaps(alignment))
                     .filter(isAlignmentWithNoGap)
                     .filter((alignment) => alignment.contains(sunkCoordinate));
             }
@@ -244,17 +206,9 @@ export class MoveAnalyzer<
 
             const matchingAlignment = alignmentsWithoutGap.first()!;
 
-            console.log(`found matching alignment! ${matchingAlignment.toString()}`);
-
             this.handleAlignmentWithSunkHit(matchingAlignment);
             suspiciousCoordinates = suspiciousCoordinates.filter((coordinate) => !matchingAlignment.contains(coordinate));
         }
-
-        console.log('update previous hits');
-        console.log({
-            previousHitsBefore: this.previousHits.map(toString).toArray(),
-            previousHitsAfter: suspiciousCoordinates.map(toString).toArray(),
-        });
 
         this.previousHits = suspiciousCoordinates;
     }
