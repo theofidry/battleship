@@ -1,9 +1,13 @@
 import { expect } from 'chai';
 import { isValueObject, List } from 'immutable';
+import { toString } from 'lodash';
 import { Coordinate } from '../../src/grid/coordinate';
-import { CoordinateAlignment } from '../../src/grid/coordinate-alignment';
+import { AtomicAlignment, CoordinateAlignment } from '../../src/grid/coordinate-alignment';
 import { ShipDirection } from '../../src/ship/ship-direction';
-import { TestCoordinate, TestCoordinateAlignment } from './test-coordinates';
+import { expectLeftValueError, rightValue } from '../utils/either-expectations';
+import {
+    TestCoordinate, TestCoordinateAlignment, testCoordinateNavigator,
+} from './test-coordinates';
 
 class EqualitySet {
     constructor(
@@ -17,6 +21,7 @@ class EqualitySet {
 
 function* provideEqualitySets(): Generator<EqualitySet> {
     const alignment = new CoordinateAlignment(
+        testCoordinateNavigator,
         ShipDirection.HORIZONTAL,
         List([
             new Coordinate('A', '4'),
@@ -38,6 +43,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'same sortedCoordinates but different references',
         alignment,
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -54,6 +60,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'different sortedCoordinates',
         alignment,
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -81,6 +88,7 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
     yield new NextExtremumRemoval(
         'no extremum',
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -92,6 +100,7 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
         ),
         new Coordinate('A', '4'),
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -106,6 +115,7 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
     yield new NextExtremumRemoval(
         'remove next head',
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('B', '4'),
@@ -117,6 +127,7 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
         ),
         new Coordinate('B', '4'),
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('B', '4'),
@@ -131,6 +142,7 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
     yield new NextExtremumRemoval(
         'remove next tail',
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('B', '4'),
@@ -142,6 +154,7 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
         ),
         new Coordinate('C', '4'),
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('B', '4'),
@@ -154,9 +167,179 @@ function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
     );
 }
 
+class ExtremumRemoval {
+    constructor(
+        readonly title: string,
+        readonly alignment: TestCoordinateAlignment,
+        readonly shift: TestCoordinateAlignment | string,
+        readonly pop: TestCoordinateAlignment | string,
+    ) {
+    }
+}
+
+function* provideExtremumRemoval(): Generator<ExtremumRemoval> {
+    yield new ExtremumRemoval(
+        'atomic',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+            ]),
+            List([]),
+            undefined,
+            undefined,
+        ),
+        'The alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
+        'The alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
+    );
+
+    yield new ExtremumRemoval(
+        '3 elements',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+                new Coordinate('D', '4'),
+            ]),
+            List([]),
+            new Coordinate('A', '4'),
+            new Coordinate('E', '4'),
+        ),
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('C', '4'),
+                new Coordinate('D', '4'),
+            ]),
+            List([]),
+            new Coordinate('B', '4'),
+            new Coordinate('E', '4'),
+        ),
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            new Coordinate('A', '4'),
+            new Coordinate('D', '4'),
+        ),
+    );
+
+    yield new ExtremumRemoval(
+        '4 elements and a gap',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('D', '4'),
+                new Coordinate('E', '4'),
+            ]),
+            List([
+                new Coordinate('C', '4'),
+            ]),
+            undefined,
+            undefined,
+        ),
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('D', '4'),
+                new Coordinate('E', '4'),
+            ]),
+            List([
+                new Coordinate('C', '4'),
+            ]),
+            new Coordinate('A', '4'),
+            undefined,
+        ),
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('D', '4'),
+            ]),
+            List([
+                new Coordinate('C', '4'),
+            ]),
+            undefined,
+            new Coordinate('E', '4'),
+        ),
+    );
+
+    yield new ExtremumRemoval(
+        '3 elements and a gap',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('E', '4'),
+            ]),
+            List([
+                new Coordinate('C', '4'),
+                new Coordinate('D', '4'),
+            ]),
+            undefined,
+            undefined,
+        ),
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('E', '4'),
+            ]),
+            List([
+                new Coordinate('C', '4'),
+                new Coordinate('D', '4'),
+            ]),
+            new Coordinate('A', '4'),
+            undefined,
+        ),
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+            ]),
+            List(),
+            undefined,
+            new Coordinate('C', '4'),
+        ),
+    );
+}
+
+function convertAlignment(alignment: TestCoordinateAlignment): object {
+    return {
+        direction: alignment.direction,
+        sortedCoordinates: alignment.sortedCoordinates.map(toString).toArray(),
+        sortedGaps: alignment.sortedGaps.map(toString).toArray(),
+        nextHead: alignment.nextHead?.toString(),
+        nextTail: alignment.nextTail?.toString(),
+        nextExtremums: alignment.nextExtremums.map(toString).toArray(),
+    };
+}
+
 describe('Coordinate', () => {
     it('can be cast into a string', () => {
         const alignment = new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -175,6 +358,7 @@ describe('Coordinate', () => {
     // This allows Immutable JS to correctly detect duplicates
     it('is an Immutable value object', () => {
         const alignment = new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -202,6 +386,7 @@ describe('Coordinate', () => {
 
     it('can tell if it contains a coordinate or not', () => {
         const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -218,6 +403,7 @@ describe('Coordinate', () => {
 
     it('describes its head & tail', () => {
         const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.HORIZONTAL,
             List([
                 new Coordinate('A', '4'),
@@ -241,6 +427,52 @@ describe('Coordinate', () => {
 
             expect(actual).to.eqls(expected);
             expect(alignment.toString()).to.equal(original);
+        });
+    }
+
+    for (const { title, alignment, shift, pop } of provideExtremumRemoval()) {
+        it(`can shift the alignment: ${title}`, () => {
+            const original = alignment.toString();
+
+            const result = alignment.shift();
+
+            if ('string' === typeof shift) {
+                expectLeftValueError(
+                    'AtomicAlignment',
+                    shift,
+                    result,
+                );
+            } else {
+                rightValue(
+                    result,
+                    (actual) => {
+                        expect(convertAlignment(actual)).to.eqls(convertAlignment(shift));
+                        expect(alignment.toString()).to.equal(original);
+                    }
+                );
+            }
+        });
+
+        it(`can pop the alignment: ${title}`, () => {
+            const original = alignment.toString();
+
+            const result = alignment.pop();
+
+            if ('string' === typeof pop) {
+                expectLeftValueError(
+                    'AtomicAlignment',
+                    pop,
+                    result,
+                );
+            } else {
+                rightValue(
+                    result,
+                    (actual) => {
+                        expect(convertAlignment(actual)).to.eqls(convertAlignment(pop));
+                        expect(alignment.toString()).to.equal(original);
+                    }
+                );
+            }
         });
     }
 });
