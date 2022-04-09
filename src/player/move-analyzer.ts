@@ -325,7 +325,7 @@ export class MoveAnalyzer<
         assert(sunkCoordinatesFromSuspiciousAlignment.size === 1, 'TODO');
 
         this.suspiciousAlignments = List([
-            suspiciousAlignment.removeExtremum(sunkCoordinatesFromSuspiciousAlignment.first()!),
+            suspiciousAlignment.removeNextExtremum(sunkCoordinatesFromSuspiciousAlignment.first()!),
         ]);
         this.previousHits = List();
 
