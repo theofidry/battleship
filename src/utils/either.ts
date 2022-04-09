@@ -111,6 +111,15 @@ export class Either<L, R> {
             (rightValue) => rightValue,
         );
     }
+
+    getOrThrowLeft(): R | never {
+        return this.fold(
+            (error) => {
+                throw error;
+            },
+            (rightValue) => rightValue,
+        );
+    }
     
     toOptional(): Optional<R> {
         return this.fold(

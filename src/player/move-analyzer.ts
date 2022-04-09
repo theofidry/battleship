@@ -20,6 +20,7 @@ export class MoveAnalyzer<
     private previousMoves: List<PreviousMove<ColumnIndex, RowIndex>> = List();
     private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
     private previousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
+    private triedAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
     private previousAlignmentsWithConfirmedSunk: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
     private suspiciousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
     private opponentFleet: OpponentFleet<ColumnIndex, RowIndex>;
@@ -48,7 +49,11 @@ export class MoveAnalyzer<
         this.previousMoves = this.previousMoves.push(previousMove);
 
         if (!isHitOrSunk(previousMove.response)) {
-            return this.checkOrphanHit();
+            this.logger.log('Recording a miss');
+
+            this.checkOrphanHit();
+
+            return this.logState('State after orphan check');
         }
 
         this.logger.log('Add hit and re-calculate alignments.');
@@ -140,7 +145,7 @@ export class MoveAnalyzer<
             previousMove.target,
             this.previousMoves,
         );
-        assert(newSuspiciousAlignments.size === 1, 'TODO: 123P123K90');
+        assert(newSuspiciousAlignments.size === 1, `Expected to find only one suspicious alignment after reconsidering potentially sunk ships. Found: "${newSuspiciousAlignments.join('", "')}".`);
         const suspiciousAlignment = newSuspiciousAlignments.first()!;
 
         this.logger.log(`New suspicious alignments found: ${newSuspiciousAlignments.map(toString).join(', ')}.`);
@@ -218,7 +223,7 @@ export class MoveAnalyzer<
             return this.logger.log('Setting enableShipSizeTracking: record the miss and do nothing.');
         }
 
-        this.logger.log('Recording a miss; Checking for orphan hits.');
+        this.logger.log('Checking for orphan hits.');
 
         // We might end up in the situation where we have a hit but all the
         // surrounding coordinates are either a miss or a hit belonging to a
@@ -244,10 +249,27 @@ export class MoveAnalyzer<
 
         this.logger.log(`Orphan hit ${orphanHit.toString()} found!`);
 
-        assert(this.suspiciousAlignments.size === 0, 'TODO');
+        assert(this.suspiciousAlignments.size === 0, `Did not expect to find an orphan hit whilst having suspicious alignments. Found: "${this.suspiciousAlignments.join('", "')}".`);
+
+        const suspiciousAlignmentFromOrphan = this.opponentFleet.recordOrphanHit(
+            orphanHit,
+            this.triedAlignments,
+            this.previousMoves
+                .filter(({ response }) => response === HitResponse.SUNK)
+                .map(({ target }) => target),
+        );
+
+        if (undefined === suspiciousAlignmentFromOrphan) {
+            this.logger.log('No suspicious alignment found from orphan.');
+
+            this.suspiciousAlignments = List();
+            this.previousHits = List();
+
+            return;
+        }
 
         const { suspiciousAlignment, choppedCoordinate } = this.analyzeSuspiciousAlignment(
-            this.opponentFleet.recordOrphanHit(orphanHit),
+            suspiciousAlignmentFromOrphan,
         );
 
         this.logger.log(`Analysis result: ${suspiciousAlignment.toString()} and ${choppedCoordinate?.toString() || 'ø'}.`);
@@ -256,11 +278,15 @@ export class MoveAnalyzer<
             this.suspiciousAlignments = List([suspiciousAlignment]);
             this.previousHits = List();
         } else {
+            this.triedAlignments = this.triedAlignments.push(suspiciousAlignment);
             this.handleAlignmentWithSunkHit(suspiciousAlignment);
             this.previousHits = List([choppedCoordinate]);
-        }
 
-        this.logState('State after orphan check');
+            // Check again for orphan hits: the last chopped coordinate may very
+            // well be an orphan in which case if left unchecked, we will end
+            // up loosing one turn.
+            this.checkOrphanHit();
+        }
     }
 
     /**
@@ -305,7 +331,7 @@ export class MoveAnalyzer<
         const newSuspiciousAlignment = sunkIsHead ? suspiciousAlignment.pop() : suspiciousAlignment.shift();
 
         return {
-            suspiciousAlignment: newSuspiciousAlignment.getOrThrow(new Error('TODO: 1239JZHEUAY')),
+            suspiciousAlignment: newSuspiciousAlignment.getOrThrowLeft(),
             choppedCoordinate: sunkIsHead ? tail : head,
         };
     }
@@ -365,6 +391,7 @@ export class MoveAnalyzer<
             previousAlignments: this.previousAlignments.map(toString).toArray(),
             previousAlignmentsWithConfirmedSunk: this.previousAlignmentsWithConfirmedSunk.map(toString).toArray(),
             suspiciousAlignments: this.suspiciousAlignments.map(toString).toArray(),
+            triedAlignments: this.triedAlignments.map(toString).toArray(),
             sunkShips: formatFleet(OpponentShipStatus.SUNK),
             potentiallySunkShips: formatFleet(OpponentShipStatus.POTENTIALLY_SUNK),
             notFoundShips: formatFleet(OpponentShipStatus.NOT_FOUND),
@@ -468,10 +495,15 @@ class OpponentFleet<
         return Either.right(undefined);
     }
 
-    recordOrphanHit(orphanHit: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {
+    recordOrphanHit(
+        orphanHit: Coordinate<ColumnIndex, RowIndex>,
+        invalidAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+        sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+    ): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
         this.logger.log(`Looking for the potentially sunk ship that can contain the orphan hit ${orphanHit.toString()}.`);
 
-        const shipThatShouldContainOrphan = this.fleet.find(
+        let shipThatMayContainOrphan: OpponentShip<ColumnIndex, RowIndex> | undefined = undefined;
+        let shipsThatMayContainOrphan = this.fleet.filter(
             (ship) => {
                 if (!ship.isPotentiallySunk()) {
                     return false;
@@ -482,14 +514,50 @@ class OpponentFleet<
                 // TODO: there is probably more to do here... For example if the
                 // alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
                 // want a match if the orphan hit is F8.
-                return undefined !== alignment && alignment.nextExtremums.contains(orphanHit);
+                return undefined !== alignment
+                    && alignment.nextExtremums.contains(orphanHit)
+                    && !invalidAlignments.contains(alignment);
             },
         );
-        assertIsNotUndefined(shipThatShouldContainOrphan, 'Expected to find an incorrect potentially sunk ship.');
 
-        this.logger.log(`Found the ship ${shipThatShouldContainOrphan}.`);
+        if (shipsThatMayContainOrphan.size === 1) {
+            shipThatMayContainOrphan = shipsThatMayContainOrphan.first()!;
+        } else {
+            assert(
+                shipsThatMayContainOrphan.size === 0,
+                `Did not expect to find more than one potentially sunk ship for which the next extremum is the orphan hit. Found: "${shipsThatMayContainOrphan.join('", "')}"`,
+            );
 
-        const incorrectAlignmentCoordinates = shipThatShouldContainOrphan.unmarkAsPotentiallySunk().sortedCoordinates;
+            // If we arrive here it means we previously attempted to split up
+            // an alignment which resulted in an orphan hit.
+            // This means the alignment we tried to split up was indeed correct.
+            shipsThatMayContainOrphan = this.fleet.filter(
+                (ship) => {
+                    if (!ship.isPotentiallySunk()) {
+                        return false;
+                    }
+
+                    const alignment = ship.getAlignment();
+
+                    // TODO: there is probably more to do here... For example if the
+                    // alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
+                    // want a match if the orphan hit is F8.
+                    return undefined !== alignment
+                        && alignment.nextExtremums.contains(orphanHit);
+                },
+            );
+
+            assert(
+                shipsThatMayContainOrphan.size === 1,
+                `Expected to find exactly one ship for which the next extremum is the orphan hit. Found: "${shipsThatMayContainOrphan.join('", "')}"`,
+            );
+
+            shipThatMayContainOrphan = shipsThatMayContainOrphan.first()!;
+        }
+
+        this.logger.log(`Found the ship ${shipThatMayContainOrphan}.`);
+
+        const incorrectAlignmentCoordinates = shipThatMayContainOrphan.unmarkAsPotentiallySunk().sortedCoordinates;
 
         const correctAlignmentSize = incorrectAlignmentCoordinates.size + 1;
         assertIsShipSize(correctAlignmentSize);
@@ -512,9 +580,21 @@ class OpponentFleet<
             (ship) => ship.isPotentiallySunk() && ship.size === alignmentSize,
         );
 
-        assert(potentiallySunkShips.size === 1, 'TODO');
+        let suspiciousAlignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined = undefined;
 
-        const suspiciousAlignment = potentiallySunkShips.first()!.unmarkAsPotentiallySunk();
+        if (potentiallySunkShips.size === 0) {
+            const sunkCoordinatesBelongingToAlignment = sunkCoordinates.filter(
+                (coordinate) => correctAlignment.contains(coordinate),
+            );
+
+            assert(sunkCoordinatesBelongingToAlignment.size === 1, `Expected to find exactly one sunk coordinate within the alignment ${correctAlignment.toString()}. Found: ${sunkCoordinatesBelongingToAlignment.join(', ')}.`);
+
+            // Do nothing: all is good.
+        } else {
+            assert(potentiallySunkShips.size === 1, `Expected to find exactly one potentially sunk ship of the size ${alignmentSize}. Found ${potentiallySunkShips.size}.`);
+
+            suspiciousAlignment = potentiallySunkShips.first()!.unmarkAsPotentiallySunk();
+        }
 
         const correctShip = this.find(
                 alignmentSize,
