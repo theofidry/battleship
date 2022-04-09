@@ -1,7 +1,7 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../assert/assert';
-import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
+import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
 import { HitResponse, isHitOrSunk } from '../communication/hit-response';
 import { Coordinate } from '../grid/coordinate';
 import { CoordinateAlignment, isAlignmentWithNoGap } from '../grid/coordinate-alignment';
