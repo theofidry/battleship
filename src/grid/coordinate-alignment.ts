@@ -3,8 +3,29 @@ import { toString } from 'lodash';
 import { assert } from '../assert/assert';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { ShipDirection } from '../ship/ship-direction';
+import { Either } from '../utils/either';
 import { Coordinate } from './coordinate';
+import { CoordinateNavigator, IncompleteCoordinateAlignment } from './coordinate-navigator';
 import { hashString } from './string-hash-code';
+
+export function completeAlignment<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(
+    alignment: IncompleteCoordinateAlignment<ColumnIndex, RowIndex>,
+    coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
+): CoordinateAlignment<ColumnIndex, RowIndex> {
+    const { nextHead, nextTail } = coordinateNavigator.findNextExtremums(alignment);
+
+    return new CoordinateAlignment(
+        coordinateNavigator,
+        alignment.direction,
+        alignment.coordinates,
+        coordinateNavigator.findAlignmentGaps(alignment),
+        nextHead,
+        nextTail,
+    );
+}
 
 export class CoordinateAlignment<
     ColumnIndex extends PropertyKey,
@@ -15,6 +36,7 @@ export class CoordinateAlignment<
     private stringValue?: string;
 
     public constructor(
+        private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
         public readonly direction: ShipDirection,
         public readonly sortedCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
         public readonly sortedGaps: List<Coordinate<ColumnIndex, RowIndex>>,
@@ -29,40 +51,12 @@ export class CoordinateAlignment<
         this.nextExtremums = List([nextHead, nextTail].filter(isNotUndefined));
     }
 
-    head(): Coordinate<ColumnIndex, RowIndex> {
+    get head(): Coordinate<ColumnIndex, RowIndex> {
         return this.sortedCoordinates.first()!;
     }
 
-    tail(): Coordinate<ColumnIndex, RowIndex> {
+    get tail(): Coordinate<ColumnIndex, RowIndex> {
         return this.sortedCoordinates.last()!;
-    }
-
-    pop(): CoordinateAlignment<ColumnIndex, RowIndex> {
-        const tail = this.tail();
-        const newSortedCoordinates = this.sortedCoordinates.pop();
-        assert(newSortedCoordinates.size >= 2, 'TODO: prob Either<>');
-
-        return new CoordinateAlignment(
-            this.direction,
-            newSortedCoordinates,
-            this.sortedGaps, // TODO: may be incorrect
-            this.nextHead,
-            tail,
-        );
-    }
-
-    shift(): CoordinateAlignment<ColumnIndex, RowIndex> {
-        const head = this.head();
-        const newSortedCoordinates = this.sortedCoordinates.shift();
-        assert(newSortedCoordinates.size >= 2, 'TODO: prob Either<>');
-
-        return new CoordinateAlignment(
-            this.direction,
-            newSortedCoordinates,
-            this.sortedGaps, // TODO: may be incorrect
-            head,
-            this.nextTail,
-        );
     }
 
     contains(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
@@ -96,11 +90,48 @@ export class CoordinateAlignment<
         }
 
         return new CoordinateAlignment(
+            this.coordinateNavigator,
             direction,
             sortedCoordinates,
             sortedGaps,
             nextHead,
             nextTail,
+        );
+    }
+
+    shift(): Either<AtomicAlignment, CoordinateAlignment<ColumnIndex, RowIndex>> {
+        const newSortedCoordinates = this.sortedCoordinates.shift();
+
+        if (newSortedCoordinates.size < 2) {
+            return Either.left(AtomicAlignment.forAlignment(this));
+        }
+
+        return Either.right(
+            completeAlignment(
+                {
+                    direction: this.direction,
+                    coordinates: newSortedCoordinates,
+                },
+                this.coordinateNavigator,
+            ),
+        );
+    }
+
+    pop(): Either<AtomicAlignment, CoordinateAlignment<ColumnIndex, RowIndex>> {
+        const newSortedCoordinates = this.sortedCoordinates.pop();
+
+        if (newSortedCoordinates.size < 2) {
+            return Either.left(AtomicAlignment.forAlignment(this));
+        }
+
+        return Either.right(
+            completeAlignment(
+                {
+                    direction: this.direction,
+                    coordinates: newSortedCoordinates,
+                },
+                this.coordinateNavigator,
+            ),
         );
     }
 
@@ -126,4 +157,16 @@ export function isAlignmentWithNoGap<
     RowIndex extends PropertyKey,
 >(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): boolean {
     return alignment.sortedGaps.size === 0;
+}
+
+export class AtomicAlignment extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'AtomicAlignment';
+    }
+
+    static forAlignment(alignment: CoordinateAlignment<any, any>): AtomicAlignment {
+        return new AtomicAlignment(`The alignment ${alignment.toString()} is atomic: no element can be removed from it.`);
+    }
 }

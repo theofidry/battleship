@@ -7,7 +7,7 @@ import { ShipDirection } from '../ship/ship-direction';
 import { ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { Coordinate } from './coordinate';
-import { CoordinateAlignment } from './coordinate-alignment';
+import { completeAlignment, CoordinateAlignment } from './coordinate-alignment';
 
 export type AdjacentIndexFinder<Index extends PropertyKey> = (index: Index)=> Index | undefined;
 export type IndexSorter<Index extends PropertyKey> = (left: Index, right: Index)=> number;
@@ -143,17 +143,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
         return this
             .findAlignedCoordinates(coordinates, maxDistance)
-            .map((alignment) => {
-                const [head, tail] = this.findNextExtremums(alignment).toArray();
-
-                return new CoordinateAlignment(
-                    alignment.direction,
-                    alignment.coordinates,
-                   this.findAlignmentGaps(alignment),
-                   head,
-                   tail,
-                );
-            });
+            .map((alignment) => completeAlignment(alignment, this));
     }
 
     /**
@@ -360,19 +350,22 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
      * Finds the sortedCoordinates at the (next) extremums of the given alignments.
      *
      * For example for the alignments (A1, A3) and (B2, E2), the sortedCoordinates
-     * found will be A4, A2 and F2.
+     * found will be respectively (A2, A4) and (F2).
      */
-    findNextExtremums(alignment: IncompleteCoordinateAlignment<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+    findNextExtremums(alignment: IncompleteCoordinateAlignment<ColumnIndex, RowIndex>): {
+        nextHead: Coordinate<ColumnIndex, RowIndex> | undefined,
+        nextTail: Coordinate<ColumnIndex, RowIndex> | undefined,
+    } {
         const direction = alignment.direction;
 
         if (alignment.coordinates.size === 0) {
-            return List();
+            return { nextHead: undefined, nextTail: undefined};
         }
 
         if (direction === ShipDirection.HORIZONTAL) {
             const rowIndex = alignment.coordinates.first()!.rowIndex;
 
-            const missingColumns = findIndexExtremums(
+            const { head: missingHeadColumnIndex, tail: missingTailColumnIndex } = findIndexExtremums(
                 alignment
                     .coordinates
                     .sort(this.createCoordinatesSorter())
@@ -382,13 +375,18 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                 this.findNextColumnIndex,
             );
 
-            return missingColumns.map((columnIndex) => new Coordinate(columnIndex, rowIndex));
+            const mapToCoordinate = (columnIndex: ColumnIndex | undefined) => undefined === columnIndex ? undefined : new Coordinate(columnIndex, rowIndex);
+
+            return {
+                nextHead: mapToCoordinate(missingHeadColumnIndex),
+                nextTail: mapToCoordinate(missingTailColumnIndex),
+            };
         }
 
         if (direction === ShipDirection.VERTICAL) {
             const columnIndex = alignment.coordinates.first()!.columnIndex;
 
-            const missingRows = findIndexExtremums(
+            const { head: missingHeadRowIndex, tail: missingTailRowIndex } = findIndexExtremums(
                 alignment
                     .coordinates
                     .sort(this.createCoordinatesSorter())
@@ -398,7 +396,12 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                 this.findNextRowIndex,
             );
 
-            return missingRows.map((rowIndex) => new Coordinate(columnIndex, rowIndex));
+            const mapToCoordinate = (rowIndex: RowIndex | undefined) => undefined === rowIndex ? undefined : new Coordinate(columnIndex, rowIndex);
+
+            return {
+                nextHead: mapToCoordinate(missingHeadRowIndex),
+                nextTail: mapToCoordinate(missingTailRowIndex),
+            };
         }
 
         assertIsUnreachableCase(direction);
@@ -705,20 +708,23 @@ function findIndexExtremums<Index extends PropertyKey>(
     sortedIndices: OrderedSet<Index>,
     findPreviousIndex: AdjacentIndexFinder<Index>,
     findNextIndex: AdjacentIndexFinder<Index>,
-): List<Index> {
-    const missingIndices: Array<Index|undefined> = [];
+): { head: Index | undefined, tail: Index | undefined} {
+    const missingIndices: { head: Index | undefined, tail: Index | undefined} = {
+        head: undefined,
+        tail: undefined,
+    };
     const first = sortedIndices.first();
     const last = sortedIndices.last();
 
     if (undefined !== first) {
-        missingIndices.push(findPreviousIndex(first));
+        missingIndices.head = findPreviousIndex(first);
     }
 
     if (undefined !== last) {
-        missingIndices.push(findNextIndex(last));
+        missingIndices.tail = findNextIndex(last);
     }
 
-    return List(missingIndices.filter(isNotUndefined));
+    return missingIndices;
 }
 
 function getOrigin<
@@ -770,7 +776,7 @@ function createFindNextCoordinate<
     findNextColumnIndex: AdjacentIndexFinder<ColumnIndex>,
     findNextRowIndex: AdjacentIndexFinder<RowIndex>,
 ): AdjacentCoordinateFinder<ColumnIndex, RowIndex> {
-    const reference = alignment.head();
+    const reference = alignment.head;
 
     switch (alignment.direction) {
         case ShipDirection.VERTICAL:
