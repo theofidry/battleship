@@ -3,7 +3,7 @@ import { isValueObject, List } from 'immutable';
 import { Coordinate } from '../../src/grid/coordinate';
 import { CoordinateAlignment } from '../../src/grid/coordinate-alignment';
 import { ShipDirection } from '../../src/ship/ship-direction';
-import { TestCoordinateAlignment } from './test-coordinates';
+import { TestCoordinate, TestCoordinateAlignment } from './test-coordinates';
 
 class EqualitySet {
     constructor(
@@ -64,6 +64,93 @@ function* provideEqualitySets(): Generator<EqualitySet> {
             undefined,
         ),
         false,
+    );
+}
+
+class NextExtremumRemoval {
+    constructor(
+        readonly title: string,
+        readonly alignment: TestCoordinateAlignment,
+        readonly extremum: TestCoordinate,
+        readonly expected: TestCoordinateAlignment,
+    ) {
+    }
+}
+
+function* provideNextExtremumRemoval(): Generator<NextExtremumRemoval> {
+    yield new NextExtremumRemoval(
+        'no extremum',
+        new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+            ]),
+            List([]),
+            undefined,
+            undefined,
+        ),
+        new Coordinate('A', '4'),
+        new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+            ]),
+            List([]),
+            undefined,
+            undefined,
+        ),
+    );
+
+    yield new NextExtremumRemoval(
+        'remove next head',
+        new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            new Coordinate('A', '4'),
+            new Coordinate('D', '4'),
+        ),
+        new Coordinate('B', '4'),
+        new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            undefined,
+            new Coordinate('D', '4'),
+        ),
+    );
+
+    yield new NextExtremumRemoval(
+        'remove next tail',
+        new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            new Coordinate('A', '4'),
+            new Coordinate('D', '4'),
+        ),
+        new Coordinate('C', '4'),
+        new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            new Coordinate('A', '4'),
+            undefined,
+        ),
     );
 }
 
@@ -128,4 +215,32 @@ describe('Coordinate', () => {
         expect(alignment.contains(new Coordinate('A', '4'))).to.equal(true);
         expect(alignment.contains(new Coordinate('D', '4'))).to.equal(false);
     });
+
+    it('describes its head & tail', () => {
+        const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            undefined,
+            undefined,
+        );
+
+        expect(alignment.head.toString()).to.equal('A4');
+        expect(alignment.tail.toString()).to.equal('C4');
+    });
+
+    for (const { title, alignment, extremum, expected } of provideNextExtremumRemoval()) {
+        it(`can remove an extremum: ${title}`, () => {
+            const original = alignment.toString();
+
+            const actual = alignment.removeNextExtremum(extremum);
+
+            expect(actual).to.eqls(expected);
+            expect(alignment.toString()).to.equal(original);
+        });
+    }
 });
