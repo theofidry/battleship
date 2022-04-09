@@ -419,7 +419,8 @@ class CoordinateAlignmentSet {
         readonly title: string,
         readonly alignment: IncompleteCoordinateAlignment<TestColumnIndex, TestRowIndex>,
         readonly expectedGaps: ReadonlyArray<string>,
-        readonly expectedExtremums: ReadonlyArray<string>,
+        readonly expectedNextHead: string | undefined,
+        readonly expectedNextTail: string | undefined,
     ) {
     }
 }
@@ -432,7 +433,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             coordinates: List(),
         },
         [],
-        [],
+        undefined,
+        undefined,
     );
 
     yield new CoordinateAlignmentSet(
@@ -444,7 +446,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         [],
-        ['A2', 'C2'],
+        'A2',
+        'C2',
     );
 
     yield new CoordinateAlignmentSet(
@@ -456,7 +459,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         [],
-        ['B2'],
+        undefined,
+        'B2',
     );
 
     yield new CoordinateAlignmentSet(
@@ -469,7 +473,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         [],
-        ['B1', 'B4'],
+        'B1',
+        'B4',
     );
 
     yield new CoordinateAlignmentSet(
@@ -482,7 +487,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         ['B3'],
-        ['B1', 'B5'],
+        'B1',
+        'B5',
     );
 
     yield new CoordinateAlignmentSet(
@@ -495,7 +501,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         [],
-        ['A2', 'C2'],
+        'A2',
+        'C2',
     );
 
     yield new CoordinateAlignmentSet(
@@ -508,7 +515,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         ['B3'],
-        ['B1', 'B5'],
+        'B1',
+        'B5',
     );
 
     yield new CoordinateAlignmentSet(
@@ -521,7 +529,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         ['C2'],
-        ['A2', 'E2'],
+        'A2',
+        'E2',
     );
 
     yield new CoordinateAlignmentSet(
@@ -534,7 +543,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         ['B3', 'B4'],
-        ['B1'],
+        'B1',
+        undefined,
     );
 
     yield new CoordinateAlignmentSet(
@@ -548,7 +558,8 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
             ]),
         },
         ['B2', 'B4'],
-        [],
+        undefined,
+        undefined,
     );
 }
 
@@ -566,14 +577,12 @@ describe('CoordinateNavigator::findAlignmentGaps()', () => {
 });
 
 describe('CoordinateNavigator::findNextExtremums()', () => {
-    for (const { title, alignment, expectedExtremums } of provideCoordinateAlignmentGapsSet()) {
+    for (const { title, alignment, expectedNextHead, expectedNextTail } of provideCoordinateAlignmentGapsSet()) {
         it(title, () => {
-            const actual = testCoordinateNavigator
-                .findNextExtremums(alignment)
-                .map(toString)
-                .toArray();
+            const { nextHead, nextTail } = testCoordinateNavigator.findNextExtremums(alignment);
 
-            expect(actual).to.eqls(expectedExtremums);
+            expect(nextHead?.toString()).to.equal(expectedNextHead);
+            expect(nextTail?.toString()).to.equal(expectedNextTail);
         });
     }
 });
@@ -591,6 +600,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
     yield new CoordinateAlignmentExplodeGapsSet(
         'alignment with no gaps',
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.VERTICAL,
             List([
                 new Coordinate('A', '1'),
@@ -610,6 +620,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
     yield new CoordinateAlignmentExplodeGapsSet(
         'alignment with one gap',
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.VERTICAL,
             List([
                 new Coordinate('A', '1'),
@@ -630,6 +641,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
     yield new CoordinateAlignmentExplodeGapsSet(
         'alignment with two gaps',
         new CoordinateAlignment(
+            testCoordinateNavigator,
             ShipDirection.VERTICAL,
             List([
                 new Coordinate('A', '1'),
