@@ -144,9 +144,10 @@ export class MoveAnalyzer<
 
         this.logger.log(`New suspicious alignments found: ${newSuspiciousAlignments.map(toString).join(', ')}.`);
 
-        assert(newSuspiciousAlignments.size > 1, 'TODO: 34412831');
+        assert(newSuspiciousAlignments.size === 1, 'TODO: 34412831');
 
         // TODO: handle when there is more than one
+        assert(newSuspiciousAlignments.size === 1, 'TODO: 123P123K90');
         const suspiciousAlignment = newSuspiciousAlignments.first()!;
 
         let suspiciousCoordinates = suspiciousAlignment.sortedCoordinates.push(previousMove.target);
@@ -155,10 +156,10 @@ export class MoveAnalyzer<
             .map(({ target }) => target)
             .unshift(previousMove.target);
 
-        console.log({
-            suspiciousCoordinates: suspiciousCoordinates.map(toString).toArray(),
-            sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
-        });
+        // console.log({
+        //     suspiciousCoordinates: suspiciousCoordinates.map(toString).toArray(),
+        //     sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
+        // });
 
         while (sortedSunkCoordinates.size > 0) {
             const maxShipSize = this.getMaxShipSize();
@@ -174,17 +175,17 @@ export class MoveAnalyzer<
                     maxShipSize,
                 );
 
-            console.log({
-                maxShipSize,
-                sunkCoordinate,
-                sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
-                prefilterAlignments: prefilterAlignments.map(toString).toArray(),
-                gaps: prefilterAlignments
-                    .map((alignment) => alignment.sortedGaps)
-                    .filter((gaps) => gaps.size > 0)
-                    .map((gaps) => gaps.map(toString).join(','))
-                    .toArray(),
-            });
+            // console.log({
+            //     maxShipSize,
+            //     sunkCoordinate,
+            //     sortedSunkCoordinates: sortedSunkCoordinates.map(toString).toArray(),
+            //     prefilterAlignments: prefilterAlignments.map(toString).toArray(),
+            //     gaps: prefilterAlignments
+            //         .map((alignment) => alignment.sortedGaps)
+            //         .filter((gaps) => gaps.size > 0)
+            //         .map((gaps) => gaps.map(toString).join(','))
+            //         .toArray(),
+            // });
 
             const alignments = this.coordinateNavigator
                 .findAlignments(
@@ -196,16 +197,16 @@ export class MoveAnalyzer<
             let alignmentsWithoutGap = alignments.filter(isAlignmentWithNoGap);
 
             if (alignmentsWithoutGap.size === 0) {
-                console.log('no alignment without gap found! Retrying by exploding alignment by gaps');
+                // console.log('no alignment without gap found! Retrying by exploding alignment by gaps');
 
                 alignmentsWithoutGap = alignments
                     .flatMap((alignment) => {
                         const x = this.coordinateNavigator.explodeByGaps(alignment);
-
-                        console.log({
-                            alignment: alignment.toString(),
-                            alignmentsAfterExplode: x.map(toString).toArray(),
-                        });
+                        //
+                        // console.log({
+                        //     alignment: alignment.toString(),
+                        //     alignmentsAfterExplode: x.map(toString).toArray(),
+                        // });
 
                         return x;
                     })
@@ -220,17 +221,17 @@ export class MoveAnalyzer<
 
             const matchingAlignment = alignmentsWithoutGap.first()!;
 
-            console.log(`found matching alignment! ${matchingAlignment.toString()}`);
+            // console.log(`found matching alignment! ${matchingAlignment.toString()}`);
 
             this.handleAlignmentWithSunkHit(matchingAlignment);
             suspiciousCoordinates = suspiciousCoordinates.filter((coordinate) => !matchingAlignment.contains(coordinate));
         }
 
-        console.log('update previous hits');
-        console.log({
-            previousHitsBefore: this.previousHits.map(toString).toArray(),
-            previousHitsAfter: suspiciousCoordinates.map(toString).toArray(),
-        });
+        // console.log('update previous hits');
+        // console.log({
+        //     previousHitsBefore: this.previousHits.map(toString).toArray(),
+        //     previousHitsAfter: suspiciousCoordinates.map(toString).toArray(),
+        // });
 
         this.previousHits = suspiciousCoordinates;
     }
@@ -326,8 +327,8 @@ export class MoveAnalyzer<
         const sunkIsHead = sunkCoordinate.equals(suspiciousAlignment.head());
 
         const isNextExtremum: (coordinate: Coordinate<ColumnIndex, RowIndex>)=> boolean = sunkIsHead
-            ? (coordinate) => coordinate.equals(suspiciousAlignment.tail())
-            : (coordinate) => coordinate.equals(suspiciousAlignment.head());
+            ? (coordinate) => coordinate.equals(suspiciousAlignment.nextTail)
+            : (coordinate) => coordinate.equals(suspiciousAlignment.nextHead);
 
         const nonSunkExtremumAlreadyTargeted = this.previousMoves
             .map(({ target }) => target)
@@ -717,7 +718,7 @@ class OpponentShip<
     }
 
     toString(): string {
-        return `(${this.status},${this.alignment})`;
+        return `"${this.status},${this.alignment}"`;
     }
 }
 
