@@ -225,7 +225,7 @@ export class MoveAnalyzer<
         this.recalculateAlignments();
     }
 
-    private checkOrphanHit(): void {
+    private checkOrphanHit(recurse = true): void {
         this.logger.log('Checking for orphan hits.');
 
         // We might end up in the situation where we have a hit but all the
@@ -273,6 +273,13 @@ export class MoveAnalyzer<
 
         this.suspiciousAlignments = List([suspiciousAlignmentFromOrphan]);
         this.checkOrphanSuspiciousAlignment();
+
+        if (recurse) {
+            // Check again for orphan hits: the last chopped coordinate may very
+            // well be an orphan in which case if left unchecked, we will end
+            // up loosing one turn.
+            this.checkOrphanHit(false);
+        }
     }
 
     private checkConfirmedAlignment(): void {
@@ -344,6 +351,8 @@ export class MoveAnalyzer<
             return this.logger.log('More than one suspicious alignment found: do nothing.');
         }
 
+        this.suspiciousAlignments = List();
+
         const { suspiciousAlignment, choppedCoordinate } = this.analyzeSuspiciousAlignment(
             suspiciousAlignments.first()!
         );
@@ -357,11 +366,6 @@ export class MoveAnalyzer<
             this.triedAlignments = this.triedAlignments.push(suspiciousAlignment);
             this.handleAlignmentWithSunkHit(suspiciousAlignment);
             this.previousHits = List([choppedCoordinate]);
-
-            // Check again for orphan hits: the last chopped coordinate may very
-            // well be an orphan in which case if left unchecked, we will end
-            // up loosing one turn.
-            this.checkOrphanHit();
         }
     }
 
@@ -540,6 +544,8 @@ class OpponentFleet<
 
         const matchingShip = unsunkShips.first();
 
+        let result: Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> | undefined;
+
         if (undefined === matchingShip) {
             this.logger.log('No matching ship found.');
 
@@ -558,7 +564,7 @@ class OpponentFleet<
 
             this.logger.log(`Un-marking the ship ${sunkShipOfSize.toString()} as potentially sunk.`);
 
-            return Either.left(List([
+            result = Either.left(List([
                 sunkAlignment,
                 suspiciousAlignment,
             ]));
@@ -566,13 +572,15 @@ class OpponentFleet<
             this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as potentially sunk.`);
 
             matchingShip.markAsPotentiallySunk(sunkAlignment);
+
+            result = Either.right(undefined);
         }
 
         this.recalculateSize();
 
         this.logState();
 
-        return Either.right(undefined);
+        return result;
     }
 
     markAsSunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
