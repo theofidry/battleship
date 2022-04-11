@@ -11,13 +11,14 @@ import { Fleet } from '../../ship/fleet';
 import { assertIsShipSize, ShipSize } from '../../ship/ship-size';
 import { Either } from '../../utils/either';
 import { PreviousMove } from '../hit-strategy';
+import { PreviousMoves } from './previous-moves';
 
 export class MoveAnalyzer<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
     OpponentCell,
 > {
-    private previousMoves: List<PreviousMove<ColumnIndex, RowIndex>> = List();
+    private readonly previousMoves: PreviousMoves<ColumnIndex, RowIndex>;
     private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
     private previousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
     private triedAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
@@ -36,6 +37,8 @@ export class MoveAnalyzer<
             coordinateNavigator,
             logger,
         );
+
+        this.previousMoves = new PreviousMoves();
     }
 
     recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
@@ -46,7 +49,7 @@ export class MoveAnalyzer<
         this.logger.log(`Recording previous move ${previousMove.target.toString()}:${previousMove.response}.`);
         this.logState('State before recalculation');
 
-        this.previousMoves = this.previousMoves.push(previousMove);
+        this.previousMoves.push(previousMove);
 
         if (!isHitOrSunk(previousMove.response)) {
             this.logger.log('Recording a miss');
@@ -84,7 +87,7 @@ export class MoveAnalyzer<
     }
 
     getPreviousMoves(): List<PreviousMove<ColumnIndex, RowIndex>> {
-        return this.previousMoves;
+        return this.previousMoves.all;
     }
 
     getPreviousHits(): List<Coordinate<ColumnIndex, RowIndex>> {
@@ -100,7 +103,7 @@ export class MoveAnalyzer<
     }
 
     private recalculateStateAfterSunk(): void {
-        const previousMove = this.previousMoves.last();
+        const previousMove = this.previousMoves.last;
         const suspiciousAlignments = this.suspiciousAlignments;
 
         if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
@@ -158,9 +161,9 @@ export class MoveAnalyzer<
         this.logger.log(`New suspicious alignments found: ${newSuspiciousAlignments.map(toString).join(', ')}.`);
 
         let suspiciousCoordinates = suspiciousAlignment.sortedCoordinates.push(previousMove.target);
-        let sortedSunkCoordinates = this.previousMoves
-            .filter(({ target, response }) => response === HitResponse.SUNK && suspiciousAlignment.contains(target))
-            .map(({ target }) => target)
+        let sortedSunkCoordinates = this.previousMoves.sunkCoordinates
+            .filter((coordinate) => suspiciousAlignment.contains(coordinate))
+            .sort(this.coordinateNavigator.createCoordinatesSorter())
             .unshift(previousMove.target);
 
         while (sortedSunkCoordinates.size > 0) {
@@ -241,8 +244,8 @@ export class MoveAnalyzer<
         const surroundingCoordinates = this.coordinateNavigator.getSurroundingCoordinates(potentiallyOrphanHit);
 
         const isOrphan = surroundingCoordinates
-            .filter((coordinate) => !this.isInPreviousMoves(coordinate))
-            .length === 0;
+            .filter((coordinate) => !this.previousMoves.contains(coordinate))
+            .size === 0;
 
         if (!isOrphan) {
             return this.logger.log('No orphan found: do nothing.');
@@ -257,9 +260,7 @@ export class MoveAnalyzer<
         const suspiciousAlignmentFromOrphan = this.opponentFleet.recordOrphanHit(
             orphanHit,
             this.triedAlignments,
-            this.previousMoves
-                .filter(({ response }) => response === HitResponse.SUNK)
-                .map(({ target }) => target),
+            this.previousMoves.sunkCoordinates,
         );
 
         if (undefined === suspiciousAlignmentFromOrphan) {
@@ -285,11 +286,7 @@ export class MoveAnalyzer<
     private checkConfirmedAlignment(): void {
         this.logger.log('Checking for confirmed alignment.');
 
-        // TODO: keep track of the sunk coordinates somewhere as we re-use them
-        //  in several places
-        const sunkCoordinates = this.previousMoves
-            .filter(({ target, response }) => HitResponse.SUNK)
-            .map(({ target}) => target);
+        const sunkCoordinates = this.previousMoves.sunkCoordinates;
 
         const alignmentContainsSunkCoordinate = (coordinates: List<Coordinate<ColumnIndex, RowIndex>>): boolean => {
             for (const coordinate of coordinates) {
@@ -314,8 +311,7 @@ export class MoveAnalyzer<
             return this.logger.log('No suspicious alignment: do nothing.');
         }
 
-        // TODO: this can be kept as a property instead.
-        const knownCoordinates = this.previousMoves.map(({ target }) => target);
+        const knownCoordinates = this.previousMoves.knownCoordinates;
 
         const isAlignmentConfirmed = (alignment: CoordinateAlignment<ColumnIndex, RowIndex>): boolean => {
             const unknownSurroundingCoordinates = alignment.sortedCoordinates
@@ -389,8 +385,7 @@ export class MoveAnalyzer<
             ? (coordinate) => coordinate.equals(suspiciousAlignment.nextTail)
             : (coordinate) => coordinate.equals(suspiciousAlignment.nextHead);
 
-        const nonSunkExtremumAlreadyTargeted = this.previousMoves
-            .map(({ target }) => target)
+        const nonSunkExtremumAlreadyTargeted = this.previousMoves.knownCoordinates
             .filter(isNextExtremum)
             .size > 0;
 
@@ -417,17 +412,13 @@ export class MoveAnalyzer<
     }
 
     private getSuspiciousAlignmentSunkCoordinate(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): Coordinate<ColumnIndex, RowIndex> {
-        const sunkCoordinatesFromSuspiciousAlignment = this.previousMoves
-            .filter(({ target, response }) => HitResponse.SUNK === response && alignment.contains(target))
-            .map(({ target}) => target);
+        const sunkCoordinatesFromSuspiciousAlignment = this.previousMoves.sunkCoordinates.filter(
+            (coordinate) => alignment.contains(coordinate),
+        );
 
         assert(sunkCoordinatesFromSuspiciousAlignment.size === 1, () => `The alignment ${alignment.toString()} can only contain one sunk coordinate. Found ${sunkCoordinatesFromSuspiciousAlignment.join(', ')}.`);
 
         return sunkCoordinatesFromSuspiciousAlignment.first()!;
-    }
-
-    private isInPreviousMoves(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
-        return undefined !== this.previousMoves.find(({ target }) => target.equals(coordinate));
     }
 
     private recalculateAlignments(): void {
@@ -464,7 +455,7 @@ export class MoveAnalyzer<
 
         this.logger.log({
             label: label,
-            previousMoves: this.previousMoves
+            previousMoves: this.previousMoves.all
                 .map(({ target, response }) => ({ target: target.toString(), response }))
                 .toArray(),
             previousHits: this.previousHits.map(toString).toArray(),
@@ -726,18 +717,13 @@ class OpponentFleet<
      */
     reconsiderPotentiallySunkShips(
         incorrectSunk: Coordinate<ColumnIndex, RowIndex>,
-        previousMoves: List<PreviousMove<ColumnIndex, RowIndex>>,
+        previousMoves: PreviousMoves<ColumnIndex, RowIndex>,
     ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
-        const surroundingCoordinateAsStrings = this.coordinateNavigator
-            .getSurroundingCoordinates(incorrectSunk)
-            .map(toString);
+        const surroundingCoordinateAsStrings = this.coordinateNavigator.getSurroundingCoordinates(incorrectSunk);
 
-        const surroundingHitCoordinates = previousMoves
-            .filter(({ target, response }) => {
-                return response === HitResponse.HIT
-                    && surroundingCoordinateAsStrings.includes(target.toString());
-            })
-            .map(({ target }) => target);
+        const surroundingHitCoordinates = previousMoves.hitCoordinates.filter(
+            (coordinate) => surroundingCoordinateAsStrings.contains(coordinate),
+        );
 
         const alignmentContainsSurroundingHitCoordinates: (alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined)=> boolean = (alignment) => surroundingHitCoordinates.reduce(
             (contains: boolean, coordinate) => contains || (undefined !== alignment && alignment.contains(coordinate)),

@@ -161,9 +161,7 @@ export class AIHitStrategy<
         hitTarget: Coordinate<ColumnIndex, RowIndex>,
     ): ChoiceStrategy<ColumnIndex, RowIndex> | undefined {
         // Picks the sortedCoordinates surrounding the given hit target.
-        const validCandidates = Set(
-            this.coordinateNavigator.getSurroundingCoordinates(hitTarget),
-        );
+        const validCandidates = this.coordinateNavigator.getSurroundingCoordinates(hitTarget);
 
         if (validCandidates.size === 0) {
             return undefined;
