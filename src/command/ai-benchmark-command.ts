@@ -69,12 +69,12 @@ export const AIBenchmarkCommand = createCommand(
 
         const play$ = playMatches(fleet, samples, ai, false)
             .pipe(
-                tap((averageEndTurn) => {
+                tap(({ lastTurnMean, playerTurnCountMean }) => {
                     const endTimeInSeconds = process.hrtime()[0];
                     const elapsedTime = endTimeInSeconds - startTimeInSeconds;
-                    const efficiency = calculateEfficiency(fleet, averageEndTurn);
+                    const efficiency = calculateEfficiency(fleet, lastTurnMean);
 
-                    console.log(`Matches finished in ${chalk.redBright(averageEndTurn)} turns on average (efficiency: ${chalk.redBright(efficiency + '%')}).`);
+                    console.log(`Matches finished in ${chalk.redBright(playerTurnCountMean)} turns on average (efficiency: ${chalk.redBright(efficiency + '%')}).`);
                     console.log(`Took ${chalk.yellowBright(formatTime(elapsedTime))}.`);
                 }),
                 map(() => undefined),
@@ -103,14 +103,17 @@ function playMatches(
     nbrOfMatches: number,
     version: AIVersion,
     debug: boolean,
-): Observable<number> {
+): Observable<{lastTurnMean: number, playerTurnCountMean: number}> {
     const logger = new ConsoleLogger();
 
     const matches = range(0, nbrOfMatches).map(() => startMatch(logger, fleet, version, debug));
 
     return combineLatest(matches)
         .pipe(
-            map(mean),
+            map((values) => ({
+                lastTurnMean: mean(values.map(({ lastTurn }) => lastTurn)),
+                playerTurnCountMean: mean(values.map(({ playerTurnCount }) => playerTurnCount)),
+            })),
         );
 }
 
@@ -119,7 +122,7 @@ function startMatch(
     fleet: Fleet,
     version: AIVersion,
     debug: boolean,
-): Observable<number> {
+): Observable<{ lastTurn: number, playerTurnCount: number}> {
     const match = new Match(new NullMatchLogger());
 
     return match
@@ -130,6 +133,6 @@ function startMatch(
         )
         .pipe(
             filter(({ winner }) => undefined !== winner),
-            map(({ turn }) => turn),
+            map(({ turn }) => ({ lastTurn: turn, playerTurnCount: (turn / 2) + (turn % 2) })),
         );
 }

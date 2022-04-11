@@ -70,8 +70,12 @@ export class MoveAnalyzer<
 
         this.logState('Recalculating state');
         this.recalculateStateAfterSunk();
-        this.checkOrphanHit();
-        this.checkConfirmedAlignment();
+
+        if (this.enableShipSizeTracking) {
+            this.checkOrphanHit();
+            this.checkConfirmedAlignment();
+        }
+
         this.logState('Recalculated state');
     }
 
@@ -710,17 +714,9 @@ class OpponentFleet<
     private getSurroundingHitCoordinates(coordinate: Coordinate<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const surroundingCoordinates = this.coordinateNavigator.getSurroundingCoordinates(coordinate);
 
-        const x = this.previousMoves.hitCoordinates.filter(
+        return this.previousMoves.hitCoordinates.filter(
             (hitCoordinate) => surroundingCoordinates.contains(hitCoordinate),
         );
-
-        console.log({
-            surroundingCoordinates: surroundingCoordinates.map(toString).toArray(),
-            hitCoordinates: this.previousMoves.hitCoordinates.map(toString).toArray(),
-            found: x.map(toString).toArray(),
-        });
-
-        return x;
     }
 
     /**
