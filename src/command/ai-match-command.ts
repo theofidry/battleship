@@ -4,7 +4,7 @@ import { BasicMatchLogger } from '../match/basic-match-logger';
 import { Match } from '../match/match';
 import { createFleet } from '../ship/fleet';
 import { calculateEfficiency } from '../standard-grid/efficiency';
-import { createAIPlayer } from '../standard-grid/std-ai-player-factory';
+import { AIVersion, createAIPlayer } from '../standard-grid/std-ai-player-factory';
 import { MAX_TURN } from '../standard-grid/std-coordinate';
 import { AIVersionOption, createAIVersionOption, parseAIVersionOption } from './ai-version-option';
 import { createCommand, noopParser, OptionParser } from './command';
@@ -37,7 +37,7 @@ export const AIMatchCommand = createCommand(
         const play$ = match
             .play(
                 createAIPlayer(fleet, ai, debug, logger),
-                createAIPlayer(fleet, ai, false, logger),
+                createAIPlayer(fleet, AIVersion.V1, false, logger),
                 MAX_TURN,
             )
             .pipe(
