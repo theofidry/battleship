@@ -68,7 +68,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
      * For example with a grid system of (column,row)=(A-J,1-10), the surrounding
      * sortedCoordinates of E8 will be E7,E9,D8,F8.
      */
-    getSurroundingCoordinates(target: Coordinate<ColumnIndex, RowIndex>): ReadonlyArray<Coordinate<ColumnIndex, RowIndex>> {
+    getSurroundingCoordinates(target: Coordinate<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
         const targetColumnIndex = target.columnIndex;
         const targetRowIndex = target.rowIndex;
 
@@ -82,14 +82,16 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
             this.findNextRowIndex(targetRowIndex),
         ].filter(isNotUndefined);
 
-        return [
-            ...potentialColumnIndices.map(
-                (columnIndex) => new Coordinate(columnIndex, targetRowIndex),
-            ),
-            ...potentialRowIndices.map(
-                (rowIndex) => new Coordinate(targetColumnIndex, rowIndex),
-            ),
-        ].sort(this.createCoordinatesSorter());
+        return List(
+            [
+                ...potentialColumnIndices.map(
+                    (columnIndex) => new Coordinate(columnIndex, targetRowIndex),
+                ),
+                ...potentialRowIndices.map(
+                    (rowIndex) => new Coordinate(targetColumnIndex, rowIndex),
+                ),
+            ].sort(this.createCoordinatesSorter()
+        ));
     }
 
     /**

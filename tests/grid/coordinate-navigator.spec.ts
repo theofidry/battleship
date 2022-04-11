@@ -104,7 +104,8 @@ describe('CoordinateNavigator::getSurroundingCoordinates()', () => {
         it(title, () => {
             const actual = testCoordinateNavigator
                 .getSurroundingCoordinates(target)
-                .map((coordinate) => coordinate.toString());
+                .map((coordinate) => coordinate.toString())
+                .toArray();
 
             expect(actual).to.eqls(expected);
         });
