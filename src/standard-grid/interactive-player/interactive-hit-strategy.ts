@@ -1,6 +1,5 @@
-import { isObjectLike } from 'lodash';
 import readlineSync from 'readline-sync';
-import { map, Observable, of, retry, retryWhen, takeWhile } from 'rxjs';
+import { map, Observable, of, retryWhen, takeWhile } from 'rxjs';
 import { isNonNullObject } from '../../assert/assert-is-non-null-object';
 import { Coordinate } from '../../grid/coordinate';
 import { OpponentGrid } from '../../grid/opponent-grid';

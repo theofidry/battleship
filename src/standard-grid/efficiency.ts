@@ -1,5 +1,4 @@
 import { assert } from '../assert/assert';
-import { assertIsInteger } from '../assert/assert-is-integer';
 import { Fleet } from '../ship/fleet';
 import { MAX_TURN } from './std-coordinate';
 

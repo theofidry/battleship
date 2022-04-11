@@ -1,7 +1,7 @@
 import { List, Map } from 'immutable';
-import { Coordinate } from '../grid/coordinate';
-import { CoordinateAlignment } from '../grid/coordinate-alignment';
-import { OpponentGrid } from '../grid/opponent-grid';
+import { Coordinate } from '../../grid/coordinate';
+import { CoordinateAlignment } from '../../grid/coordinate-alignment';
+import { OpponentGrid } from '../../grid/opponent-grid';
 import { AppliedChoiceStrategy, ChoiceStrategy } from './ai-hit-strategy';
 
 export interface AiHitStrategyStateRecorder<
