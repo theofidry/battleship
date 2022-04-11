@@ -1,16 +1,16 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
-import { assert } from '../assert/assert';
-import { assertIsNotUndefined } from '../assert/assert-is-not-undefined';
-import { HitResponse, isHitOrSunk } from '../communication/hit-response';
-import { Coordinate } from '../grid/coordinate';
-import { CoordinateAlignment, isAlignmentWithNoGap } from '../grid/coordinate-alignment';
-import { CoordinateNavigator } from '../grid/coordinate-navigator';
-import { Logger } from '../logger/logger';
-import { Fleet } from '../ship/fleet';
-import { assertIsShipSize, ShipSize } from '../ship/ship-size';
-import { Either } from '../utils/either';
-import { PreviousMove } from './hit-strategy';
+import { assert } from '../../assert/assert';
+import { assertIsNotUndefined } from '../../assert/assert-is-not-undefined';
+import { HitResponse, isHitOrSunk } from '../../communication/hit-response';
+import { Coordinate } from '../../grid/coordinate';
+import { CoordinateAlignment, isAlignmentWithNoGap } from '../../grid/coordinate-alignment';
+import { CoordinateNavigator } from '../../grid/coordinate-navigator';
+import { Logger } from '../../logger/logger';
+import { Fleet } from '../../ship/fleet';
+import { assertIsShipSize, ShipSize } from '../../ship/ship-size';
+import { Either } from '../../utils/either';
+import { PreviousMove } from '../hit-strategy';
 
 export class MoveAnalyzer<
     ColumnIndex extends PropertyKey,

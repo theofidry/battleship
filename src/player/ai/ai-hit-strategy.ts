@@ -11,7 +11,7 @@ import { Fleet } from '../../ship/fleet';
 import { ShipSize } from '../../ship/ship-size';
 import { Either } from '../../utils/either';
 import { HitStrategy, PreviousMove } from '../hit-strategy';
-import { MoveAnalyzer } from '../move-analyzer';
+import { MoveAnalyzer } from './move-analyzer';
 import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
 
 export type UntouchedCoordinatesFinder<
