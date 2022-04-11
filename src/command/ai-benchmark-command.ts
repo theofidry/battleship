@@ -125,7 +125,7 @@ function startMatch(
     return match
         .play(
             createAIPlayer(fleet, version, debug, logger),
-            createAIPlayer(fleet, version, debug, logger),
+            createAIPlayer(fleet, AIVersion.V1, false, logger),
             MAX_TURN,
         )
         .pipe(
