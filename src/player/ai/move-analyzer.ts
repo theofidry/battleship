@@ -32,13 +32,14 @@ export class MoveAnalyzer<
         private readonly logger: Logger,
         private readonly enableShipSizeTracking: boolean,
     ) {
+        this.previousMoves = new PreviousMoves();
+
         this.opponentFleet = new OpponentFleet<ColumnIndex, RowIndex>(
             fleet,
             coordinateNavigator,
+            this.previousMoves,
             logger,
         );
-
-        this.previousMoves = new PreviousMoves();
     }
 
     recordPreviousMove(previousMove: PreviousMove<ColumnIndex, RowIndex> | undefined): void {
@@ -104,6 +105,7 @@ export class MoveAnalyzer<
 
     private recalculateStateAfterSunk(): void {
         const previousMove = this.previousMoves.last;
+
         const suspiciousAlignments = this.suspiciousAlignments;
 
         if (undefined === previousMove || previousMove.response !== HitResponse.SUNK) {
@@ -151,10 +153,7 @@ export class MoveAnalyzer<
 
         this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
 
-        const newSuspiciousAlignments = this.opponentFleet.reconsiderPotentiallySunkShips(
-            previousMove.target,
-            this.previousMoves,
-        );
+        const newSuspiciousAlignments = this.opponentFleet.reconsiderPotentiallySunkShips(previousMove.target);
         assert(newSuspiciousAlignments.size === 1, `Expected to find only one suspicious alignment after reconsidering potentially sunk ships. Found: "${newSuspiciousAlignments.join('", "')}".`);
         const suspiciousAlignment = newSuspiciousAlignments.first()!;
 
@@ -485,6 +484,7 @@ class OpponentFleet<
     constructor(
         gameFleet: Fleet,
         private readonly coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
+        private readonly previousMoves: PreviousMoves<ColumnIndex, RowIndex>,
         private readonly logger: Logger,
     ) {
         const opponentFleet = List(
@@ -707,6 +707,22 @@ class OpponentFleet<
         return suspiciousAlignment;
     }
 
+    private getSurroundingHitCoordinates(coordinate: Coordinate<ColumnIndex, RowIndex>): List<Coordinate<ColumnIndex, RowIndex>> {
+        const surroundingCoordinates = this.coordinateNavigator.getSurroundingCoordinates(coordinate);
+
+        const x = this.previousMoves.hitCoordinates.filter(
+            (hitCoordinate) => surroundingCoordinates.contains(hitCoordinate),
+        );
+
+        console.log({
+            surroundingCoordinates: surroundingCoordinates.map(toString).toArray(),
+            hitCoordinates: this.previousMoves.hitCoordinates.map(toString).toArray(),
+            found: x.map(toString).toArray(),
+        });
+
+        return x;
+    }
+
     /**
      * We have an unexpected sunk coordinate, which means one of the alignments
      * containing this sunk coordinates is incorrect.
@@ -717,13 +733,8 @@ class OpponentFleet<
      */
     reconsiderPotentiallySunkShips(
         incorrectSunk: Coordinate<ColumnIndex, RowIndex>,
-        previousMoves: PreviousMoves<ColumnIndex, RowIndex>,
     ): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
-        const surroundingCoordinateAsStrings = this.coordinateNavigator.getSurroundingCoordinates(incorrectSunk);
-
-        const surroundingHitCoordinates = previousMoves.hitCoordinates.filter(
-            (coordinate) => surroundingCoordinateAsStrings.contains(coordinate),
-        );
+        const surroundingHitCoordinates = this.getSurroundingHitCoordinates(incorrectSunk);
 
         const alignmentContainsSurroundingHitCoordinates: (alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined)=> boolean = (alignment) => surroundingHitCoordinates.reduce(
             (contains: boolean, coordinate) => contains || (undefined !== alignment && alignment.contains(coordinate)),

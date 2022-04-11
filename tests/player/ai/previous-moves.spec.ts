@@ -12,6 +12,13 @@ function normalizeCoordinateList(coordinates: List<TestCoordinate>): ReadonlyArr
     return coordinates.toArray().map(toString);
 }
 
+function expectLastMoveToBe(
+    previousMoves: TestPreviousMoves,
+    expectedLast: string | undefined,
+): void {
+    expect(previousMoves.last?.target.toString()).to.equal(expectedLast);
+}
+
 function expectPreviousMovesState(
     previousMoves: TestPreviousMoves,
     expectedAll: ReadonlyArray<string>,
@@ -22,7 +29,7 @@ function expectPreviousMovesState(
     expect(normalizeCoordinateList(previousMoves.all.map(({ target }) => target))).to.eqls(expectedAll);
     expect(normalizeCoordinateList(previousMoves.sunkCoordinates)).to.eqls(expectedSunkCoordinates);
     expect(normalizeCoordinateList(previousMoves.hitCoordinates)).to.eqls(expectedHitCoordinates);
-    expect(previousMoves.last?.target.toString()).to.equal(expectedLast);
+    expectLastMoveToBe(previousMoves, expectedLast);
 }
 
 describe('PreviousMoves', () => {

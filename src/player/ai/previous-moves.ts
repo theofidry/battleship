@@ -1,4 +1,4 @@
-import { List, Map } from 'immutable';
+import { List, OrderedMap } from 'immutable';
 import { HitResponse } from '../../communication/hit-response';
 import { Coordinate } from '../../grid/coordinate';
 import { PreviousMove } from '../hit-strategy';
@@ -7,7 +7,7 @@ export class PreviousMoves<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > {
-    #moves: Map<string, PreviousMove<ColumnIndex, RowIndex>> = Map();
+    #moves: OrderedMap<string, PreviousMove<ColumnIndex, RowIndex>> = OrderedMap();
     #knownCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
     #sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
     #hitCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
