@@ -1,9 +1,9 @@
 import { Coordinate } from '../../grid/coordinate';
 import { Either } from '../../utils/either';
 import { EnumHelper } from '../../utils/enum-helper';
-import { CoordinateParser } from './interactive-hit-strategy';
 import { STD_COLUMN_INDICES, StdColumnIndex } from '../std-column-index';
 import { STD_ROW_INDICES, StdRowIndex } from '../std-row-index';
+import { CoordinateParser } from './interactive-hit-strategy';
 
 export const parseCoordinate: CoordinateParser = (rawCoordinate) => {
     const result = rawCoordinate.match(/([A-Z]+)([0-9]+)/);

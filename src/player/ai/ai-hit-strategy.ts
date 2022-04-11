@@ -1,18 +1,18 @@
 import { List, Map, Set } from 'immutable';
 import { sample } from 'lodash';
 import { Observable, of } from 'rxjs';
-import { assertIsNotUndefined, isNotUndefined } from '../assert/assert-is-not-undefined';
-import { Coordinate } from '../grid/coordinate';
-import { CoordinateAlignment } from '../grid/coordinate-alignment';
-import { CoordinateNavigator } from '../grid/coordinate-navigator';
-import { OpponentGrid } from '../grid/opponent-grid';
-import { Logger } from '../logger/logger';
-import { Fleet } from '../ship/fleet';
-import { ShipSize } from '../ship/ship-size';
-import { Either } from '../utils/either';
+import { assertIsNotUndefined, isNotUndefined } from '../../assert/assert-is-not-undefined';
+import { Coordinate } from '../../grid/coordinate';
+import { CoordinateAlignment } from '../../grid/coordinate-alignment';
+import { CoordinateNavigator } from '../../grid/coordinate-navigator';
+import { OpponentGrid } from '../../grid/opponent-grid';
+import { Logger } from '../../logger/logger';
+import { Fleet } from '../../ship/fleet';
+import { ShipSize } from '../../ship/ship-size';
+import { Either } from '../../utils/either';
+import { HitStrategy, PreviousMove } from '../hit-strategy';
+import { MoveAnalyzer } from '../move-analyzer';
 import { AiHitStrategyStateRecorder } from './ai-hit-strategy-state-recorder';
-import { HitStrategy, PreviousMove } from './hit-strategy';
-import { MoveAnalyzer } from './move-analyzer';
 
 export type UntouchedCoordinatesFinder<
     ColumnIndex extends PropertyKey,

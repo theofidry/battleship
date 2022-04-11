@@ -6,9 +6,9 @@ import { DebugLogger } from '../logger/debug-logger';
 import { Logger } from '../logger/logger';
 import {
     AIErrorHandler, AIHitStrategy, UntouchedCoordinatesFinder,
-} from '../player/ai-hit-strategy';
-import { AiHitStrategyStateRecorder } from '../player/ai-hit-strategy-state-recorder';
-import { NullAIHitStrategyStateRecorder } from '../player/null-ai-hit-strategy-state-recorder';
+} from '../player/ai/ai-hit-strategy';
+import { AiHitStrategyStateRecorder } from '../player/ai/ai-hit-strategy-state-recorder';
+import { NullAIHitStrategyStateRecorder } from '../player/ai/null-ai-hit-strategy-state-recorder';
 import { Fleet } from '../ship/fleet';
 import { printTable } from '../utils/table-printer';
 import { createOpponentTable } from './interactive-player/grid-printer';
