@@ -73,10 +73,10 @@ function* provideEqualitySets(): Generator<EqualitySet> {
 
     yield new EqualitySet(
         'same ship but different references & with alignment',
-        ship.markAsUnverifiedSunk(alignment),
+        ship.markAsNonVerifiedSunk(alignment),
         createOpponentShip<TestColumnIndex, TestRowIndex>(
             new ShipModel('Destroyer', 4),
-        ).markAsUnverifiedSunk(alignment),
+        ).markAsNonVerifiedSunk(alignment),
         true,
     );
 
@@ -100,7 +100,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
 
     yield new EqualitySet(
         'different status',
-        ship.markAsUnverifiedSunk(alignment),
+        ship.markAsNonVerifiedSunk(alignment),
         createOpponentShip<TestColumnIndex, TestRowIndex>(
             new ShipModel('Submarine', 4),
         ).markAsSunk(alignment),
@@ -109,10 +109,10 @@ function* provideEqualitySets(): Generator<EqualitySet> {
 
     yield new EqualitySet(
         'same status different alignment',
-        ship.markAsUnverifiedSunk(alignment),
+        ship.markAsNonVerifiedSunk(alignment),
         createOpponentShip<TestColumnIndex, TestRowIndex>(
             new ShipModel('Submarine', 4),
-        ).markAsUnverifiedSunk(anotherAlignment),
+        ).markAsNonVerifiedSunk(anotherAlignment),
         false,
     );
 }
@@ -138,7 +138,7 @@ describe('OpponentShip', () => {
         );
         const original = cloneDeep(notFoundShip);
 
-        const unverifiedSunkShip: UnverifiedSunkShip<TestColumnIndex, TestRowIndex> = notFoundShip.markAsUnverifiedSunk(alignment);
+        const unverifiedSunkShip: UnverifiedSunkShip<TestColumnIndex, TestRowIndex> = notFoundShip.markAsNonVerifiedSunk(alignment);
 
         expect(notFoundShip).to.eqls(original);
 
@@ -173,7 +173,7 @@ describe('OpponentShip', () => {
     it('can transition from unverified sunk -> not found', () => {
         const unverifiedSunkShip: UnverifiedSunkShip<TestColumnIndex, TestRowIndex> = createOpponentShip<TestColumnIndex, TestRowIndex>(
             new ShipModel('Battleship', 4),
-        ).markAsUnverifiedSunk(anotherAlignment);
+        ).markAsNonVerifiedSunk(anotherAlignment);
         const original = cloneDeep(unverifiedSunkShip);
 
         const notFoundShip: NotFoundShip<TestColumnIndex, TestRowIndex> = unverifiedSunkShip.markAsNotFound();
@@ -192,7 +192,7 @@ describe('OpponentShip', () => {
     it('can transition from unverified sunk -> sunk', () => {
         const unverifiedSunkShip: UnverifiedSunkShip<TestColumnIndex, TestRowIndex> = createOpponentShip<TestColumnIndex, TestRowIndex>(
             new ShipModel('Battleship', 4),
-        ).markAsUnverifiedSunk(anotherAlignment);
+        ).markAsNonVerifiedSunk(anotherAlignment);
         const original = cloneDeep(unverifiedSunkShip);
 
         const sunkShip: SunkShip<TestColumnIndex, TestRowIndex> = unverifiedSunkShip.markAsSunk(alignment);

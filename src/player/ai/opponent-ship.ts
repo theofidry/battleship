@@ -63,7 +63,7 @@ class OpponentShip<
         return ship;
     }
 
-    markAsUnverifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): UnverifiedSunkShip<ColumnIndex, RowIndex> {
+    markAsNonVerifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): UnverifiedSunkShip<ColumnIndex, RowIndex> {
         const previous = this;
         assert(
             isShip(previous) && !isSunkShip(previous),
@@ -109,7 +109,7 @@ class OpponentShip<
     }
 
     override toString(): string {
-        return `${this.name}(${this.size},${this.#status},${this.#alignment})`;
+        return `${this.name.replace(' ', '')}(${this.size},${this.#status},${this.#alignment})`;
     }
 }
 
@@ -120,7 +120,7 @@ export type NotFoundShip<
     status: OpponentShipStatus.NOT_FOUND;
     alignment: undefined;
 
-    markAsUnverifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): UnverifiedSunkShip<ColumnIndex, RowIndex>;
+    markAsNonVerifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): UnverifiedSunkShip<ColumnIndex, RowIndex>;
     markAsSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): SunkShip<ColumnIndex, RowIndex>;
 };
 

@@ -132,21 +132,25 @@ export class OpponentFleet<
 
             this.updateShip(
                 incorrectShip,
-                (ship) => ship.markAsNotFound(),
-            );
+                (ship) => {
+                    this.logger.log(`Marking the ship ${ship.toString()} as not found.`);
 
-            this.logger.log(`Marking the ship ${incorrectShip.toString()} as not found.`);
+                    return ship.markAsNotFound();
+                },
+            );
 
             result = Either.left(List([
                 sunkAlignment,
                 suspiciousAlignment,
             ]));
         } else {
-            this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as non-verified sunk.`);
-
             this.updateShip(
                 matchingShip,
-                (ship) => ship.markAsUnverifiedSunk(sunkAlignment),
+                (ship) => {
+                    this.logger.log(`Marking ship ${ship.toString()} as non-verified sunk on ${sunkAlignment.toString()}.`);
+
+                    return ship.markAsNonVerifiedSunk(sunkAlignment);
+                },
             );
 
             result = Either.right(undefined);
@@ -208,8 +212,7 @@ export class OpponentFleet<
                     // TODO: there is probably more to do here... For example if the
                     // alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
                     // want a match if the orphan hit is F8.
-                    return alignment.nextExtremums.contains(orphanHit)
-                        && !invalidAlignments.contains(alignment);
+                    return alignment.nextExtremums.contains(orphanHit);
                 },
             );
 
@@ -221,12 +224,14 @@ export class OpponentFleet<
             shipThatMayContainOrphan = shipsThatMayContainOrphan.first()!;
         }
 
-        this.logger.log(`Found the ship ${shipThatMayContainOrphan}.`);
-
         const incorrectAlignmentCoordinates = shipThatMayContainOrphan.alignment.sortedCoordinates;
         this.updateShip(
             shipThatMayContainOrphan,
-            (ship) => ship.markAsNotFound(),
+            (ship) => {
+                this.logger.log(`Marking the ship ${ship.toString()} as not found.`);
+
+                return ship.markAsNotFound();
+            },
         );
 
         const correctAlignmentSize = incorrectAlignmentCoordinates.size + 1;
@@ -241,8 +246,9 @@ export class OpponentFleet<
 
         assertIsNotUndefined(correctAlignment, 'Expected to find an alignment.');
 
-        this.logger.log(`Marking the ship matching the alignment ${correctAlignment.toString()} as sunk.`);
+        this.logger.log(`Looking for the ship matching the alignment ${correctAlignment.toString()} to mark it as sunk.`);
 
+        // TODO: coordinate alignment could have a helper to convert to alignment size
         const alignmentSize = correctAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
@@ -257,7 +263,7 @@ export class OpponentFleet<
 
             assert(sunkCoordinatesBelongingToAlignment.size === 1, () => `Expected to find exactly one sunk coordinate within the alignment ${correctAlignment.toString()}. Found: ${sunkCoordinatesBelongingToAlignment.join(', ')}.`);
 
-            // Do nothing: all is good.
+            // Do nothing: there is no non-verified ship to mark as not found.
         } else {
             assert(nonVerifiedSunkShips.size === 1, () => `Expected to find exactly one non-verified sunk ship of the size ${alignmentSize}. Found ${nonVerifiedSunkShips.size}: ${nonVerifiedSunkShips.map(toString).join(', ')}.`);
             const nonVerifiedSunkShip = nonVerifiedSunkShips.first()!;
@@ -266,7 +272,11 @@ export class OpponentFleet<
 
             this.updateShip(
                 nonVerifiedSunkShip,
-                (ship) => ship.markAsNotFound(),
+                (ship) => {
+                    this.logger.log(`Marking the ship ${ship.toString()} as not found.`);
+
+                    return ship.markAsNotFound();
+                },
             );
         }
 
@@ -274,7 +284,11 @@ export class OpponentFleet<
 
         this.updateShip(
             correctShip,
-            (ship) => ship.markAsSunk(correctAlignment),
+            (ship) => {
+                this.logger.log(`Marking the ship ${ship.toString()} as sunk in ${correctAlignment.toString()}.`);
+
+                return ship.markAsSunk(correctAlignment);
+            },
         );
 
         return suspiciousAlignment;
@@ -306,24 +320,18 @@ export class OpponentFleet<
             false,
         );
 
-        const suspiciousShips = this.nonVerifiedSunkShips().filter(
-            ({ alignment }) => alignmentContainsSurroundingHitCoordinates(alignment),
-        );
+        return this.nonVerifiedSunkShips()
+            .filter(
+                ({ alignment }) => alignmentContainsSurroundingHitCoordinates(alignment),
+            )
+            .map((suspiciousShip) => {
+                this.updateShip(
+                    suspiciousShip,
+                    (ship) => ship.markAsNotFound(),
+                );
 
-        const suspiciousAlignments = suspiciousShips.map(({ alignment }) => alignment);
-
-        this.#fleet = suspiciousShips.reduce(
-            (fleet, ship) => {
-                const shipIndex = fleet.indexOf(ship);
-
-                return fleet.set(shipIndex, ship.markAsNotFound());
-            },
-            this.#fleet,
-        );
-
-        this.recalculateSize();
-
-        return suspiciousAlignments;
+                return suspiciousShip.alignment;
+            });
     }
 
     recalculateSize(): void {
