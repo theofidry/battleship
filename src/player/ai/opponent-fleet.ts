@@ -3,7 +3,7 @@ import { toString } from 'lodash';
 import { assert } from '../../assert/assert';
 import { assertIsNotUndefined } from '../../assert/assert-is-not-undefined';
 import { Coordinate } from '../../grid/coordinate';
-import { CoordinateAlignment } from '../../grid/coordinate-alignment';
+import { CoordinateAlignment, verifyAlignment } from '../../grid/coordinate-alignment';
 import { CoordinateNavigator } from '../../grid/coordinate-navigator';
 import { Logger } from '../../logger/logger';
 import { Fleet } from '../../ship/fleet';
@@ -100,82 +100,72 @@ export class OpponentFleet<
         );
     }
 
-    private updateShip<T extends Ship<ColumnIndex, RowIndex>>(
-        ship: T,
-        update: (previous: T)=> Ship<ColumnIndex, RowIndex>,
-    ): void {
-        const shipIndex = this.#fleet.indexOf(ship);
-        assert(-1 !== shipIndex, `Expected to find the ship ${ship.toString()} among the fleet.`);
-
-        this.#fleet = this.#fleet.set(shipIndex, update(ship));
-        this.recalculateSize();
-    }
-
-    markAsNonVerifiedSunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
-        const alignmentSize = sunkAlignment.sortedCoordinates.size;
-        assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
-
+    /**
+     * Returns nothing on success. On failure, it means one of the previously
+     * thought sunk ship is not of the expected size, in which case it is un-marked
+     * as non-verified sunk and its alignment is returned along with the given
+     * alignment.
+     */
+    markAsNonVerifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
+        const { alignmentSize } = verifyAlignment(alignment).getOrThrowLeft();
         const matchingShip = this.notFoundShips(alignmentSize).first();
 
-        let result: Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> | undefined;
-
-        if (undefined === matchingShip) {
-            this.logger.log('No matching ship found.');
-
-            // This means one of the ship we thought we sank was not of the size
-            // we expected. In other words, it was not one single ship but rather
-            // a ship AND bits of another one.
-            const incorrectShip = this.nonVerifiedSunkShips(alignmentSize).first();
-            assertIsNotUndefined(incorrectShip);
-
-            const suspiciousAlignment = incorrectShip.alignment;
-
-            this.updateShip(
-                incorrectShip,
-                (ship) => {
-                    this.logger.log(`Marking the ship ${ship.toString()} as not found.`);
-
-                    return ship.markAsNotFound();
-                },
-            );
-
-            result = Either.left(List([
-                sunkAlignment,
-                suspiciousAlignment,
-            ]));
-        } else {
+        if (undefined !== matchingShip) {
             this.updateShip(
                 matchingShip,
                 (ship) => {
-                    this.logger.log(`Marking ship ${ship.toString()} as non-verified sunk on ${sunkAlignment.toString()}.`);
+                    this.logger.log(`Marking ship ${ship.toString()} as non-verified sunk on ${alignment.toString()}.`);
 
-                    return ship.markAsNonVerifiedSunk(sunkAlignment);
+                    return ship.markAsNonVerifiedSunk(alignment);
                 },
             );
 
-            result = Either.right(undefined);
+            return Either.right(undefined);
         }
 
-        this.logState();
+        // This means one of the ship we thought we sank was not of the size
+        // we expected. In other words, it was not one single ship but rather
+        // a ship AND bits of another one.
+        this.logger.log('No matching ship found: check non verified sunk ships.');
 
-        return result;
+        const nonVerifiedSunkShips = this.nonVerifiedSunkShips(alignmentSize);
+        assert(
+            nonVerifiedSunkShips.size === 1,
+            `Expected to find one and only one non-verified sunk ship of the size ${alignmentSize}.`,
+        );
+
+        const incorrectShip = nonVerifiedSunkShips.first()!;
+        const suspiciousAlignment = incorrectShip.alignment;
+
+        this.updateShip(
+            incorrectShip,
+            (ship) => {
+                this.logger.log(`Marking the ship ${ship.toString()} as not found.`);
+
+                return ship.markAsNotFound();
+            },
+        );
+
+        return Either.left(List([
+            alignment,
+            suspiciousAlignment,
+        ]));
     }
 
-    markAsSunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        const alignmentSize = sunkAlignment.sortedCoordinates.size;
-        assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
+    markAsSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+        const { alignmentSize } = verifyAlignment(alignment).getOrThrowLeft();
 
         const matchingShip = this.notFoundShips(alignmentSize).first();
-        assertIsNotUndefined(matchingShip, 'Expected to find a not found ship of this size.');
-
-        this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as sunk.`);
+        assertIsNotUndefined(matchingShip, `Expected to find at least one not found ship of the size ${alignmentSize}.`);
 
         this.updateShip(
             matchingShip,
-            (ship) => ship.markAsSunk(sunkAlignment),
-        );
+            (ship) => {
+                this.logger.log(`Marking ship ${ship.toString()} sunk on ${alignment.toString()}.`);
 
-        this.logState();
+                return ship.markAsSunk(alignment);
+            },
+        );
     }
 
     recordOrphanHit(
@@ -332,6 +322,19 @@ export class OpponentFleet<
 
                 return suspiciousShip.alignment;
             });
+    }
+
+    private updateShip<T extends Ship<ColumnIndex, RowIndex>>(
+        ship: T,
+        update: (previous: T)=> Ship<ColumnIndex, RowIndex>,
+    ): void {
+        const shipIndex = this.#fleet.indexOf(ship);
+        assert(-1 !== shipIndex, `Expected to find the ship ${ship.toString()} among the fleet.`);
+
+        this.#fleet = this.#fleet.set(shipIndex, update(ship));
+        this.recalculateSize();
+
+        this.logState();
     }
 
     recalculateSize(): void {
