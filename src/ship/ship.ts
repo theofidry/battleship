@@ -8,7 +8,7 @@ export class Ship {
     }
 
     toString(): string {
-        return `${this.name.split(' ').join('')}(${this.size})`;
+        return `${this.name.replace(' ', '')}(${this.size})`;
     }
 }
 
