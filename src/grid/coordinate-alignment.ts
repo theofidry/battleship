@@ -3,6 +3,7 @@ import { toString } from 'lodash';
 import { assert } from '../assert/assert';
 import { isNotUndefined } from '../assert/assert-is-not-undefined';
 import { ShipDirection } from '../ship/ship-direction';
+import { isShipSize, ShipSize } from '../ship/ship-size';
 import { Either } from '../utils/either';
 import { Coordinate } from './coordinate';
 import { CoordinateNavigator, IncompleteCoordinateAlignment } from './coordinate-navigator';
@@ -157,6 +158,26 @@ export function isAlignmentWithNoGap<
     RowIndex extends PropertyKey,
 >(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): boolean {
     return alignment.sortedGaps.size === 0;
+}
+
+export type PotentialShipAlignment<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+> = {
+    readonly alignment: CoordinateAlignment<ColumnIndex, RowIndex>;
+    readonly alignmentSize: ShipSize;
+};
+
+export function verifyAlignment<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<Error, PotentialShipAlignment<ColumnIndex, RowIndex>> {
+    const size = alignment.sortedCoordinates.size;
+
+    return isAlignmentWithNoGap(alignment) && isShipSize(size)
+        ? Either.right({ alignment, alignmentSize: size })
+        : Either.left(new Error(`The alignment ${alignment.toString()} cannot be a ship alignment.`));
+
 }
 
 export class AtomicAlignment extends Error {
