@@ -1,5 +1,7 @@
+import { ValueObject } from 'immutable';
 import { assert } from '../../assert/assert';
 import { CoordinateAlignment } from '../../grid/coordinate-alignment';
+import { hashString } from '../../grid/string-hash-code';
 import { Ship as ShipModel } from '../../ship/ship';
 
 export enum OpponentShipStatus {
@@ -11,7 +13,7 @@ export enum OpponentShipStatus {
 class OpponentShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> extends ShipModel {
+> extends ShipModel implements ValueObject {
     #status = OpponentShipStatus.NOT_FOUND;
     #alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined = undefined;
 
@@ -36,6 +38,14 @@ class OpponentShip<
         return this.#alignment;
     }
 
+    equals(other: unknown): boolean {
+        return other instanceof OpponentShip && this.toString() === other.toString();
+    }
+
+    hashCode(): number {
+        return hashString(this.toString());
+    }
+
     markAsNotFound(): NotFoundShip<ColumnIndex, RowIndex> {
         const previous = this;
         assert(
@@ -53,6 +63,7 @@ class OpponentShip<
         return ship;
     }
 
+    // TODO: expect matching size!!
     markAsUnverifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): UnverifiedSunkShip<ColumnIndex, RowIndex> {
         const previous = this;
         assert(
@@ -88,14 +99,14 @@ class OpponentShip<
     }
 
     override toString(): string {
-        return `${this.name}(${this.#status},${this.#alignment})`;
+        return `${this.name}(${this.size},${this.#status},${this.#alignment})`;
     }
 }
 
 export type NotFoundShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> = ShipModel & {
+> = ShipModel & ValueObject & {
     status: OpponentShipStatus.NOT_FOUND;
     alignment: undefined;
 
@@ -113,7 +124,7 @@ export function isNotFoundShip<
 export type UnverifiedSunkShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> = ShipModel & {
+> = ShipModel & ValueObject & {
     status: OpponentShipStatus.UNVERIFIED_SUNK;
     alignment: CoordinateAlignment<ColumnIndex, RowIndex>;
 
@@ -131,7 +142,7 @@ export function isUnverifiedSunkShip<
 export type SunkShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
-> = ShipModel & {
+> = ShipModel & ValueObject & {
     status: OpponentShipStatus.SUNK;
     alignment: CoordinateAlignment<ColumnIndex, RowIndex>;
 };

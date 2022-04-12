@@ -452,7 +452,7 @@ export class MoveAnalyzer<
 
     private logState(label: string): void {
         const formatFleet = (shipStatus: OpponentShipStatus) => this.opponentFleet
-            .getFleet()
+            .fleet
             .filter((ship) => ship.status === shipStatus)
             .map(({ size }) => size)
             .join('|');

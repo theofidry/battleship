@@ -9,17 +9,20 @@ import { Logger } from '../../logger/logger';
 import { Fleet } from '../../ship/fleet';
 import { assertIsShipSize, ShipSize } from '../../ship/ship-size';
 import { Either } from '../../utils/either';
-import { isUnverifiedSunkShip, OpponentShip, OpponentShipStatus } from './opponent-ship';
+import {
+    createOpponentShip, isNotFoundShip, isUnverifiedSunkShip, NotFoundShip, OpponentShipStatus,
+    Ship, UnverifiedSunkShip,
+} from './opponent-ship';
 import { PreviousMoves } from './previous-moves';
 
 export class OpponentFleet<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > {
-    private readonly fleet: List<OpponentShip<ColumnIndex, RowIndex>>;
-    private #minShipSize: ShipSize;
-    private #maxShipSize: ShipSize;
-    private #verifiedMaxShipSize: ShipSize;
+    #fleet: List<Ship<ColumnIndex, RowIndex>>;
+    #minShipSize: ShipSize;
+    #maxShipSize: ShipSize;
+    #verifiedMaxShipSize: ShipSize;
 
     constructor(
         gameFleet: Fleet,
@@ -28,10 +31,10 @@ export class OpponentFleet<
         private readonly logger: Logger,
     ) {
         const opponentFleet = List(
-            gameFleet.map(({ name, size }) => new OpponentShip<ColumnIndex, RowIndex>(name, size)),
+            gameFleet.map((ship) => createOpponentShip<ColumnIndex, RowIndex>(ship)),
         );
 
-        this.fleet = opponentFleet;
+        this.#fleet = opponentFleet;
 
         this.#minShipSize = calculateMinShipSize(opponentFleet);
         this.#maxShipSize = calculateMaxShipSize(opponentFleet);
@@ -50,30 +53,44 @@ export class OpponentFleet<
         return this.#verifiedMaxShipSize;
     }
 
-    getFleet(): List<OpponentShip<ColumnIndex, RowIndex>> {
-        return this.fleet;
+    get fleet(): List<Ship<ColumnIndex, RowIndex>> {
+        return this.#fleet;
     }
 
-    find(size: ShipSize, statusOrStatuses: OpponentShipStatus | ReadonlyArray<OpponentShipStatus>): List<OpponentShip<ColumnIndex, RowIndex>> {
-        const statuses: ReadonlyArray<OpponentShipStatus> = Array.isArray(statusOrStatuses)
-            ? statusOrStatuses
-            : [statusOrStatuses];
-
-        return this.fleet.filter((
-            ship) => ship.size === size && statuses.includes(ship.status),
+    private get notFoundShips(): List<NotFoundShip<ColumnIndex, RowIndex>> {
+        return this.#fleet.filter(
+            (ship): ship is NotFoundShip<ColumnIndex, RowIndex> => isNotFoundShip(ship),
         );
+    }
+
+    private get unverifiedSunkShips(): List<UnverifiedSunkShip<ColumnIndex, RowIndex>> {
+        return this.#fleet.filter(
+            (ship): ship is UnverifiedSunkShip<ColumnIndex, RowIndex> => isUnverifiedSunkShip(ship),
+        );
+    }
+
+    private get nonSunkShips(): List<NotFoundShip<ColumnIndex, RowIndex> | UnverifiedSunkShip<ColumnIndex, RowIndex>> {
+        return this.#fleet.filter(
+            (ship): ship is NotFoundShip<ColumnIndex, RowIndex> | UnverifiedSunkShip<ColumnIndex, RowIndex> => isNotFoundShip(ship) || isUnverifiedSunkShip(ship),
+        );
+    }
+
+    private updateShip<T extends Ship<ColumnIndex, RowIndex>>(
+        ship: T,
+        update: (previous: T)=> Ship<ColumnIndex, RowIndex>,
+    ): void {
+        const shipIndex = this.#fleet.indexOf(ship);
+        assert(-1 !== shipIndex, `Expected to find the ship ${ship.toString()} among the fleet.`);
+
+        this.#fleet = this.#fleet.set(shipIndex, update(ship));
+        this.recalculateSize();
     }
 
     markAsPotentiallySunk(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
         const alignmentSize = sunkAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
-        const unsunkShips = this.find(
-            alignmentSize,
-            OpponentShipStatus.NOT_FOUND,
-        );
-
-        const matchingShip = unsunkShips.first();
+        const matchingShip = this.notFoundShips.first();
 
         let result: Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> | undefined;
 
@@ -83,17 +100,14 @@ export class OpponentFleet<
             // This means one of the ship we thought we sank was not of the size
             // we expected. In other words, it was not one single ship but rather
             // a ship AND bits of another one.
-            const sunkShipOfSize = this.find(
-                    alignmentSize,
-                    OpponentShipStatus.UNVERIFIED_SUNK,
-                )
-                .first();
+            const incorrectShip = this.unverifiedSunkShips.first();
+            assertIsNotUndefined(incorrectShip);
 
-            assertIsNotUndefined(sunkShipOfSize);
+            const suspiciousAlignment = incorrectShip.alignment;
 
-            const suspiciousAlignment = sunkShipOfSize.markAsNotFound();
+            this.updateShip(incorrectShip, (ship) => ship.markAsNotFound());
 
-            this.logger.log(`Un-marking the ship ${sunkShipOfSize.toString()} as potentially sunk.`);
+            this.logger.log(`Un-marking the ship ${incorrectShip.toString()} as potentially sunk.`);
 
             result = Either.left(List([
                 sunkAlignment,
@@ -102,12 +116,13 @@ export class OpponentFleet<
         } else {
             this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as potentially sunk.`);
 
-            matchingShip.markAsUnverifiedSunk(sunkAlignment);
+            this.updateShip(
+                matchingShip,
+                (ship) => ship.markAsUnverifiedSunk(sunkAlignment),
+            );
 
             result = Either.right(undefined);
         }
-
-        this.recalculateSize();
 
         this.logState();
 
@@ -118,19 +133,17 @@ export class OpponentFleet<
         const alignmentSize = sunkAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
-        const unsunkShips = this.find(
-            alignmentSize,
-            OpponentShipStatus.NOT_FOUND,
-        );
+        const unsunkShips = this.notFoundShips;
 
         const matchingShip = unsunkShips.first();
         assertIsNotUndefined(matchingShip, 'Expected to find a not found ship of this size.');
 
         this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as sunk.`);
 
-        matchingShip.markAsSunk(sunkAlignment);
-
-        this.recalculateSize();
+        this.updateShip(
+            matchingShip,
+            (ship) => ship.markAsSunk(sunkAlignment),
+        );
 
         this.logState();
     }
@@ -142,13 +155,9 @@ export class OpponentFleet<
     ): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
         this.logger.log(`Looking for the potentially sunk ship that can contain the orphan hit ${orphanHit.toString()}.`);
 
-        let shipThatMayContainOrphan: OpponentShip<ColumnIndex, RowIndex> | undefined = undefined;
-        let shipsThatMayContainOrphan = this.fleet.filter(
+        let shipThatMayContainOrphan: UnverifiedSunkShip<ColumnIndex, RowIndex> | undefined;
+        let shipsThatMayContainOrphan = this.unverifiedSunkShips.filter(
             (ship) => {
-                if (!isUnverifiedSunkShip(ship)) {
-                    return false;
-                }
-
                 const alignment = ship.alignment;
 
                 // TODO: there is probably more to do here... For example if the
@@ -170,12 +179,8 @@ export class OpponentFleet<
             // If we arrive here it means we previously attempted to split up
             // an #alignment which resulted in an orphan hit.
             // This means the #alignment we tried to split up was indeed correct.
-            shipsThatMayContainOrphan = this.fleet.filter(
+            shipsThatMayContainOrphan = this.unverifiedSunkShips.filter(
                 (ship) => {
-                    if (!isUnverifiedSunkShip(ship)) {
-                        return false;
-                    }
-
                     const alignment = ship.alignment;
 
                     // TODO: there is probably more to do here... For example if the
@@ -196,7 +201,11 @@ export class OpponentFleet<
 
         this.logger.log(`Found the ship ${shipThatMayContainOrphan}.`);
 
-        const incorrectAlignmentCoordinates = shipThatMayContainOrphan.markAsNotFound().sortedCoordinates;
+        const incorrectAlignmentCoordinates = shipThatMayContainOrphan.alignment.sortedCoordinates;
+        this.updateShip(
+            shipThatMayContainOrphan,
+            (ship) => ship.markAsNotFound(),
+        );
 
         const correctAlignmentSize = incorrectAlignmentCoordinates.size + 1;
         assertIsShipSize(correctAlignmentSize);
@@ -215,8 +224,8 @@ export class OpponentFleet<
         const alignmentSize = correctAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
-        const potentiallySunkShips = this.fleet.filter(
-            (ship) => ship.status === OpponentShipStatus.UNVERIFIED_SUNK && ship.size === alignmentSize,
+        const potentiallySunkShips = this.unverifiedSunkShips.filter(
+            ({ size }) => size === alignmentSize,
         );
 
         let suspiciousAlignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined = undefined;
@@ -231,17 +240,22 @@ export class OpponentFleet<
             // Do nothing: all is good.
         } else {
             assert(potentiallySunkShips.size === 1, `Expected to find exactly one potentially sunk ship of the size ${alignmentSize}. Found ${potentiallySunkShips.size}.`);
+            const potentiallySunkShip = potentiallySunkShips.first()!;
 
-            suspiciousAlignment = potentiallySunkShips.first()!.markAsNotFound();
+            suspiciousAlignment = potentiallySunkShip.alignment;
+
+            this.updateShip(
+                potentiallySunkShip,
+                (ship) => ship.markAsNotFound(),
+            );
         }
 
-        const correctShip = this.find(
-                alignmentSize,
-                [OpponentShipStatus.NOT_FOUND, OpponentShipStatus.UNVERIFIED_SUNK],
-            )
-            .first()!;
+        const correctShip = this.nonSunkShips.first()!;
 
-        correctShip.markAsSunk(correctAlignment);
+        this.updateShip(
+            correctShip,
+            (ship) => ship.markAsSunk(correctAlignment),
+        );
 
         return suspiciousAlignment;
     }
@@ -272,12 +286,20 @@ export class OpponentFleet<
             false,
         );
 
-        const suspiciousAlignments = this.fleet
-            .filter((ship) => {
-                return ship.status === OpponentShipStatus.UNVERIFIED_SUNK
-                    && alignmentContainsSurroundingHitCoordinates(ship.alignment);
-            })
-            .map((ship) => ship.markAsNotFound());
+        const suspiciousShips = this.unverifiedSunkShips.filter(
+            ({ alignment }) => alignmentContainsSurroundingHitCoordinates(alignment),
+        );
+
+        const suspiciousAlignments = suspiciousShips.map(({ alignment }) => alignment);
+
+        this.#fleet = suspiciousShips.reduce(
+            (fleet, ship) => {
+                const shipIndex = fleet.indexOf(ship);
+
+                return fleet.set(shipIndex, ship.markAsNotFound());
+            },
+            this.#fleet,
+        );
 
         this.recalculateSize();
 
@@ -327,7 +349,7 @@ export class OpponentFleet<
 function calculateMinShipSize<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
+>(fleet: List<Ship<ColumnIndex, RowIndex>>): ShipSize {
     const min = fleet
         .filter((ship) => OpponentShipStatus.NOT_FOUND === ship.status)
         .map((ship) => ship.size)
@@ -341,7 +363,7 @@ function calculateMinShipSize<
 function calculateMaxShipSize<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
+>(fleet: List<Ship<ColumnIndex, RowIndex>>): ShipSize {
     const max = fleet
         .filter((ship) => OpponentShipStatus.NOT_FOUND === ship.status)
         .map((ship) => ship.size)
@@ -355,7 +377,7 @@ function calculateMaxShipSize<
 function calculateConfirmedMaxShipSize<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
->(fleet: List<OpponentShip<ColumnIndex, RowIndex>>): ShipSize {
+>(fleet: List<Ship<ColumnIndex, RowIndex>>): ShipSize {
     const max = fleet
         .filter((ship) => ship.status !== OpponentShipStatus.SUNK)
         .map((ship) => ship.size)
