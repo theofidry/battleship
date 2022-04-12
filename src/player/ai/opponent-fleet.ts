@@ -270,7 +270,7 @@ export class OpponentFleet<
             );
         }
 
-        const correctShip = this.nonSunkShips().first()!;
+        const correctShip = this.nonSunkShips(alignmentSize).first()!;
 
         this.updateShip(
             correctShip,
