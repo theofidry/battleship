@@ -10,8 +10,10 @@ import { Fleet } from '../../ship/fleet';
 import { assertIsShipSize, ShipSize } from '../../ship/ship-size';
 import { Either } from '../../utils/either';
 import {
-    createOpponentShip, isNotFoundShip, isUnverifiedSunkShip, NotFoundShip, OpponentShipStatus,
-    Ship, SunkShip, UnverifiedSunkShip,
+    createOpponentShip, isNotFoundShip, isSunkShip, isUnverifiedSunkShip, NotFoundShip,
+    OpponentShipStatus,
+    Ship, SunkShip,
+    UnverifiedSunkShip,
 } from './opponent-ship';
 import { PreviousMoves } from './previous-moves';
 
@@ -58,30 +60,43 @@ export class OpponentFleet<
     }
 
     notFoundShips(searchedSize?: ShipSize): List<NotFoundShip<ColumnIndex, RowIndex>> {
+        const isSearchedShipSize = (size: ShipSize) => searchedSize === undefined || size === searchedSize;
+
         return this.#fleet.filter(
-            ({ size, status }) => status === OpponentShipStatus.NOT_FOUND
-                && (searchedSize === undefined || size === searchedSize),
+            (ship): ship is NotFoundShip<ColumnIndex, RowIndex> => {
+                return isNotFoundShip(ship) && isSearchedShipSize(ship.size);
+            },
         );
     }
 
     nonVerifiedSunkShips(searchedSize?: ShipSize): List<UnverifiedSunkShip<ColumnIndex, RowIndex>> {
+        const isSearchedShipSize = (size: ShipSize) => searchedSize === undefined || size === searchedSize;
+
         return this.#fleet.filter(
-            ({ size, status }) => status === OpponentShipStatus.NON_VERIFIED_SUNK
-                && (searchedSize === undefined || size === searchedSize),
+            (ship): ship is UnverifiedSunkShip<ColumnIndex, RowIndex> => {
+                return isUnverifiedSunkShip(ship) && isSearchedShipSize(ship.size);
+            },
         );
     }
 
     nonSunkShips(searchedSize?: ShipSize): List<NotFoundShip<ColumnIndex, RowIndex> | UnverifiedSunkShip<ColumnIndex, RowIndex>> {
+        const isSearchedShipSize = (size: ShipSize) => searchedSize === undefined || size === searchedSize;
+
         return this.#fleet.filter(
-            ({ size, status }) => status !== OpponentShipStatus.SUNK
-                && (searchedSize === undefined || size === searchedSize),
+            (ship): ship is NotFoundShip<ColumnIndex, RowIndex> | UnverifiedSunkShip<ColumnIndex, RowIndex> => {
+                return (isNotFoundShip(ship) || isUnverifiedSunkShip(ship))
+                    && isSearchedShipSize(ship.size);
+            },
         );
     }
 
     sunkShips(searchedSize?: ShipSize): List<SunkShip<ColumnIndex, RowIndex>> {
+        const isSearchedShipSize = (size: ShipSize) => searchedSize === undefined || size === searchedSize;
+
         return this.#fleet.filter(
-            ({ size, status }) => status === OpponentShipStatus.SUNK
-                && (searchedSize === undefined || size === searchedSize),
+            (ship): ship is SunkShip<ColumnIndex, RowIndex> => {
+                return isSunkShip(ship) && isSearchedShipSize(ship.size);
+            },
         );
     }
 
@@ -110,13 +125,17 @@ export class OpponentFleet<
             // This means one of the ship we thought we sank was not of the size
             // we expected. In other words, it was not one single ship but rather
             // a ship AND bits of another one.
-            const sunkShipOfSize = this.nonVerifiedSunkShips(alignmentSize).first();
+            const incorrectShip = this.nonVerifiedSunkShips(alignmentSize).first();
+            assertIsNotUndefined(incorrectShip);
 
             const suspiciousAlignment = incorrectShip.alignment;
 
-            this.updateShip(incorrectShip, (ship) => ship.markAsNotFound());
+            this.updateShip(
+                incorrectShip,
+                (ship) => ship.markAsNotFound(),
+            );
 
-            this.logger.log(`Un-marking the ship ${sunkShipOfSize.toString()} as non-verified sunk.`);
+            this.logger.log(`Marking the ship ${incorrectShip.toString()} as not found.`);
 
             result = Either.left(List([
                 sunkAlignment,
@@ -241,17 +260,17 @@ export class OpponentFleet<
             // Do nothing: all is good.
         } else {
             assert(nonVerifiedSunkShips.size === 1, () => `Expected to find exactly one non-verified sunk ship of the size ${alignmentSize}. Found ${nonVerifiedSunkShips.size}: ${nonVerifiedSunkShips.map(toString).join(', ')}.`);
-            const potentiallySunkShip = potentiallySunkShips.first()!;
+            const nonVerifiedSunkShip = nonVerifiedSunkShips.first()!;
 
-            suspiciousAlignment = potentiallySunkShip.alignment;
+            suspiciousAlignment = nonVerifiedSunkShip.alignment;
 
             this.updateShip(
-                potentiallySunkShip,
+                nonVerifiedSunkShip,
                 (ship) => ship.markAsNotFound(),
             );
         }
 
-        const correctShip = this.nonSunkShips.first()!;
+        const correctShip = this.nonSunkShips().first()!;
 
         this.updateShip(
             correctShip,
@@ -287,7 +306,7 @@ export class OpponentFleet<
             false,
         );
 
-        const suspiciousShips = this.unverifiedSunkShips().filter(
+        const suspiciousShips = this.nonVerifiedSunkShips().filter(
             ({ alignment }) => alignmentContainsSurroundingHitCoordinates(alignment),
         );
 

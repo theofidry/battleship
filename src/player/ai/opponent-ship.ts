@@ -63,16 +63,17 @@ class OpponentShip<
         return ship;
     }
 
-    // TODO: expect matching size!!
     markAsUnverifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): UnverifiedSunkShip<ColumnIndex, RowIndex> {
         const previous = this;
         assert(
             isShip(previous) && !isSunkShip(previous),
-            () => `Cannot un-verify a sunk ship. Tried to mark ${this.toString()} as unverified sunk.`,
+            () => `Cannot non-verify a sunk ship. Tried to mark ${this.toString()} as unverified sunk.`,
         );
+        this.checkAlignment(alignment);
+
 
         const ship = this.createWith(
-            OpponentShipStatus.UNVERIFIED_SUNK,
+            OpponentShipStatus.NON_VERIFIED_SUNK,
             alignment,
         );
 
@@ -87,6 +88,7 @@ class OpponentShip<
             isShip(previous) && !isSunkShip(previous),
             () => `Cannot mark as sunk an already sunk ship. Tried to mark ${this.toString()} as not found.`,
         );
+        this.checkAlignment(alignment);
 
         const ship = this.createWith(
             OpponentShipStatus.SUNK,
@@ -96,6 +98,14 @@ class OpponentShip<
         assert(isSunkShip(ship));
 
         return ship;
+    }
+
+    private checkAlignment(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+        assert(alignment.sortedGaps.size === 0, `The alignment ${alignment.toString()} is not a valid ship alignment.`);
+        assert(
+            alignment.sortedCoordinates.size === this.size,
+            () => InvalidAlignmentSize.forShip(this, alignment),
+        );
     }
 
     override toString(): string {
@@ -125,7 +135,7 @@ export type UnverifiedSunkShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > = ShipModel & ValueObject & {
-    status: OpponentShipStatus.UNVERIFIED_SUNK;
+    status: OpponentShipStatus.NON_VERIFIED_SUNK;
     alignment: CoordinateAlignment<ColumnIndex, RowIndex>;
 
     markAsNotFound(): NotFoundShip<ColumnIndex, RowIndex>;
@@ -136,7 +146,7 @@ export function isUnverifiedSunkShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 >(value: unknown): value is UnverifiedSunkShip<ColumnIndex, RowIndex> {
-    return value instanceof OpponentShip && value.status === OpponentShipStatus.UNVERIFIED_SUNK;
+    return value instanceof OpponentShip && value.status === OpponentShipStatus.NON_VERIFIED_SUNK;
 }
 
 export type SunkShip<
@@ -178,4 +188,21 @@ export function createOpponentShip<
     assert(isNotFoundShip(opponentShip));
 
     return opponentShip;
+}
+
+class InvalidAlignmentSize extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'InvalidAlignmentSize';
+    }
+
+    static forShip(
+        ship: OpponentShip<any, any>,
+        alignment: CoordinateAlignment<any, any>,
+    ): InvalidAlignmentSize {
+        return new InvalidAlignmentSize(
+            `Expected alignment ${alignment.toString()} to match the ship size ${ship.toString()}.`,
+        );
+    }
 }

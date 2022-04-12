@@ -52,7 +52,7 @@ class EqualitySet {
 
 function* provideEqualitySets(): Generator<EqualitySet> {
     const ship = createOpponentShip<TestColumnIndex, TestRowIndex>(
-        new ShipModel('Destroyer', 3),
+        new ShipModel('Destroyer', 4),
     );
 
     yield new EqualitySet(
@@ -66,7 +66,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'same ship but different references',
         ship,
         createOpponentShip(
-            new ShipModel('Destroyer', 3),
+            new ShipModel('Destroyer', 4),
         ),
         true,
     );
@@ -75,7 +75,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'same ship but different references & with alignment',
         ship.markAsUnverifiedSunk(alignment),
         createOpponentShip<TestColumnIndex, TestRowIndex>(
-            new ShipModel('Destroyer', 3),
+            new ShipModel('Destroyer', 4),
         ).markAsUnverifiedSunk(alignment),
         true,
     );
@@ -84,7 +84,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'different name',
         ship,
         createOpponentShip<TestColumnIndex, TestRowIndex>(
-            new ShipModel('Submarine', 3),
+            new ShipModel('Submarine', 4),
         ),
         false,
     );
@@ -93,7 +93,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'different size',
         ship,
         createOpponentShip<TestColumnIndex, TestRowIndex>(
-            new ShipModel('Destroyer', 4),
+            new ShipModel('Destroyer', 5),
         ),
         false,
     );
@@ -102,7 +102,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'different status',
         ship.markAsUnverifiedSunk(alignment),
         createOpponentShip<TestColumnIndex, TestRowIndex>(
-            new ShipModel('Submarine', 3),
+            new ShipModel('Submarine', 4),
         ).markAsSunk(alignment),
         false,
     );
@@ -111,7 +111,7 @@ function* provideEqualitySets(): Generator<EqualitySet> {
         'same status different alignment',
         ship.markAsUnverifiedSunk(alignment),
         createOpponentShip<TestColumnIndex, TestRowIndex>(
-            new ShipModel('Submarine', 3),
+            new ShipModel('Submarine', 4),
         ).markAsUnverifiedSunk(anotherAlignment),
         false,
     );
@@ -142,9 +142,9 @@ describe('OpponentShip', () => {
 
         expect(notFoundShip).to.eqls(original);
 
-        expect(unverifiedSunkShip.status).to.equal(OpponentShipStatus.UNVERIFIED_SUNK);
+        expect(unverifiedSunkShip.status).to.equal(OpponentShipStatus.NON_VERIFIED_SUNK);
         expect(unverifiedSunkShip.alignment).to.equal(alignment);
-        expect(unverifiedSunkShip.toString()).to.equal('Battleship(4,UNVERIFIED_SUNK,HORIZONTAL:(A2,B2,C2,D2))');
+        expect(unverifiedSunkShip.toString()).to.equal('Battleship(4,NON_VERIFIED_SUNK,HORIZONTAL:(A2,B2,C2,D2))');
 
         expect(isNotFoundShip(unverifiedSunkShip)).to.equal(false);
         expect(isUnverifiedSunkShip(unverifiedSunkShip)).to.equal(true);
