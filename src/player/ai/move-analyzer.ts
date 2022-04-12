@@ -89,7 +89,7 @@ export class MoveAnalyzer<
     }
 
     getConfirmedMaxShipSize(): ShipSize {
-        return this.opponentFleet.confirmedMaxShipSize;
+        return this.opponentFleet.verifiedMaxShipSize;
     }
 
     getPreviousMoves(): List<PreviousMove<ColumnIndex, RowIndex>> {
@@ -158,8 +158,8 @@ export class MoveAnalyzer<
 
         this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
 
-        const newSuspiciousAlignments = this.opponentFleet.reconsiderPotentiallySunkShips(previousMove.target);
-        assert(newSuspiciousAlignments.size === 1, `Expected to find only one suspicious alignment after reconsidering potentially sunk ships. Found: "${newSuspiciousAlignments.join('", "')}".`);
+        const newSuspiciousAlignments = this.opponentFleet.reviewNonVerifiedSunkShips(previousMove.target);
+        assert(newSuspiciousAlignments.size === 1, `Expected to find only one suspicious alignment after reconsidering non-verified sunk ships. Found: "${newSuspiciousAlignments.join('", "')}".`);
         const suspiciousAlignment = newSuspiciousAlignments.first()!;
 
         this.logger.log(`New suspicious alignments found: ${newSuspiciousAlignments.map(toString).join(', ')}.`);
@@ -209,10 +209,10 @@ export class MoveAnalyzer<
     }
 
     private handleAlignmentWithSunkHit(sunkAlignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        this.logger.log(`Marking alignment as potentially sunk ${sunkAlignment.toString()}.`);
+        this.logger.log(`Marking alignment as non-verified sunk ${sunkAlignment.toString()}.`);
 
         this.opponentFleet
-            .markAsPotentiallySunk(sunkAlignment)
+            .markAsNonVerifiedSunk(sunkAlignment)
             .fold(
                 (suspiciousAlignments) => this.suspiciousAlignments = suspiciousAlignments,
                 () => this.removeHitsBelongingToAlignment(sunkAlignment),
@@ -468,11 +468,11 @@ export class MoveAnalyzer<
             suspiciousAlignments: this.suspiciousAlignments.map(toString).toArray(),
             triedAlignments: this.triedAlignments.map(toString).toArray(),
             sunkShips: formatFleet(OpponentShipStatus.SUNK),
-            potentiallySunkShips: formatFleet(OpponentShipStatus.POTENTIALLY_SUNK),
+            nonVerifiedSunkShips: formatFleet(OpponentShipStatus.NON_VERIFIED_SUNK),
             notFoundShips: formatFleet(OpponentShipStatus.NOT_FOUND),
             opponentFleetMin: this.opponentFleet.minShipSize,
             opponentFleetMax: this.opponentFleet.maxShipSize,
-            opponentFleetConfirmedMax: this.opponentFleet.confirmedMaxShipSize,
+            opponentFleetConfirmedMax: this.opponentFleet.verifiedMaxShipSize,
         });
     }
 }

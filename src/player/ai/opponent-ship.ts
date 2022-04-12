@@ -5,7 +5,7 @@ import { ShipSize } from '../../ship/ship-size';
 
 export enum OpponentShipStatus {
     NOT_FOUND = 'NOT_FOUND',
-    POTENTIALLY_SUNK = 'POTENTIALLY_SUNK',
+    NON_VERIFIED_SUNK = 'NON_VERIFIED_SUNK',
     SUNK = 'SUNK',
 }
 
@@ -29,8 +29,8 @@ export class OpponentShip<
         return this.#alignment;
     }
 
-    unmarkAsPotentiallySunk(): CoordinateAlignment<ColumnIndex, RowIndex> {
-        assert(this.#status === OpponentShipStatus.POTENTIALLY_SUNK);
+    markAsNotFound(): CoordinateAlignment<ColumnIndex, RowIndex> {
+        assert(this.#status === OpponentShipStatus.NON_VERIFIED_SUNK);
 
         this.#status = OpponentShipStatus.NOT_FOUND;
 
@@ -40,12 +40,12 @@ export class OpponentShip<
         return alignment;
     }
 
-    markAsPotentiallySunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
+    markAsNonVerifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
         const previousStatus = this.#status;
 
         assert(previousStatus !== OpponentShipStatus.SUNK);
 
-        this.#status = OpponentShipStatus.POTENTIALLY_SUNK;
+        this.#status = OpponentShipStatus.NON_VERIFIED_SUNK;
         this.#alignment = alignment;
     }
 
