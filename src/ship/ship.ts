@@ -6,6 +6,10 @@ export class Ship {
         public readonly size: ShipSize,
     ) {
     }
+
+    toString(): string {
+        return `${this.name.split(' ').join('')}(${this.size})`;
+    }
 }
 
 export function createCarrier(): Ship {
