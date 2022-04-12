@@ -11,7 +11,6 @@ import { Fleet } from '../../ship/fleet';
 import { ShipSize } from '../../ship/ship-size';
 import { PreviousMove } from '../hit-strategy';
 import { OpponentFleet } from './opponent-fleet';
-import { OpponentShipStatus } from './opponent-ship';
 import { PreviousMoves } from './previous-moves';
 
 export class MoveAnalyzer<
@@ -451,12 +450,6 @@ export class MoveAnalyzer<
     }
 
     private logState(label: string): void {
-        const formatFleet = (shipStatus: OpponentShipStatus) => this.opponentFleet
-            .fleet
-            .filter((ship) => ship.status === shipStatus)
-            .map(({ size }) => size)
-            .join('|');
-
         this.logger.log({
             label: label,
             previousMoves: this.previousMoves.all
@@ -467,9 +460,9 @@ export class MoveAnalyzer<
             previousAlignmentsWithConfirmedSunk: this.previousAlignmentsWithConfirmedSunk.map(toString).toArray(),
             suspiciousAlignments: this.suspiciousAlignments.map(toString).toArray(),
             triedAlignments: this.triedAlignments.map(toString).toArray(),
-            sunkShips: formatFleet(OpponentShipStatus.SUNK),
-            nonVerifiedSunkShips: formatFleet(OpponentShipStatus.NON_VERIFIED_SUNK),
-            notFoundShips: formatFleet(OpponentShipStatus.NOT_FOUND),
+            sunkShips: this.opponentFleet.sunkShips().map(toString).toArray(),
+            nonVerifiedSunkShips: this.opponentFleet.nonVerifiedSunkShips().map(toString).toArray(),
+            notFoundShips: this.opponentFleet.notFoundShips().map(toString).toArray(),
             opponentFleetMin: this.opponentFleet.minShipSize,
             opponentFleetMax: this.opponentFleet.maxShipSize,
             opponentFleetConfirmedMax: this.opponentFleet.verifiedMaxShipSize,

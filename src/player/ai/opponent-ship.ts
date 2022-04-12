@@ -37,6 +37,8 @@ export class OpponentShip<
         const alignment = this.#alignment;
         assertIsNotUndefined(alignment);
 
+        this.#alignment = undefined;
+
         return alignment;
     }
 
