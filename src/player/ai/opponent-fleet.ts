@@ -161,7 +161,7 @@ export class OpponentFleet<
                 const alignment = ship.alignment;
 
                 // TODO: there is probably more to do here... For example if the
-                // #alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
+                // alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
                 // want a match if the orphan hit is F8.
                 return alignment.nextExtremums.contains(orphanHit)
                     && !invalidAlignments.contains(alignment);
@@ -177,14 +177,14 @@ export class OpponentFleet<
             );
 
             // If we arrive here it means we previously attempted to split up
-            // an #alignment which resulted in an orphan hit.
-            // This means the #alignment we tried to split up was indeed correct.
+            // an alignment which resulted in an orphan hit.
+            // This means the alignment we tried to split up was indeed correct.
             shipsThatMayContainOrphan = this.unverifiedSunkShips.filter(
                 (ship) => {
                     const alignment = ship.alignment;
 
                     // TODO: there is probably more to do here... For example if the
-                    // #alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
+                    // alignment is F3,F4,F5,F6,F7 and the sunk hit is F7, we do not
                     // want a match if the orphan hit is F8.
                     return alignment.nextExtremums.contains(orphanHit)
                         && !invalidAlignments.contains(alignment);
@@ -217,7 +217,7 @@ export class OpponentFleet<
             )
             .first();
 
-        assertIsNotUndefined(correctAlignment, 'Expected to find an #alignment.');
+        assertIsNotUndefined(correctAlignment, 'Expected to find an alignment.');
 
         this.logger.log(`Marking the ship matching the alignment ${correctAlignment.toString()} as sunk.`);
 
@@ -273,7 +273,7 @@ export class OpponentFleet<
      * containing this sunk coordinates is incorrect.
      *
      * This method returns the exhaustive list of potentially sunk ships for
-     * which the #alignment contains at least one of the hit coordinate of the
+     * which the alignment contains at least one of the hit coordinate of the
      * sunk coordinate.
      */
     reconsiderPotentiallySunkShips(

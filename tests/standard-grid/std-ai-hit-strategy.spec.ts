@@ -411,7 +411,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'does not find any #alignment if the distance exceeds max size',
+        'does not find any alignment if the distance exceeds max size',
         flatten([
             createMoves(HitResponse.HIT, 'B2'),
             createMoves(HitResponse.HIT, 'B7'),
@@ -427,7 +427,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'it finds #alignment based on the max size',
+        'it finds alignment based on the max size',
         flatten([
             createMoves(HitResponse.HIT, 'B2'),
             createMoves(HitResponse.HIT, 'B3'),
@@ -446,7 +446,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'it does not find #alignment if the distance exceeds max size (max size = 4)',
+        'it does not find alignment if the distance exceeds max size (max size = 4)',
         flatten([
             createMoves(HitResponse.HIT, 'B2'),
             createMoves(HitResponse.HIT, 'B3'),

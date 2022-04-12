@@ -210,7 +210,7 @@ class CoordinateAlignmentsSet {
 
 function* provideCoordinateAlignmentsSet(): Generator<CoordinateAlignmentsSet> {
     yield new CoordinateAlignmentsSet(
-        'single coordinate: no #alignment possible',
+        'single coordinate: no alignment possible',
         Set([new Coordinate('C', '3')]),
         2,
         [].sort(),
@@ -428,7 +428,7 @@ class CoordinateAlignmentSet {
 
 function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet> {
     yield new CoordinateAlignmentSet(
-        '#alignment with no sortedCoordinates',
+        'alignment with no sortedCoordinates',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List(),
@@ -439,7 +439,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with one coordinate',
+        'alignment with one coordinate',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
@@ -452,7 +452,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with one coordinate in a corner',
+        'alignment with one coordinate in a corner',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
@@ -465,7 +465,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with two adjacent sortedCoordinates',
+        'alignment with two adjacent sortedCoordinates',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -479,7 +479,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with two separated sortedCoordinates',
+        'alignment with two separated sortedCoordinates',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -493,7 +493,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with two separated sortedCoordinates with incorrect direction',
+        'alignment with two separated sortedCoordinates with incorrect direction',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
@@ -507,7 +507,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with two separated sortedCoordinates (inverse order)',
+        'alignment with two separated sortedCoordinates (inverse order)',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -521,7 +521,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with two separated sortedCoordinates (horizontally)',
+        'alignment with two separated sortedCoordinates (horizontally)',
         {
             direction: ShipDirection.HORIZONTAL,
             coordinates: List([
@@ -535,7 +535,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with two separated sortedCoordinates (x2)',
+        'alignment with two separated sortedCoordinates (x2)',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -549,7 +549,7 @@ function* provideCoordinateAlignmentGapsSet(): Generator<CoordinateAlignmentSet>
     );
 
     yield new CoordinateAlignmentSet(
-        '#alignment with multi-gaps',
+        'alignment with multi-gaps',
         {
             direction: ShipDirection.VERTICAL,
             coordinates: List([
@@ -599,7 +599,7 @@ class CoordinateAlignmentExplodeGapsSet {
 
 function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignmentExplodeGapsSet> {
     yield new CoordinateAlignmentExplodeGapsSet(
-        '#alignment with no gaps',
+        'alignment with no gaps',
         new CoordinateAlignment(
             testCoordinateNavigator,
             ShipDirection.VERTICAL,
@@ -619,7 +619,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
     );
 
     yield new CoordinateAlignmentExplodeGapsSet(
-        '#alignment with one gap',
+        'alignment with one gap',
         new CoordinateAlignment(
             testCoordinateNavigator,
             ShipDirection.VERTICAL,
@@ -640,7 +640,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
     );
 
     yield new CoordinateAlignmentExplodeGapsSet(
-        '#alignment with two gaps',
+        'alignment with two gaps',
         new CoordinateAlignment(
             testCoordinateNavigator,
             ShipDirection.VERTICAL,

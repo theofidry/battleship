@@ -131,7 +131,7 @@ export class MoveAnalyzer<
             .first();
 
         if (suspiciousAlignments.size > 0 && undefined !== suspiciousAlignmentContainingSunk) {
-            this.logger.log('Target belongs to a suspicious #alignment.');
+            this.logger.log('Target belongs to a suspicious alignment.');
 
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
             this.suspiciousAlignments = List();
@@ -139,7 +139,7 @@ export class MoveAnalyzer<
             return;
         }
 
-        this.logger.log('No matching suspicious #alignment found.');
+        this.logger.log('No matching suspicious alignment found.');
 
         const knownAlignmentContainingSunk = this.previousAlignments
             .filter(
@@ -156,7 +156,7 @@ export class MoveAnalyzer<
             return this.handleAlignmentWithSunkHit(knownAlignmentContainingSunk);
         }
 
-        this.logger.log('Unexpected sunk! One of the previous sunk #alignment is not the size we thought it was.');
+        this.logger.log('Unexpected sunk! One of the previous sunk alignment is not the size we thought it was.');
 
         const newSuspiciousAlignments = this.opponentFleet.reconsiderPotentiallySunkShips(previousMove.target);
         assert(newSuspiciousAlignments.size === 1, `Expected to find only one suspicious alignment after reconsidering potentially sunk ships. Found: "${newSuspiciousAlignments.join('", "')}".`);
@@ -268,7 +268,7 @@ export class MoveAnalyzer<
         );
 
         if (undefined === suspiciousAlignmentFromOrphan) {
-            this.logger.log('No suspicious #alignment found from orphan.');
+            this.logger.log('No suspicious alignment found from orphan.');
 
             this.suspiciousAlignments = List();
             this.previousHits = List();
@@ -288,7 +288,7 @@ export class MoveAnalyzer<
     }
 
     private checkConfirmedAlignment(): void {
-        this.logger.log('Checking for confirmed #alignment.');
+        this.logger.log('Checking for confirmed alignment.');
 
         const sunkCoordinates = this.previousMoves.sunkCoordinates;
 
@@ -308,11 +308,11 @@ export class MoveAnalyzer<
             ({ sortedCoordinates, sortedGaps }) => sortedGaps.size === 0 && alignmentContainsSunkCoordinate(sortedCoordinates),
         );
 
-        // We might end up in the situation where we have an #alignment for which
+        // We might end up in the situation where we have an alignment for which
         // the surrounding coordinates are either a miss or a hit belonging to a
         // (confirmed) sunk boat which means the boat can be marked as confirmed.
         if (suspiciousAlignments.size === 0) {
-            return this.logger.log('No suspicious #alignment: do nothing.');
+            return this.logger.log('No suspicious alignment: do nothing.');
         }
 
         const knownCoordinates = this.previousMoves.knownCoordinates;
@@ -348,7 +348,7 @@ export class MoveAnalyzer<
         const suspiciousAlignments = this.suspiciousAlignments;
 
         if (suspiciousAlignments.size > 1) {
-            return this.logger.log('More than one suspicious #alignment found: do nothing.');
+            return this.logger.log('More than one suspicious alignment found: do nothing.');
         }
 
         this.suspiciousAlignments = List();
@@ -370,7 +370,7 @@ export class MoveAnalyzer<
     }
 
     /**
-     * Having the suspicious #alignment is not enough. It at least contains a
+     * Having the suspicious alignment is not enough. It at least contains a
      * sunk coordinate at an extremum, which means probing at the next
      * extremum is useless.
      * Another issue is that both extremums may already have been probed:
@@ -400,10 +400,10 @@ export class MoveAnalyzer<
             return { suspiciousAlignment };
         }
 
-        this.logger.log('The extremums of the #alignment have already been checked. Breaking apart the #alignment.');
+        this.logger.log('The extremums of the alignment have already been checked. Breaking apart the alignment.');
 
-        // It means that the #alignment contains at least two ships: one in the
-        // current #alignment that has already been sunk and at least another
+        // It means that the alignment contains at least two ships: one in the
+        // current alignment that has already been sunk and at least another
         // which is in a different direction.
         const head = suspiciousAlignment.head;
         const tail = suspiciousAlignment.tail;
