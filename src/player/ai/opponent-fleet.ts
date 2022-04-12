@@ -54,27 +54,31 @@ export class OpponentFleet<
         return this.#fleet;
     }
 
-    private get notFoundShips(): List<OpponentShip<ColumnIndex, RowIndex>> {
+    private notFoundShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
-            (ship) => ship.status === OpponentShipStatus.NOT_FOUND,
+            (ship) => ship.status === OpponentShipStatus.NOT_FOUND
+                && searchedSize === undefined || ship.size === searchedSize,
         );
     }
 
-    private get nonVerifiedSunkShips(): List<OpponentShip<ColumnIndex, RowIndex>> {
+    private nonVerifiedSunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
-            (ship) => ship.status === OpponentShipStatus.NON_VERIFIED_SUNK,
+            (ship) => ship.status === OpponentShipStatus.NON_VERIFIED_SUNK
+                && searchedSize === undefined || ship.size === searchedSize,
         );
     }
 
-    private get nonSunkShips(): List<OpponentShip<ColumnIndex, RowIndex>> {
+    private nonSunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
-            (ship) => ship.status !== OpponentShipStatus.SUNK,
+            (ship) => ship.status !== OpponentShipStatus.SUNK
+                && searchedSize === undefined || ship.size === searchedSize,
         );
     }
 
-    private get sunkShips(): List<OpponentShip<ColumnIndex, RowIndex>> {
+    private sunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
-            (ship) => ship.status === OpponentShipStatus.SUNK,
+            (ship) => ship.status === OpponentShipStatus.SUNK
+                && searchedSize === undefined || ship.size === searchedSize,
         );
     }
 
@@ -82,7 +86,7 @@ export class OpponentFleet<
         const alignmentSize = sunkAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
-        const matchingShip = this.notFoundShips.first();
+        const matchingShip = this.notFoundShips(alignmentSize).first();
 
         let result: Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> | undefined;
 
@@ -92,9 +96,7 @@ export class OpponentFleet<
             // This means one of the ship we thought we sank was not of the size
             // we expected. In other words, it was not one single ship but rather
             // a ship AND bits of another one.
-            const sunkShipOfSize = this.nonVerifiedSunkShips
-                .filter(({ size}) => size === alignmentSize)
-                .first();
+            const sunkShipOfSize = this.nonVerifiedSunkShips(alignmentSize).first();
 
             assertIsNotUndefined(sunkShipOfSize);
 
@@ -125,7 +127,7 @@ export class OpponentFleet<
         const alignmentSize = sunkAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
-        const matchingShip = this.notFoundShips.first();
+        const matchingShip = this.notFoundShips(alignmentSize).first();
         assertIsNotUndefined(matchingShip, 'Expected to find a not found ship of this size.');
 
         this.logger.log(`Marking ship size:${matchingShip.size} = (${sunkAlignment.sortedCoordinates.map(toString).join(', ')}) as sunk.`);
@@ -145,7 +147,7 @@ export class OpponentFleet<
         this.logger.log(`Looking for the non-verified sunk ship that can contain the orphan hit ${orphanHit.toString()}.`);
 
         let shipThatMayContainOrphan: OpponentShip<ColumnIndex, RowIndex> | undefined;
-        let shipsThatMayContainOrphan = this.nonVerifiedSunkShips.filter(
+        let shipsThatMayContainOrphan = this.nonVerifiedSunkShips().filter(
             (ship) => {
                 const alignment = ship.alignment;
 
@@ -169,7 +171,7 @@ export class OpponentFleet<
             // If we arrive here it means we previously attempted to split up
             // an alignment which resulted in an orphan hit.
             // This means the alignment we tried to split up was indeed correct.
-            shipsThatMayContainOrphan = this.nonVerifiedSunkShips.filter(
+            shipsThatMayContainOrphan = this.nonVerifiedSunkShips().filter(
                 (ship) => {
                     const alignment = ship.alignment;
 
@@ -210,9 +212,7 @@ export class OpponentFleet<
         const alignmentSize = correctAlignment.sortedCoordinates.size;
         assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
 
-        const nonVerifiedSunkShips = this.nonVerifiedSunkShips.filter(
-            ({ size }) => size === alignmentSize,
-        );
+        const nonVerifiedSunkShips = this.nonVerifiedSunkShips(alignmentSize);
 
         let suspiciousAlignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined = undefined;
 
@@ -230,9 +230,7 @@ export class OpponentFleet<
             suspiciousAlignment = nonVerifiedSunkShips.first()!.markAsNotFound();
         }
 
-        const correctShip = this.nonSunkShips
-            .filter(({ size }) => size === alignmentSize)
-            .first()!;
+        const correctShip = this.nonSunkShips(alignmentSize).first()!;
 
         correctShip.markAsSunk(correctAlignment);
 
@@ -265,7 +263,7 @@ export class OpponentFleet<
             false,
         );
 
-        const suspiciousAlignments = this.nonVerifiedSunkShips
+        const suspiciousAlignments = this.nonVerifiedSunkShips()
             .filter((ship) => alignmentContainsSurroundingHitCoordinates(ship.alignment))
             .map((ship) => ship.markAsNotFound());
 
@@ -285,9 +283,9 @@ export class OpponentFleet<
     private logState(): void {
         const mapShipToSize = (ship: OpponentShip<any, any>) => ship.size;
 
-        const notFoundShips = this.notFoundShips.map(mapShipToSize);
-        const nonVerifiedSunkShips = this.nonVerifiedSunkShips.map(mapShipToSize);
-        const sunkShips = this.sunkShips.map(mapShipToSize);
+        const notFoundShips = this.notFoundShips().map(mapShipToSize);
+        const nonVerifiedSunkShips = this.nonVerifiedSunkShips().map(mapShipToSize);
+        const sunkShips = this.sunkShips().map(mapShipToSize);
 
         this.logger.log({
             remainingShips: notFoundShips,
