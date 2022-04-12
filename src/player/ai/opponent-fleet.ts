@@ -54,28 +54,28 @@ export class OpponentFleet<
         return this.#fleet;
     }
 
-    private notFoundShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
+    notFoundShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
             ({ size, status }) => status === OpponentShipStatus.NOT_FOUND
-                && searchedSize === undefined || size === searchedSize,
+                && (searchedSize === undefined || size === searchedSize),
         );
     }
 
-    private nonVerifiedSunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
+    nonVerifiedSunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
             ({ size, status }) => status === OpponentShipStatus.NON_VERIFIED_SUNK
                 && (searchedSize === undefined || size === searchedSize),
         );
     }
 
-    private nonSunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
+    nonSunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
             ({ size, status }) => status !== OpponentShipStatus.SUNK
                 && (searchedSize === undefined || size === searchedSize),
         );
     }
 
-    private sunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
+    sunkShips(searchedSize?: ShipSize): List<OpponentShip<ColumnIndex, RowIndex>> {
         return this.#fleet.filter(
             ({ size, status }) => status === OpponentShipStatus.SUNK
                 && (searchedSize === undefined || size === searchedSize),
@@ -282,6 +282,7 @@ export class OpponentFleet<
         const sunkShips = this.sunkShips().map(toString).toArray();
 
         this.logger.log({
+            label: 'Fleet state',
             notFoundShips,
             nonVerifiedSunkShips,
             sunkShips,
