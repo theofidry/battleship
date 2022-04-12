@@ -304,7 +304,7 @@ export class MoveAnalyzer<
         };
 
         const suspiciousAlignments = this.suspiciousAlignments.filter(
-            ({ sortedCoordinates, sortedGaps }) => sortedGaps.alignmentSize === 0 && alignmentContainsSunkCoordinate(sortedCoordinates),
+            ({ sortedCoordinates, sortedGaps }) => sortedGaps.size === 0 && alignmentContainsSunkCoordinate(sortedCoordinates),
         );
 
         // We might end up in the situation where we have an alignment for which
