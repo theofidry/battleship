@@ -191,8 +191,8 @@ function* provideExtremumRemoval(): Generator<ExtremumRemoval> {
             undefined,
             undefined,
         ),
-        'The alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
-        'The alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
+        'The #alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
+        'The #alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
     );
 
     yield new ExtremumRemoval(

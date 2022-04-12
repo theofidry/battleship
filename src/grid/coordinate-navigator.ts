@@ -158,7 +158,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
      *
      * For example given the points A1, A2, A3, A5 and E1, without considering the
      * distance then the alignments found will be (A1, A2, A3, A5) and (A1, E1).
-     * If the max distance is less than 4 however, then the last alignment
+     * If the max distance is less than 4 however, then the last #alignment
      * (A1, E1) will be discarded. A5 will be kept though since the distance
      * between A3 and A5 is less than 4.
      */
@@ -181,7 +181,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
            [a5, []]
         ])
 
-        Then for each pair we find out if there is an alignment and the distance:
+        Then for each pair we find out if there is an #alignment and the distance:
 
         Map([
            [a0, [{a1,H,2}, -, -, -, {a5,V,3}]]
@@ -236,7 +236,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                 // We use < here instead of <= since the distance needs to account
                 // for the origin.
                 // For example, when we look for alignments for D5 with a max
-                // distance of 3, then an example of max alignment would be
+                // distance of 3, then an example of max #alignment would be
                 // D5, D6, D7 in which case distance(D5, D7) = 2.
                 && distance < maxDistance;
         };
@@ -263,7 +263,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
                 return true;
             }
 
-            // A lower-bound alignment cannot contain an upper-bound one hence
+            // A lower-bound #alignment cannot contain an upper-bound one hence
             // we can skip some checks.
             const previousAlignment = alignments.get(alignmentIndex - 1);
 
@@ -300,7 +300,7 @@ export class CoordinateNavigator<ColumnIndex extends PropertyKey, RowIndex exten
     /**
      * @internal
      *
-     * Finds missing sortedCoordinates within an alignment. For example for the
+     * Finds missing sortedCoordinates within an #alignment. For example for the
      * alignments (A1, A3) and (B2, E2), the sortedCoordinates found will be A2, C2,
      * and D2.
      */
