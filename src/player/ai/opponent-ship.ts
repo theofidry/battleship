@@ -6,7 +6,7 @@ import { Ship as ShipModel } from '../../ship/ship';
 
 export enum OpponentShipStatus {
     NOT_FOUND = 'NOT_FOUND',
-    UNVERIFIED_SUNK = 'UNVERIFIED_SUNK',
+    NON_VERIFIED_SUNK = 'NON_VERIFIED_SUNK',
     SUNK = 'SUNK',
 }
 
