@@ -13,61 +13,52 @@ export class OpponentShip<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > {
-    private alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined;
-    private status = OpponentShipStatus.NOT_FOUND;
+    #alignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined = undefined;
+    #status = OpponentShipStatus.NOT_FOUND;
 
     constructor(
         public readonly size: ShipSize,
     ) {
-        this.alignment = undefined;
     }
 
-    getStatus(): OpponentShipStatus {
-        return this.status;
+    get status(): OpponentShipStatus {
+        return this.#status;
     }
 
-    isPotentiallySunk(): boolean {
-        return this.status === OpponentShipStatus.POTENTIALLY_SUNK;
-    }
-
-    isNotSunk(): boolean {
-        return this.status !== OpponentShipStatus.SUNK;
-    }
-
-    getAlignment(): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
-        return this.alignment;
+    get alignment(): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
+        return this.#alignment;
     }
 
     unmarkAsPotentiallySunk(): CoordinateAlignment<ColumnIndex, RowIndex> {
-        assert(this.status === OpponentShipStatus.POTENTIALLY_SUNK);
+        assert(this.#status === OpponentShipStatus.POTENTIALLY_SUNK);
 
-        this.status = OpponentShipStatus.NOT_FOUND;
+        this.#status = OpponentShipStatus.NOT_FOUND;
 
-        const alignment = this.alignment;
+        const alignment = this.#alignment;
         assertIsNotUndefined(alignment);
 
         return alignment;
     }
 
     markAsPotentiallySunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        const previousStatus = this.status;
+        const previousStatus = this.#status;
 
         assert(previousStatus !== OpponentShipStatus.SUNK);
 
-        this.status = OpponentShipStatus.POTENTIALLY_SUNK;
-        this.alignment = alignment;
+        this.#status = OpponentShipStatus.POTENTIALLY_SUNK;
+        this.#alignment = alignment;
     }
 
     markAsSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        const previousStatus = this.status;
+        const previousStatus = this.#status;
 
         assert(previousStatus !== OpponentShipStatus.SUNK);
 
-        this.status = OpponentShipStatus.SUNK;
-        this.alignment = alignment;
+        this.#status = OpponentShipStatus.SUNK;
+        this.#alignment = alignment;
     }
 
     toString(): string {
-        return `"${this.status},${this.alignment}"`;
+        return `"${this.#status},${this.#alignment}"`;
     }
 }

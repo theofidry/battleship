@@ -81,15 +81,15 @@ export class MoveAnalyzer<
     }
 
     getMinShipSize(): ShipSize {
-        return this.opponentFleet.getMinShipSize();
+        return this.opponentFleet.minShipSize;
     }
 
     getMaxShipSize(): ShipSize {
-        return this.opponentFleet.getMaxShipSize();
+        return this.opponentFleet.maxShipSize;
     }
 
     getConfirmedMaxShipSize(): ShipSize {
-        return this.opponentFleet.getConfirmedMaxShipSize();
+        return this.opponentFleet.confirmedMaxShipSize;
     }
 
     getPreviousMoves(): List<PreviousMove<ColumnIndex, RowIndex>> {
@@ -452,8 +452,8 @@ export class MoveAnalyzer<
 
     private logState(label: string): void {
         const formatFleet = (shipStatus: OpponentShipStatus) => this.opponentFleet
-            .getFleet()
-            .filter((ship) => ship.getStatus() === shipStatus)
+            .fleet
+            .filter((ship) => ship.status === shipStatus)
             .map(({ size }) => size)
             .join('|');
 
@@ -470,9 +470,9 @@ export class MoveAnalyzer<
             sunkShips: formatFleet(OpponentShipStatus.SUNK),
             potentiallySunkShips: formatFleet(OpponentShipStatus.POTENTIALLY_SUNK),
             notFoundShips: formatFleet(OpponentShipStatus.NOT_FOUND),
-            opponentFleetMin: this.opponentFleet.getMinShipSize(),
-            opponentFleetMax: this.opponentFleet.getMaxShipSize(),
-            opponentFleetConfirmedMax: this.opponentFleet.getConfirmedMaxShipSize(),
+            opponentFleetMin: this.opponentFleet.minShipSize,
+            opponentFleetMax: this.opponentFleet.maxShipSize,
+            opponentFleetConfirmedMax: this.opponentFleet.confirmedMaxShipSize,
         });
     }
 }
