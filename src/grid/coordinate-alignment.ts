@@ -32,6 +32,7 @@ export class CoordinateAlignment<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
 > implements ValueObject {
+    public readonly extremums: List<Coordinate<ColumnIndex, RowIndex>>;
     public readonly nextExtremums: List<Coordinate<ColumnIndex, RowIndex>>;
 
     private stringValue?: string;
@@ -49,6 +50,7 @@ export class CoordinateAlignment<
             `Expected alignment to contain at least 2 elements. Got "${sortedCoordinates.size}".`,
         );
 
+        this.extremums = List([this.head, this.tail].filter(isNotUndefined));
         this.nextExtremums = List([nextHead, nextTail].filter(isNotUndefined));
     }
 
@@ -62,6 +64,12 @@ export class CoordinateAlignment<
 
     contains(coordinate: Coordinate<ColumnIndex, RowIndex>): boolean {
         return this.sortedCoordinates.includes(coordinate);
+    }
+
+    containsAny(coordinates: List<Coordinate<ColumnIndex, RowIndex>>): boolean {
+        return coordinates.some(
+            (coordinate) => this.contains(coordinate),
+        );
     }
 
     equals(other: unknown): boolean {

@@ -1,9 +1,10 @@
 import { List } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../../assert/assert';
-import { assertIsNotUndefined } from '../../assert/assert-is-not-undefined';
 import { Coordinate } from '../../grid/coordinate';
-import { CoordinateAlignment, verifyAlignment } from '../../grid/coordinate-alignment';
+import {
+    completeAlignment, CoordinateAlignment, PotentialShipAlignment, verifyAlignment,
+} from '../../grid/coordinate-alignment';
 import { CoordinateNavigator } from '../../grid/coordinate-navigator';
 import { Logger } from '../../logger/logger';
 import { Fleet } from '../../ship/fleet';
@@ -11,9 +12,7 @@ import { assertIsShipSize, ShipSize } from '../../ship/ship-size';
 import { Either } from '../../utils/either';
 import {
     createOpponentShip, isNotFoundShip, isSunkShip, isUnverifiedSunkShip, NotFoundShip,
-    OpponentShipStatus,
-    Ship, SunkShip,
-    UnverifiedSunkShip,
+    OpponentShipStatus, Ship, SunkShip, UnverifiedSunkShip,
 } from './opponent-ship';
 import { PreviousMoves } from './previous-moves';
 
@@ -107,17 +106,38 @@ export class OpponentFleet<
      * alignment.
      */
     markAsNonVerifiedSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
+        return this.markMatchingShip(
+            alignment,
+            (ship) => {
+                this.logger.log(`Marking ship ${ship.toString()} sunk on ${alignment.toString()}.`);
+
+                return ship.markAsNonVerifiedSunk(alignment);
+            },
+        );
+    }
+
+    markAsSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
+        return this.markMatchingShip(
+            alignment,
+            (ship) => {
+                this.logger.log(`Marking ship ${ship.toString()} sunk on ${alignment.toString()}.`);
+
+                return ship.markAsSunk(alignment);
+            },
+        );
+    }
+
+    private markMatchingShip(
+        alignment: CoordinateAlignment<ColumnIndex, RowIndex>,
+        handleMatchingShip: (matchingShip: NotFoundShip<ColumnIndex, RowIndex>)=> Ship<ColumnIndex,RowIndex>,
+    ): Either<List<CoordinateAlignment<ColumnIndex, RowIndex>>, void> {
         const { alignmentSize } = verifyAlignment(alignment).getOrThrowLeft();
         const matchingShip = this.notFoundShips(alignmentSize).first();
 
         if (undefined !== matchingShip) {
             this.updateShip(
                 matchingShip,
-                (ship) => {
-                    this.logger.log(`Marking ship ${ship.toString()} as non-verified sunk on ${alignment.toString()}.`);
-
-                    return ship.markAsNonVerifiedSunk(alignment);
-                },
+                handleMatchingShip,
             );
 
             return Either.right(undefined);
@@ -126,7 +146,7 @@ export class OpponentFleet<
         // This means one of the ship we thought we sank was not of the size
         // we expected. In other words, it was not one single ship but rather
         // a ship AND bits of another one.
-        this.logger.log('No matching ship found: check non verified sunk ships.');
+        this.logger.log('No matching ship found: check non-verified sunk ships.');
 
         const nonVerifiedSunkShips = this.nonVerifiedSunkShips(alignmentSize);
         assert(
@@ -150,22 +170,6 @@ export class OpponentFleet<
             alignment,
             suspiciousAlignment,
         ]));
-    }
-
-    markAsSunk(alignment: CoordinateAlignment<ColumnIndex, RowIndex>): void {
-        const { alignmentSize } = verifyAlignment(alignment).getOrThrowLeft();
-
-        const matchingShip = this.notFoundShips(alignmentSize).first();
-        assertIsNotUndefined(matchingShip, `Expected to find at least one not found ship of the size ${alignmentSize}.`);
-
-        this.updateShip(
-            matchingShip,
-            (ship) => {
-                this.logger.log(`Marking ship ${ship.toString()} sunk on ${alignment.toString()}.`);
-
-                return ship.markAsSunk(alignment);
-            },
-        );
     }
 
     recordOrphanHit(
@@ -214,7 +218,7 @@ export class OpponentFleet<
             shipThatMayContainOrphan = shipsThatMayContainOrphan.first()!;
         }
 
-        const incorrectAlignmentCoordinates = shipThatMayContainOrphan.alignment.sortedCoordinates;
+        const incorrectAlignment = shipThatMayContainOrphan.alignment;
         this.updateShip(
             shipThatMayContainOrphan,
             (ship) => {
@@ -224,38 +228,20 @@ export class OpponentFleet<
             },
         );
 
-        const correctAlignmentSize = incorrectAlignmentCoordinates.size + 1;
-        assertIsShipSize(correctAlignmentSize);
-
-        const correctAlignment = this.coordinateNavigator
-            .findAlignments(
-                incorrectAlignmentCoordinates.push(orphanHit),
-                correctAlignmentSize,
-            )
-            .first();
-
-        assertIsNotUndefined(correctAlignment, 'Expected to find an alignment.');
+        const correctAlignment = this.correctAlignment(
+            incorrectAlignment,
+            orphanHit,
+            this.previousMoves.sunkCoordinates,
+        );
 
         this.logger.log(`Looking for the ship matching the alignment ${correctAlignment.toString()} to mark it as sunk.`);
 
-        // TODO: coordinate alignment could have a helper to convert to alignment size
-        const alignmentSize = correctAlignment.sortedCoordinates.size;
-        assertIsShipSize(alignmentSize, `Invalid ship size ${alignmentSize}.`);
-
-        const nonVerifiedSunkShips = this.nonVerifiedSunkShips(alignmentSize);
+        const nonVerifiedSunkShips = this.nonVerifiedSunkShips(correctAlignment.alignmentSize);
 
         let suspiciousAlignment: CoordinateAlignment<ColumnIndex, RowIndex> | undefined = undefined;
 
-        if (nonVerifiedSunkShips.size === 0) {
-            const sunkCoordinatesBelongingToAlignment = sunkCoordinates.filter(
-                (coordinate) => correctAlignment.contains(coordinate),
-            );
-
-            assert(sunkCoordinatesBelongingToAlignment.size === 1, () => `Expected to find exactly one sunk coordinate within the alignment ${correctAlignment.toString()}. Found: ${sunkCoordinatesBelongingToAlignment.join(', ')}.`);
-
-            // Do nothing: there is no non-verified ship to mark as not found.
-        } else {
-            assert(nonVerifiedSunkShips.size === 1, () => `Expected to find exactly one non-verified sunk ship of the size ${alignmentSize}. Found ${nonVerifiedSunkShips.size}: ${nonVerifiedSunkShips.map(toString).join(', ')}.`);
+        if (nonVerifiedSunkShips.size !== 0) {
+            assert(nonVerifiedSunkShips.size === 1, () => `Expected to find exactly one non-verified sunk ship of the size ${correctAlignment.alignmentSize}. Found ${nonVerifiedSunkShips.size}: ${nonVerifiedSunkShips.map(toString).join(', ')}.`);
             const nonVerifiedSunkShip = nonVerifiedSunkShips.first()!;
 
             suspiciousAlignment = nonVerifiedSunkShip.alignment;
@@ -270,14 +256,14 @@ export class OpponentFleet<
             );
         }
 
-        const correctShip = this.nonSunkShips(alignmentSize).first()!;
+        const correctShip = this.nonSunkShips(correctAlignment.alignmentSize).first()!;
 
         this.updateShip(
             correctShip,
             (ship) => {
-                this.logger.log(`Marking the ship ${ship.toString()} as sunk in ${correctAlignment.toString()}.`);
+                this.logger.log(`Marking the ship ${ship.toString()} as sunk in ${correctAlignment.alignment.toString()}.`);
 
-                return ship.markAsSunk(correctAlignment);
+                return ship.markAsSunk(correctAlignment.alignment);
             },
         );
 
@@ -290,6 +276,28 @@ export class OpponentFleet<
         return this.previousMoves.hitCoordinates.filter(
             (hitCoordinate) => surroundingCoordinates.contains(hitCoordinate),
         );
+    }
+
+    private correctAlignment(
+        incorrectAlignment: CoordinateAlignment<ColumnIndex, RowIndex>,
+        missingCoordinate: Coordinate<ColumnIndex, RowIndex>,
+        sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+    ): PotentialShipAlignment<ColumnIndex, RowIndex> {
+        let newAlignment = completeAlignment(
+            {
+                direction: incorrectAlignment.direction,
+                coordinates: incorrectAlignment.sortedCoordinates.push(missingCoordinate),
+            },
+            this.coordinateNavigator,
+        );
+
+        newAlignment.extremums.forEach((extremum) => {
+            if (sunkCoordinates.contains(extremum)) {
+                newAlignment = newAlignment.removeNextExtremum(extremum);
+            }
+        });
+
+        return verifyAlignment(newAlignment).getOrThrowLeft();
     }
 
     /**
