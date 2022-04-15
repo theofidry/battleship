@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../../assert/assert';
 import { assertIsNotUndefined } from '../../assert/assert-is-not-undefined';
@@ -170,7 +170,7 @@ export class OpponentFleet<
 
     recordOrphanHit(
         orphanHit: Coordinate<ColumnIndex, RowIndex>,
-        invalidAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+        invalidAlignments: Set<CoordinateAlignment<ColumnIndex, RowIndex>>,
         sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
     ): CoordinateAlignment<ColumnIndex, RowIndex> | undefined {
         this.logger.log(`Looking for the non-verified sunk ship that can contain the orphan hit ${orphanHit.toString()}.`);

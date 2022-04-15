@@ -116,7 +116,7 @@ export class AIHitStrategy<
     private createChoiceStrategies(
         previousHits: List<Coordinate<ColumnIndex, RowIndex>>,
         alignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
-        suspiciousAlignedHitCoordinatesList: List<CoordinateAlignment<ColumnIndex, RowIndex>>,
+        suspiciousAlignedHitCoordinatesList: Set<CoordinateAlignment<ColumnIndex, RowIndex>>,
     ): ReadonlyArray<ChoiceStrategy<ColumnIndex, RowIndex>> {
         const strategies: Array<ChoiceStrategy<ColumnIndex, RowIndex> | undefined> = [];
 
