@@ -614,7 +614,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
             new Coordinate('A', '5'),
         ),
         [
-            'VERTICAL:(A1,A2,A3,A4)',
+            'VERTICAL:[A1,A2,A3,A4[',
         ],
     );
 
@@ -634,8 +634,8 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
             undefined,
         ),
         [
-            'VERTICAL:(A1,A2)',
-            'VERTICAL:(A4,A5)',
+            'VERTICAL:[A1,A2[',
+            'VERTICAL:]A4,A5]',
         ],
     );
 
@@ -655,7 +655,7 @@ function* provideCoordinateAlignmentExplodeGapsSet(): Generator<CoordinateAlignm
             undefined,
         ),
         [
-            'VERTICAL:(A1,A2,A3)',
+            'VERTICAL:[A1,A2,A3[',
         ],
     );
 }
