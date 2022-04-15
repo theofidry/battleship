@@ -11,6 +11,7 @@ export class PreviousMoves<
     #knownCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
     #sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
     #hitCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
+    #missCoordinates: List<Coordinate<ColumnIndex, RowIndex>> = List();
 
     push(move: PreviousMove<ColumnIndex, RowIndex>): void {
         const coordinate = move.target;
@@ -24,6 +25,10 @@ export class PreviousMoves<
 
             case HitResponse.HIT:
                 this.#hitCoordinates = this.#hitCoordinates.push(coordinate);
+                break;
+
+            case HitResponse.MISS:
+                this.#missCoordinates = this.#missCoordinates.push(coordinate);
                 break;
         }
 
@@ -44,6 +49,10 @@ export class PreviousMoves<
 
     get hitCoordinates(): List<Coordinate<ColumnIndex, RowIndex>> {
         return this.#hitCoordinates;
+    }
+
+    get missCoordinates(): List<Coordinate<ColumnIndex, RowIndex>> {
+        return this.#missCoordinates;
     }
 
     get knownCoordinates(): List<Coordinate<ColumnIndex, RowIndex>> {

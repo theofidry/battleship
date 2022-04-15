@@ -361,7 +361,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
     );
 
     yield new HitChoicesSet(
-        'anti-regression case (1)',
+        'regression 8712',
         flatten([
             createMoves(HitResponse.MISS, 'E3'),
             createMoves(HitResponse.HIT, 'I4'),
