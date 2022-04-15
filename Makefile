@@ -80,7 +80,7 @@ run: dist/src/main.js
 .PHONY: test
 test:		## Runs the tests
 test: $(TEST_DEPS)
-	TS_NODE_PROJECT=tsconfig.tests.json npx mocha --require=ts-node/register --check-leaks --recursive "tests/**/*.spec.ts"
+	TS_NODE_PROJECT=tsconfig.tests.json npx mocha --require=ts-node/register --parallel --check-leaks --recursive "tests/**/*.spec.ts"
 
 
 .PHONY: benchmark

@@ -283,6 +283,8 @@ export class OpponentFleet<
         missingCoordinate: Coordinate<ColumnIndex, RowIndex>,
         sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
     ): PotentialShipAlignment<ColumnIndex, RowIndex> {
+        incorrectAlignment.
+
         let newAlignment = completeAlignment(
             {
                 direction: incorrectAlignment.direction,

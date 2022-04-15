@@ -28,6 +28,41 @@ export function completeAlignment<
     );
 }
 
+function recreateFromPreviousAlignment<
+    ColumnIndex extends PropertyKey,
+    RowIndex extends PropertyKey,
+>(
+    newSortedCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
+    previous: CoordinateAlignment<ColumnIndex, RowIndex>,
+    coordinateNavigator: CoordinateNavigator<ColumnIndex, RowIndex>,
+): CoordinateAlignment<ColumnIndex, RowIndex> {
+    const incompleteAlignment = {
+        direction: previous.direction,
+        coordinates: newSortedCoordinates,
+    };
+
+    const nextExtremums = coordinateNavigator.findNextExtremums(incompleteAlignment);
+
+    const nextHead = newSortedCoordinates.contains(previous.head)
+        ? previous.nextHead
+        : nextExtremums.nextHead;
+
+    const nextTail = newSortedCoordinates.contains(previous.tail)
+        ? previous.nextTail
+        : nextExtremums.nextTail;
+
+    return new CoordinateAlignment(
+        coordinateNavigator,
+        previous.direction,
+        newSortedCoordinates,
+        coordinateNavigator.findAlignmentGaps(incompleteAlignment),
+        nextHead,
+        nextTail,
+    );
+}
+
+export const RemovedNextExtremum = Symbol('RemovedNextExtremum');
+
 export class CoordinateAlignment<
     ColumnIndex extends PropertyKey,
     RowIndex extends PropertyKey,
@@ -42,8 +77,8 @@ export class CoordinateAlignment<
         public readonly direction: ShipDirection,
         public readonly sortedCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
         public readonly sortedGaps: List<Coordinate<ColumnIndex, RowIndex>>,
-        public readonly nextHead: Coordinate<ColumnIndex, RowIndex> | undefined,
-        public readonly nextTail: Coordinate<ColumnIndex, RowIndex> | undefined,
+        public readonly nextHead: Coordinate<ColumnIndex, RowIndex> | typeof RemovedNextExtremum | undefined,
+        public readonly nextTail: Coordinate<ColumnIndex, RowIndex> | typeof RemovedNextExtremum | undefined,
     ) {
         assert(
             sortedCoordinates.size >= 2,
@@ -51,7 +86,9 @@ export class CoordinateAlignment<
         );
 
         this.extremums = List([this.head, this.tail].filter(isNotUndefined));
-        this.nextExtremums = List([nextHead, nextTail].filter(isNotUndefined));
+        this.nextExtremums = List([nextHead, nextTail].filter(
+            (value): value is Coordinate<ColumnIndex, RowIndex> => value instanceof Coordinate),
+        );
     }
 
     get head(): Coordinate<ColumnIndex, RowIndex> {
@@ -82,27 +119,28 @@ export class CoordinateAlignment<
     }
 
     removeNextExtremum(extremum: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {
-        const { direction, sortedCoordinates, sortedGaps } = this;
+        const { extremums, head, tail } = this;
+
+        assert(
+            extremums.contains(extremum),
+            () => InvalidExtremum.forAlignment(this, extremum),
+        );
+
         let { nextHead, nextTail } = this;
 
-        const head = sortedCoordinates.first()!;
-
-        if (head.equals(extremum)) {
-            nextHead = undefined;
+        if (head.equals(extremum) && nextHead !== undefined) {
+            nextHead = RemovedNextExtremum;
+        } else if (tail.equals(extremum) && nextTail !== undefined) {
+            nextTail = RemovedNextExtremum;
         } else {
-            const tail = sortedCoordinates.last()!;
-
-            // Sanity check
-            assert(tail.equals(extremum));
-
-            nextTail = undefined;
+            return this;
         }
 
         return new CoordinateAlignment(
             this.coordinateNavigator,
-            direction,
-            sortedCoordinates,
-            sortedGaps,
+            this.direction,
+            this.sortedCoordinates,
+            this.sortedGaps,
             nextHead,
             nextTail,
         );
@@ -116,11 +154,9 @@ export class CoordinateAlignment<
         }
 
         return Either.right(
-            completeAlignment(
-                {
-                    direction: this.direction,
-                    coordinates: newSortedCoordinates,
-                },
+            recreateFromPreviousAlignment(
+                newSortedCoordinates,
+                this,
                 this.coordinateNavigator,
             ),
         );
@@ -134,11 +170,9 @@ export class CoordinateAlignment<
         }
 
         return Either.right(
-            completeAlignment(
-                {
-                    direction: this.direction,
-                    coordinates: newSortedCoordinates,
-                },
+            recreateFromPreviousAlignment(
+                newSortedCoordinates,
+                this,
                 this.coordinateNavigator,
             ),
         );
@@ -151,10 +185,13 @@ export class CoordinateAlignment<
             return stringValue;
         }
 
-        const { direction, sortedCoordinates } = this;
+        const { direction, sortedCoordinates, nextHead, nextTail } = this;
         const formattedCoordinates = sortedCoordinates.map(toString).join(',');
 
-        stringValue = `${direction}:(${formattedCoordinates})`;
+        const leftSide = nextHead instanceof Coordinate ? ']' : '[';
+        const rightSide = nextTail instanceof Coordinate ? '[' : ']';
+
+        stringValue = `${direction}:${leftSide}${formattedCoordinates}${rightSide}`;
         this.stringValue = stringValue;
 
         return stringValue;
@@ -196,6 +233,22 @@ export class AtomicAlignment extends Error {
     }
 
     static forAlignment(alignment: CoordinateAlignment<any, any>): AtomicAlignment {
+        return new AtomicAlignment(`The alignment ${alignment.toString()} is atomic: no element can be removed from it.`);
+    }
+}
+
+
+export class InvalidExtremum extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        this.name = 'InvalidExtremum';
+    }
+
+    static forAlignment(
+        alignment: CoordinateAlignment<any, any>,
+        extremum: Coordinate<any, any>,
+    ): AtomicAlignment {
         return new AtomicAlignment(`The alignment ${alignment.toString()} is atomic: no element can be removed from it.`);
     }
 }
