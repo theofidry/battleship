@@ -161,7 +161,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.HIT, 'C4'),
         ]),
         startingV2,
-        'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:]C3,C4[>',
         [
             'C2',
             'C5',
@@ -176,7 +176,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.MISS, 'C2'),
         ]),
         startingV2,
-        'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:]C3,C4[>',
         [
             'C5',
         ],
@@ -190,7 +190,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.HIT, 'C4'),
         ]),
         startingV2,
-        'HitAlignedExtremumsHitTargets<VERTICAL:(C3,C4)>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:]C3,C4[>',
         [
             'C2',
             'C5',
@@ -205,7 +205,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.HIT, 'C5'),
         ]),
         startingV2,
-        'HitAlignedGapsHitTargets<VERTICAL:(C3,C5)>',
+        'HitAlignedGapsHitTargets<VERTICAL:]C3,C5[>',
         [
             'C4',
         ],
@@ -402,7 +402,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.HIT, 'B6'),
         ]),
         startingV4,
-        'HitAlignedGapsHitTargets<VERTICAL:(B2,B6)>',
+        'HitAlignedGapsHitTargets<VERTICAL:]B2,B6[>',
         [
             'B3',
             'B4',
@@ -438,7 +438,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.HIT, 'D5'),
         ]),
         startingV4,
-        'HitAlignedGapsHitTargets<VERTICAL:(D2,D5)>',
+        'HitAlignedGapsHitTargets<VERTICAL:]D2,D5[>',
         [
             'D3',
             'D4',
@@ -556,7 +556,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.MISS, 'F2'),
         ]),
         startingV4,
-        'HitAlignedExtremumsHitTargets<VERTICAL:(D3,D4,D5,D6,D7)>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:]D3,D4,D5,D6,D7]>',
         ['D2'],
     );
 
@@ -589,7 +589,7 @@ function* provideHitChoices(): Generator<HitChoicesSet> {
             createMoves(HitResponse.MISS, 'A9'),
         ]),
         startingV4,
-        'HitAlignedExtremumsHitTargets<VERTICAL:(A5,A6,A7,A8)>',
+        'HitAlignedExtremumsHitTargets<VERTICAL:]A5,A6,A7,A8]>',
         ['A4'],
     );
 

@@ -144,7 +144,7 @@ describe('OpponentShip', () => {
 
         expect(unverifiedSunkShip.status).to.equal(OpponentShipStatus.NON_VERIFIED_SUNK);
         expect(unverifiedSunkShip.alignment).to.equal(alignment);
-        expect(unverifiedSunkShip.toString()).to.equal('Battleship(4,NON_VERIFIED_SUNK,HORIZONTAL:(A2,B2,C2,D2))');
+        expect(unverifiedSunkShip.toString()).to.equal('Battleship(4,NON_VERIFIED_SUNK,HORIZONTAL:[A2,B2,C2,D2[)');
 
         expect(isNotFoundShip(unverifiedSunkShip)).to.equal(false);
         expect(isUnverifiedSunkShip(unverifiedSunkShip)).to.equal(true);
@@ -163,7 +163,7 @@ describe('OpponentShip', () => {
 
         expect(sunkShip.status).to.equal(OpponentShipStatus.SUNK);
         expect(sunkShip.alignment).to.equal(alignment);
-        expect(sunkShip.toString()).to.equal('Battleship(4,SUNK,HORIZONTAL:(A2,B2,C2,D2))');
+        expect(sunkShip.toString()).to.equal('Battleship(4,SUNK,HORIZONTAL:[A2,B2,C2,D2[)');
 
         expect(isNotFoundShip(sunkShip)).to.equal(false);
         expect(isUnverifiedSunkShip(sunkShip)).to.equal(false);
@@ -201,7 +201,7 @@ describe('OpponentShip', () => {
 
         expect(sunkShip.status).to.equal(OpponentShipStatus.SUNK);
         expect(sunkShip.alignment).to.equal(alignment);
-        expect(sunkShip.toString()).to.equal('Battleship(4,SUNK,HORIZONTAL:(A2,B2,C2,D2))');
+        expect(sunkShip.toString()).to.equal('Battleship(4,SUNK,HORIZONTAL:[A2,B2,C2,D2[)');
 
         expect(isNotFoundShip(sunkShip)).to.equal(false);
         expect(isUnverifiedSunkShip(sunkShip)).to.equal(false);

@@ -185,10 +185,13 @@ export class CoordinateAlignment<
             return stringValue;
         }
 
-        const { direction, sortedCoordinates } = this;
+        const { direction, sortedCoordinates, nextHead, nextTail } = this;
         const formattedCoordinates = sortedCoordinates.map(toString).join(',');
 
-        stringValue = `${direction}:(${formattedCoordinates})`;
+        const leftSide = nextHead instanceof Coordinate ? ']' : '[';
+        const rightSide = nextTail instanceof Coordinate ? '[' : ']';
+
+        stringValue = `${direction}:${leftSide}${formattedCoordinates}${rightSide}`;
         this.stringValue = stringValue;
 
         return stringValue;

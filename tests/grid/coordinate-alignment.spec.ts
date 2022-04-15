@@ -11,6 +11,97 @@ import {
     TestCoordinate, TestCoordinateAlignment, testCoordinateNavigator,
 } from './test-coordinates';
 
+class ToStringSet {
+    constructor(
+        readonly title: string,
+        readonly alignment: TestCoordinateAlignment,
+        readonly expected: string,
+    ) {
+    }
+}
+
+function* provideToStringSet(): Generator<ToStringSet> {
+    yield new ToStringSet(
+        'with extremums',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '3'),
+                new Coordinate('C', '3'),
+            ]),
+            List([]),
+            new Coordinate('A', '3'),
+            new Coordinate('D', '3'),
+        ),
+        'HORIZONTAL:]B3,C3[',
+    );
+
+    yield new ToStringSet(
+        'with no left extremum',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '3'),
+                new Coordinate('C', '3'),
+            ]),
+            List([]),
+            undefined,
+            new Coordinate('D', '3'),
+        ),
+        'HORIZONTAL:[B3,C3[',
+    );
+
+    yield new ToStringSet(
+        'with left removed',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '3'),
+                new Coordinate('C', '3'),
+            ]),
+            List([]),
+            RemovedNextExtremum,
+            new Coordinate('D', '3'),
+        ),
+        'HORIZONTAL:[B3,C3[',
+    );
+
+    yield new ToStringSet(
+        'with no right extremum',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '3'),
+                new Coordinate('C', '3'),
+            ]),
+            List([]),
+            new Coordinate('A', '3'),
+            undefined,
+        ),
+        'HORIZONTAL:]B3,C3]',
+    );
+
+    yield new ToStringSet(
+        'with no right extremum',
+        new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('B', '3'),
+                new Coordinate('C', '3'),
+            ]),
+            List([]),
+            new Coordinate('A', '3'),
+            RemovedNextExtremum,
+        ),
+        'HORIZONTAL:]B3,C3]',
+    );
+}
+
 class EqualitySet {
     constructor(
         readonly title: string,
@@ -193,8 +284,8 @@ function* provideExtremumRemoval(): Generator<ExtremumRemoval> {
             undefined,
             undefined,
         ),
-        'The alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
-        'The alignment HORIZONTAL:(A4,B4) is atomic: no element can be removed from it.',
+        'The alignment HORIZONTAL:[A4,B4] is atomic: no element can be removed from it.',
+        'The alignment HORIZONTAL:[A4,B4] is atomic: no element can be removed from it.',
     );
 
     yield new ExtremumRemoval(
@@ -436,23 +527,11 @@ function convertAlignment(alignment: TestCoordinateAlignment): object {
 }
 
 describe('Coordinate', () => {
-    it('can be cast into a string', () => {
-        const alignment = new CoordinateAlignment(
-            testCoordinateNavigator,
-            ShipDirection.HORIZONTAL,
-            List([
-                new Coordinate('A', '4'),
-                new Coordinate('B', '4'),
-            ]),
-            List([]),
-            undefined,
-            undefined,
-        );
-
-        const expected = 'HORIZONTAL:(A4,B4)';
-
-        expect(alignment.toString()).to.equal(expected);
-    });
+    for (const { title, alignment, expected } of provideToStringSet()) {
+        it(`can be cast into a string: ${title}`, () => {
+            expect(alignment.toString()).to.equal(expected);
+        });
+    }
 
     // This allows Immutable JS to correctly detect duplicates
     it('is an Immutable value object', () => {
