@@ -231,7 +231,6 @@ export class OpponentFleet<
         const correctAlignment = this.correctAlignment(
             incorrectAlignment,
             orphanHit,
-            this.previousMoves.sunkCoordinates,
         );
 
         this.logger.log(`Looking for the ship matching the alignment ${correctAlignment.toString()} to mark it as sunk.`);
@@ -281,23 +280,10 @@ export class OpponentFleet<
     private correctAlignment(
         incorrectAlignment: CoordinateAlignment<ColumnIndex, RowIndex>,
         missingCoordinate: Coordinate<ColumnIndex, RowIndex>,
-        sunkCoordinates: List<Coordinate<ColumnIndex, RowIndex>>,
     ): PotentialShipAlignment<ColumnIndex, RowIndex> {
-        incorrectAlignment.
-
-        let newAlignment = completeAlignment(
-            {
-                direction: incorrectAlignment.direction,
-                coordinates: incorrectAlignment.sortedCoordinates.push(missingCoordinate),
-            },
-            this.coordinateNavigator,
-        );
-
-        newAlignment.extremums.forEach((extremum) => {
-            if (sunkCoordinates.contains(extremum)) {
-                newAlignment = newAlignment.removeNextExtremum(extremum);
-            }
-        });
+        const newAlignment = incorrectAlignment
+            .add(missingCoordinate)
+            .getOrThrowLeft();
 
         return verifyAlignment(newAlignment).getOrThrowLeft();
     }
