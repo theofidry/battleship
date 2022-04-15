@@ -392,7 +392,9 @@ export class MoveAnalyzer<
             .filter(isNextExtremum)
             .size > 0;
 
-        suspiciousAlignment = suspiciousAlignment.removeNextExtremum(sunkCoordinate);
+        suspiciousAlignment = suspiciousAlignment
+            .removeNextExtremum(sunkCoordinate)
+            .getOrThrowLeft();
 
         if (!nonSunkExtremumAlreadyTargeted) {
             // Nothing more to do: the ship may very well continue in the unchecked direction.
