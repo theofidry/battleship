@@ -514,7 +514,7 @@ function* provideContainsAnyCoordinateSet(): Generator<ContainsAnyCoordinateSet>
     );
 }
 
-function convertAlignment(alignment: TestCoordinateAlignment): object {
+function normalizeAlignment(alignment: TestCoordinateAlignment): object {
     return {
         direction: alignment.direction,
         sortedCoordinates: alignment.sortedCoordinates.map(toString).toArray(),
@@ -524,6 +524,16 @@ function convertAlignment(alignment: TestCoordinateAlignment): object {
         nextTail: alignment.nextTail?.toString(),
         nextExtremums: alignment.nextExtremums.map(toString).toArray(),
     };
+}
+
+function expectEqualAlignments(
+    actual: TestCoordinateAlignment,
+    expected: TestCoordinateAlignment,
+): void {
+    // This is purely to trigger the lazy evaluation of the string value
+    expect(actual.toString()).to.equal(expected.toString());
+
+    expect(normalizeAlignment(actual)).to.eqls(normalizeAlignment(expected));
 }
 
 describe('Coordinate', () => {
@@ -614,13 +624,43 @@ describe('Coordinate', () => {
             // Ensure toString is calculated (it is lazily evaluated) as
             // otherwise the comparator may fail.
             alignment.toString();
-            actual.toString();
             expected.toString();
 
-            expect(actual).to.eqls(expected);
+            rightValue(
+                actual,
+                (value) => {
+                    expect(value.toString()).to.eqls(expected.toString());
+                    expect(value).to.eqls(expected);
+                },
+            );
             expect(alignment.toString()).to.equal(original);
         });
     }
+
+    it('cannot remove an invalid extremum', () => {
+        const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            undefined,
+            undefined,
+        );
+
+        const actual = alignment.removeNextExtremum(
+            new Coordinate('A', '1'),
+        );
+
+        expectLeftValueError(
+            'InvalidExtremum',
+            'The coordinate A1 is not an extremum of the alignment HORIZONTAL:[A4,B4,C4].',
+            actual,
+        );
+    });
 
     for (const { title, alignment, shift, pop } of provideExtremumRemoval()) {
         it(`can shift the alignment: ${title}`, () => {
@@ -638,7 +678,7 @@ describe('Coordinate', () => {
                 rightValue(
                     result,
                     (actual) => {
-                        expect(convertAlignment(actual)).to.eqls(convertAlignment(shift));
+                        expectEqualAlignments(actual, shift);
                         expect(alignment.toString()).to.equal(original);
                     }
                 );
@@ -660,11 +700,99 @@ describe('Coordinate', () => {
                 rightValue(
                     result,
                     (actual) => {
-                        expect(convertAlignment(actual)).to.eqls(convertAlignment(pop));
+                        expectEqualAlignments(actual, pop);
                         expect(alignment.toString()).to.equal(original);
                     }
                 );
             }
         });
     }
+
+    it('can add an next extremum to the alignment', () => {
+        const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            undefined,
+            new Coordinate('D', '4'),
+        );
+
+        const newAlignment = alignment.add(
+            new Coordinate('D', '4'),
+        );
+
+        const expected = new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+                new Coordinate('D', '4'),
+            ]),
+            List([]),
+            undefined,
+            new Coordinate('E', '4'),
+        );
+
+        rightValue(
+            newAlignment,
+            (value) => expectEqualAlignments(value, expected),
+        );
+    });
+
+    it('cannot add an non-extremum to the alignment', () => {
+        const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            undefined,
+            new Coordinate('D', '4'),
+        );
+
+        const actual = alignment.add(
+            new Coordinate('E', '5'),
+        );
+
+        expectLeftValueError(
+            'InvalidExtremum',
+            'The coordinate E5 is not a next extremum of the alignment HORIZONTAL:[A4,B4,C4[.',
+            actual,
+        );
+    });
+
+    it('cannot add an valid extremum to the alignment for which the extremum has been removed', () => {
+        const alignment: TestCoordinateAlignment = new CoordinateAlignment(
+            testCoordinateNavigator,
+            ShipDirection.HORIZONTAL,
+            List([
+                new Coordinate('A', '4'),
+                new Coordinate('B', '4'),
+                new Coordinate('C', '4'),
+            ]),
+            List([]),
+            undefined,
+            RemovedNextExtremum,
+        );
+
+        const actual = alignment.add(
+            new Coordinate('D', '4'),
+        );
+
+        expectLeftValueError(
+            'InvalidExtremum',
+            'The coordinate D4 is not a next extremum of the alignment HORIZONTAL:[A4,B4,C4].',
+            actual,
+        );
+    });
 });
