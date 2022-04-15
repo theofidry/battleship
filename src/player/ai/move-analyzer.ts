@@ -23,8 +23,8 @@ export class MoveAnalyzer<
     private readonly previousMoves: PreviousMoves<ColumnIndex, RowIndex>;
     private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
     private previousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
-    private triedAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
-    private previousAlignmentsWithConfirmedSunk: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
+    private triedAlignments: Set<CoordinateAlignment<ColumnIndex, RowIndex>> = Set();
+    private previousAlignmentsWithConfirmedSunk: Set<CoordinateAlignment<ColumnIndex, RowIndex>> = Set();
     private suspiciousAlignments: Set<CoordinateAlignment<ColumnIndex, RowIndex>> = Set();
     private opponentFleet: OpponentFleet<ColumnIndex, RowIndex>;
 
@@ -98,8 +98,8 @@ export class MoveAnalyzer<
         return this.previousAlignments;
     }
 
-    getSuspiciousHitAlignments(): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
-        return this.suspiciousAlignments.toList();
+    getSuspiciousHitAlignments(): Set<CoordinateAlignment<ColumnIndex, RowIndex>> {
+        return this.suspiciousAlignments;
     }
 
     private recalculateState(): void {
@@ -474,11 +474,11 @@ export class MoveAnalyzer<
         // is cheaper than implementing a caching layer for the coordinate
         // navigator.
         this.previousAlignmentsWithConfirmedSunk = maxShipSize === confirmedMaxShipSize
-            ? this.previousAlignments
+            ? this.previousAlignments.toSet()
             : this.coordinateNavigator.findAlignments(
                 this.previousHits,
                 confirmedMaxShipSize,
-            );
+            ).toSet();
     }
 
     private clearHits(): void {
