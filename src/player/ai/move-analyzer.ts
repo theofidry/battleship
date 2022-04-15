@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 import { toString } from 'lodash';
 import { assert } from '../../assert/assert';
 import { assertIsNotUndefined } from '../../assert/assert-is-not-undefined';
@@ -21,9 +21,9 @@ export class MoveAnalyzer<
     private readonly previousMoves: PreviousMoves<ColumnIndex, RowIndex>;
     private previousHits: List<Coordinate<ColumnIndex, RowIndex>> = List();
     private previousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
-    private triedAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
-    private previousAlignmentsWithConfirmedSunk: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
-    private suspiciousAlignments: List<CoordinateAlignment<ColumnIndex, RowIndex>> = List();
+    private triedAlignments: Set<CoordinateAlignment<ColumnIndex, RowIndex>> = Set();
+    private previousAlignmentsWithConfirmedSunk: Set<CoordinateAlignment<ColumnIndex, RowIndex>> = Set();
+    private suspiciousAlignments: Set<CoordinateAlignment<ColumnIndex, RowIndex>> = Set();
     private opponentFleet: OpponentFleet<ColumnIndex, RowIndex>;
 
     constructor(
@@ -103,7 +103,7 @@ export class MoveAnalyzer<
         return this.previousAlignments;
     }
 
-    getSuspiciousHitAlignments(): List<CoordinateAlignment<ColumnIndex, RowIndex>> {
+    getSuspiciousHitAlignments(): Set<CoordinateAlignment<ColumnIndex, RowIndex>> {
         return this.suspiciousAlignments;
     }
 
@@ -133,7 +133,7 @@ export class MoveAnalyzer<
             this.logger.log('Target belongs to a suspicious alignment.');
 
             suspiciousAlignments.forEach((suspiciousAlignment) => this.handleAlignmentWithSunkHit(suspiciousAlignment));
-            this.suspiciousAlignments = List();
+            this.suspiciousAlignments = Set();
 
             return;
         }
@@ -213,7 +213,7 @@ export class MoveAnalyzer<
         this.opponentFleet
             .markAsNonVerifiedSunk(sunkAlignment)
             .fold(
-                (suspiciousAlignments) => this.suspiciousAlignments = suspiciousAlignments,
+                (suspiciousAlignments) => this.suspiciousAlignments = suspiciousAlignments.toSet(),
                 () => this.removeHitsBelongingToAlignment(sunkAlignment),
             );
     }
@@ -269,13 +269,13 @@ export class MoveAnalyzer<
         if (undefined === suspiciousAlignmentFromOrphan) {
             this.logger.log('No suspicious alignment found from orphan.');
 
-            this.suspiciousAlignments = List();
+            this.suspiciousAlignments = Set();
             this.previousHits = List();
 
             return;
         }
 
-        this.suspiciousAlignments = List([suspiciousAlignmentFromOrphan]);
+        this.suspiciousAlignments = Set([suspiciousAlignmentFromOrphan]);
         this.checkOrphanSuspiciousAlignment();
 
         if (recurse) {
@@ -332,9 +332,7 @@ export class MoveAnalyzer<
                 this.opponentFleet.markAsSunk(alignment);
                 this.removeHitsBelongingToAlignment(alignment);
 
-                const suspiciousAlignmentIndex = newSuspiciousAlignments.indexOf(alignment);
-
-                newSuspiciousAlignments = newSuspiciousAlignments.remove(suspiciousAlignmentIndex);
+                newSuspiciousAlignments = newSuspiciousAlignments.remove(alignment);
             });
 
         this.suspiciousAlignments = newSuspiciousAlignments;
@@ -350,7 +348,7 @@ export class MoveAnalyzer<
             return this.logger.log('More than one suspicious alignment found: do nothing.');
         }
 
-        this.suspiciousAlignments = List();
+        this.suspiciousAlignments = Set();
 
         const { suspiciousAlignment, choppedCoordinate } = this.analyzeSuspiciousAlignment(
             suspiciousAlignments.first()!
@@ -359,10 +357,10 @@ export class MoveAnalyzer<
         this.logger.log(`Analysis result: ${suspiciousAlignment.toString()} and ${choppedCoordinate?.toString() || 'ø'}.`);
 
         if (undefined === choppedCoordinate) {
-            this.suspiciousAlignments = List([suspiciousAlignment]);
+            this.suspiciousAlignments = Set([suspiciousAlignment]);
             this.previousHits = List();
         } else {
-            this.triedAlignments = this.triedAlignments.push(suspiciousAlignment);
+            this.triedAlignments = this.triedAlignments.add(suspiciousAlignment);
             this.handleAlignmentWithSunkHit(suspiciousAlignment);
             this.previousHits = List([choppedCoordinate]);
         }
@@ -439,11 +437,11 @@ export class MoveAnalyzer<
         // is cheaper than implementing a caching layer for the coordinate
         // navigator.
         this.previousAlignmentsWithConfirmedSunk = maxShipSize === confirmedMaxShipSize
-            ? this.previousAlignments
+            ? this.previousAlignments.toSet()
             : this.coordinateNavigator.findAlignments(
                 this.previousHits,
                 confirmedMaxShipSize,
-            );
+            ).toSet();
     }
 
     private clearHits(): void {
