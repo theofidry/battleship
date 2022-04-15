@@ -43,13 +43,24 @@ function recreateFromPreviousAlignment<
 
     const nextExtremums = coordinateNavigator.findNextExtremums(incompleteAlignment);
 
-    const nextHead = newSortedCoordinates.contains(previous.head)
-        ? previous.nextHead
-        : nextExtremums.nextHead;
+    let nextHead: Coordinate<ColumnIndex, RowIndex> | typeof RemovedNextExtremum | undefined;
+    let nextTail: Coordinate<ColumnIndex, RowIndex> | typeof RemovedNextExtremum | undefined;
 
-    const nextTail = newSortedCoordinates.contains(previous.tail)
-        ? previous.nextTail
-        : nextExtremums.nextTail;
+    if (previous.nextHead instanceof Coordinate) {
+        nextHead = nextExtremums.nextHead;
+    } else if (newSortedCoordinates.contains(previous.head)) {
+        nextHead = previous.nextHead;
+    } else {
+        nextHead = nextExtremums.nextHead;
+    }
+
+    if (previous.nextTail instanceof Coordinate) {
+        nextTail = nextExtremums.nextTail;
+    } else if (newSortedCoordinates.contains(previous.tail)) {
+        nextTail = previous.nextTail;
+    } else {
+        nextTail = nextExtremums.nextTail;
+    }
 
     return new CoordinateAlignment(
         coordinateNavigator,
@@ -118,13 +129,12 @@ export class CoordinateAlignment<
         return hashString(this.toString());
     }
 
-    removeNextExtremum(extremum: Coordinate<ColumnIndex, RowIndex>): CoordinateAlignment<ColumnIndex, RowIndex> {
+    removeNextExtremum(extremum: Coordinate<ColumnIndex, RowIndex>): Either<InvalidExtremum, CoordinateAlignment<ColumnIndex, RowIndex>> {
         const { extremums, head, tail } = this;
 
-        assert(
-            extremums.contains(extremum),
-            () => InvalidExtremum.forAlignment(this, extremum),
-        );
+        if (!extremums.contains(extremum)) {
+            return Either.left(InvalidExtremum.forAlignment(this, extremum));
+        }
 
         let { nextHead, nextTail } = this;
 
@@ -133,16 +143,18 @@ export class CoordinateAlignment<
         } else if (tail.equals(extremum) && nextTail !== undefined) {
             nextTail = RemovedNextExtremum;
         } else {
-            return this;
+            return Either.right(this);
         }
 
-        return new CoordinateAlignment(
-            this.coordinateNavigator,
-            this.direction,
-            this.sortedCoordinates,
-            this.sortedGaps,
-            nextHead,
-            nextTail,
+        return Either.right(
+            new CoordinateAlignment(
+                this.coordinateNavigator,
+                this.direction,
+                this.sortedCoordinates,
+                this.sortedGaps,
+                nextHead,
+                nextTail,
+            ),
         );
     }
 
@@ -168,6 +180,25 @@ export class CoordinateAlignment<
         if (newSortedCoordinates.size < 2) {
             return Either.left(AtomicAlignment.forAlignment(this));
         }
+
+        return Either.right(
+            recreateFromPreviousAlignment(
+                newSortedCoordinates,
+                this,
+                this.coordinateNavigator,
+            ),
+        );
+    }
+
+    add(nextExtremum: Coordinate<ColumnIndex, RowIndex>): Either<InvalidExtremum, CoordinateAlignment<ColumnIndex, RowIndex>> {
+        if (!this.nextExtremums.contains(nextExtremum)) {
+            return Either.left(new InvalidExtremum(
+                `The coordinate ${nextExtremum.toString()} is not a next extremum of the alignment ${this.toString()}.`
+            ));
+        }
+
+        const newSortedCoordinates = this.sortedCoordinates
+            .push(nextExtremum);
 
         return Either.right(
             recreateFromPreviousAlignment(
@@ -248,7 +279,7 @@ export class InvalidExtremum extends Error {
     static forAlignment(
         alignment: CoordinateAlignment<any, any>,
         extremum: Coordinate<any, any>,
-    ): AtomicAlignment {
-        return new AtomicAlignment(`The alignment ${alignment.toString()} is atomic: no element can be removed from it.`);
+    ): InvalidExtremum {
+        return new InvalidExtremum(`The coordinate ${extremum.toString()} is not an extremum of the alignment ${alignment.toString()}.`);
     }
 }
